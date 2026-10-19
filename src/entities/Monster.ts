@@ -4,6 +4,7 @@ import type { IsoMap } from '../iso/IsoMap';
 import { screenToTile } from '../iso/iso';
 import { isSafeTile } from '../world/worldData';
 import { FONT } from '../ui/theme';
+import { isMonsterAnim } from '../assets/sprites';
 
 const LEASH = 280; // wild monsters give up a chase this far from home
 
@@ -13,7 +14,7 @@ function safeAt(x: number, y: number) {
 }
 
 export interface MonsterDef {
-  id: 'slime' | 'slime_blue' | 'wolf' | 'goblin' | 'orc' | 'skeleton' | 'slime_king' | 'dragon';
+  id: 'slime' | 'slime_blue' | 'slime_red' | 'wolf' | 'goblin' | 'orc' | 'skeleton' | 'zombie' | 'bat' | 'spider' | 'slime_king' | 'dragon';
   name: string;
   hp: number;
   atk: number;
@@ -39,6 +40,10 @@ export const MONSTERS: Record<MonsterDef['id'], MonsterDef> = {
   goblin: { id: 'goblin', name: 'Goblin', hp: 50, atk: 11, def: 2, speed: 90, aggroRange: 210, exp: 24, gold: 10, drop: { item: 'health_potion', chance: 0.2 }, extra: [{ item: 'iron_sword', chance: 0.04 }, { item: 'leather_armor', chance: 0.05 }, { item: 'oak_staff', chance: 0.04 }] },
   orc: { id: 'orc', name: 'Orc', hp: 120, atk: 16, def: 5, speed: 60, aggroRange: 200, exp: 45, gold: 18, drop: { item: 'health_potion', chance: 0.3 }, extra: [{ item: 'iron_sword', chance: 0.06 }] },
   skeleton: { id: 'skeleton', name: 'Skeleton', hp: 70, atk: 13, def: 4, speed: 80, aggroRange: 200, exp: 32, gold: 12, drop: { item: 'mana_potion', chance: 0.2 } },
+  slime_red: { id: 'slime_red', name: 'Fire Slime', hp: 40, atk: 10, def: 1, speed: 60, aggroRange: 180, exp: 16, gold: 4, drop: { item: 'slime_gel', chance: 0.6 } },
+  zombie: { id: 'zombie', name: 'Zombie', hp: 90, atk: 14, def: 3, speed: 45, aggroRange: 190, exp: 30, gold: 9, drop: { item: 'health_potion', chance: 0.15 } },
+  bat: { id: 'bat', name: 'Bat', hp: 25, atk: 8, def: 0, speed: 120, aggroRange: 220, exp: 14, gold: 3, drop: { item: 'mana_potion', chance: 0.1 } },
+  spider: { id: 'spider', name: 'Cave Spider', hp: 45, atk: 11, def: 2, speed: 95, aggroRange: 200, exp: 20, gold: 6, drop: { item: 'health_potion', chance: 0.1 } },
   // Night bosses only (never in the wilds).
   // (Gravemaw, the cave boss, is a King Slime grown huge on the Core's light: see GRAVEMAW.)
   slime_king: { id: 'slime_king', name: 'King Slime', hp: 160, atk: 14, def: 4, speed: 50, aggroRange: 200, exp: 60, gold: 25, drop: { item: 'slime_gel', chance: 1 }, extra: [{ item: 'health_potion', chance: 0.6 }] },
@@ -57,6 +62,9 @@ export class Monster extends Actor {
   hp: number;
   readonly hpBar: Phaser.GameObjects.Graphics;
   private title: Phaser.GameObjects.Text | null = null;
+  /** Drawn frames (idle, attack, hurt, dying); an attack or hurt frame shows until `actionUntil`. */
+  readonly animated: boolean;
+  private actionUntil = 0;
   private wanderTarget: { x: number; y: number } | null = null;
   private nextThink = 0;
   private knockback = new Phaser.Math.Vector2();
@@ -77,6 +85,7 @@ export class Monster extends Actor {
 
   constructor(scene: Phaser.Scene, x: number, y: number, readonly def: MonsterDef, readonly home: { x: number; y: number }) {
     super(scene, x, y, def.id);
+    this.animated = isMonsterAnim(def.id);
     this.hp = def.hp;
     if (def.size) (this.baseScale *= def.size), this.sprite.setScale(this.baseScale);
     this.hpBar = scene.add.graphics().setDepth(100000);
@@ -148,15 +157,38 @@ export class Monster extends Actor {
     this.heading.set(vx, vy).normalize();
     this.stuck = len > 1 && Math.hypot(this.x - ox, this.y - oy) < 0.05 * Math.hypot(mx, my) + 0.01;
     this.stuckMs = this.stuck ? this.stuckMs + dtMs : 0;
-    if (Math.abs(mx) > 0.01) this.sprite.setFlipX(['wolf', 'goblin', 'orc', 'skeleton'].includes(this.def.id) ? mx < 0 : this.def.id === 'dragon' ? mx > 0 : false);
+    if (Math.abs(mx) > 0.01) this.sprite.setFlipX(['wolf', 'goblin', 'orc', 'skeleton', 'zombie', 'spider', 'bat'].includes(this.def.id) ? mx < 0 : this.def.id === 'dragon' ? mx > 0 : false);
     if (len > 1) this.bob += dtMs / (this.def.id.startsWith('slime') ? 120 : 60);
-    // Slimes squish through their 3 frames as they hop.
-    if (this.def.id === 'slime') this.sprite.setFrame(len > 1 ? Math.floor(now / 160) % 3 : 0);
+    // Drawn monsters step between their two idle poses (faster while moving).
+    // (Attack and hurt frames are timed on the scene clock, like strikeAnim and hit.)
+    const t = this.scene.time.now;
+    if (this.animated && t > this.actionUntil) this.sprite.setFrame(Math.floor(t / (len > 1 ? 180 : 420)) % 2);
     this.sync();
     this.drawHp();
   }
 
+  /** Wind-up then strike (when it bites the hero or hits a building). */
+  strikeAnim() {
+    if (!this.animated || this.dead) return;
+    const now = this.scene.time.now;
+    this.actionUntil = now + 300;
+    this.sprite.setFrame(2);
+    this.scene.time.delayedCall(110, () => !this.dead && this.sprite.setFrame(3));
+  }
+
+  /** Falls over (drawn dying frames). Returns false if the monster has none. */
+  dieAnim(): boolean {
+    if (!this.animated) return false;
+    this.sprite.setFrame(5);
+    this.scene.time.delayedCall(140, () => this.sprite.active && this.sprite.setFrame(6));
+    return true;
+  }
+
   hit(dmg: number, from: { x: number; y: number }) {
+    if (this.animated) {
+      this.actionUntil = this.scene.time.now + 160;
+      this.sprite.setFrame(4);
+    }
     this.hp = Math.max(0, this.hp - dmg);
     const away = new Phaser.Math.Vector2(this.x - from.x, this.y - from.y).normalize().scale(420);
     this.knockback.copy(away);

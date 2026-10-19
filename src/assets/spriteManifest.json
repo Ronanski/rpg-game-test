@@ -103,6 +103,169 @@
   "imported": true
  },
  {
+  "key": "bat",
+  "w": 420,
+  "h": 56,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 60,
+  "manim": true
+ },
+ {
+  "key": "bl_crystal_1",
+  "w": 96,
+  "h": 77,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bl_crystal_3",
+  "w": 104,
+  "h": 90,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bl_crystal_5",
+  "w": 120,
+  "h": 107,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bl_crystal_7",
+  "w": 118,
+  "h": 107,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bl_farm_1",
+  "w": 102,
+  "h": 73,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bl_farm_3",
+  "w": 110,
+  "h": 89,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bl_farm_5",
+  "w": 114,
+  "h": 90,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bl_farm_7",
+  "w": 114,
+  "h": 90,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bl_forge_1",
+  "w": 89,
+  "h": 61,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bl_forge_3",
+  "w": 104,
+  "h": 86,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bl_forge_5",
+  "w": 102,
+  "h": 89,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bl_forge_7",
+  "w": 100,
+  "h": 89,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bl_hut_1",
+  "w": 106,
+  "h": 81,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bl_hut_2",
+  "w": 96,
+  "h": 81,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bl_tower_1",
+  "w": 64,
+  "h": 63,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bl_tower_3",
+  "w": 70,
+  "h": 67,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bl_tower_5",
+  "w": 73,
+  "h": 70,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bl_tower_7",
+  "w": 70,
+  "h": 73,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bl_workshop_1",
+  "w": 106,
+  "h": 82,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bl_workshop_2",
+  "w": 104,
+  "h": 84,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bl_workshop_4",
+  "w": 123,
+  "h": 90,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bl_workshop_6",
+  "w": 122,
+  "h": 89,
+  "scale": 1,
+  "imported": true
+ },
+ {
   "key": "blacksmith",
   "w": 120,
   "h": 120,
@@ -246,10 +409,12 @@
  },
  {
   "key": "goblin",
-  "w": 41,
-  "h": 46,
+  "w": 371,
+  "h": 49,
   "scale": 1,
-  "imported": true
+  "imported": true,
+  "frameWidth": 53,
+  "manim": true
  },
  {
   "key": "grave",
@@ -725,10 +890,12 @@
  },
  {
   "key": "orc",
-  "w": 71,
-  "h": 56,
+  "w": 462,
+  "h": 58,
   "scale": 1,
-  "imported": true
+  "imported": true,
+  "frameWidth": 66,
+  "manim": true
  },
  {
   "key": "pine",
@@ -794,25 +961,30 @@
  },
  {
   "key": "skeleton",
-  "w": 43,
-  "h": 54,
+  "w": 469,
+  "h": 62,
   "scale": 1,
-  "imported": true
+  "imported": true,
+  "frameWidth": 67,
+  "manim": true
  },
  {
   "key": "slime",
-  "w": 114,
-  "h": 30,
+  "w": 287,
+  "h": 43,
   "scale": 1,
   "imported": true,
-  "frameWidth": 38
+  "frameWidth": 41,
+  "manim": true
  },
  {
   "key": "slime_blue",
-  "w": 38,
-  "h": 30,
+  "w": 441,
+  "h": 43,
   "scale": 1,
-  "imported": true
+  "imported": true,
+  "frameWidth": 63,
+  "manim": true
  },
  {
   "key": "slime_king",
@@ -827,6 +999,24 @@
   "h": 30,
   "scale": 1,
   "imported": true
+ },
+ {
+  "key": "slime_red",
+  "w": 371,
+  "h": 36,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 53,
+  "manim": true
+ },
+ {
+  "key": "spider",
+  "w": 399,
+  "h": 40,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 57,
+  "manim": true
  },
  {
   "key": "stable",
@@ -1011,5 +1201,14 @@
   "h": 40,
   "scale": 1,
   "imported": true
+ },
+ {
+  "key": "zombie",
+  "w": 483,
+  "h": 52,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 69,
+  "manim": true
  }
 ]

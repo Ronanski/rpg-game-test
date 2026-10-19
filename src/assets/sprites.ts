@@ -13,6 +13,8 @@ export interface SpriteInfo {
   imported?: boolean;
   /** Frame-by-frame hero: 0 idle, 1-5 walk, 6 wind-up, 7 strike, 8 hurt. */
   anim?: boolean;
+  /** Frame-by-frame monster: 0-1 idle, 2 wind-up, 3 strike, 4 hurt, 5-6 dying. */
+  manim?: boolean;
 }
 
 const byKey = new Map<string, SpriteInfo>((manifest as SpriteInfo[]).map((s) => [s.key, s]));
@@ -30,6 +32,10 @@ export function spriteScale(key: string): number {
 
 export function isAnimated(key: string): boolean {
   return !!byKey.get(key)?.anim;
+}
+
+export function isMonsterAnim(key: string): boolean {
+  return !!byKey.get(key)?.manim;
 }
 
 export function frameCount(key: string): number {

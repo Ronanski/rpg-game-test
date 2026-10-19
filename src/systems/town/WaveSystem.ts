@@ -24,7 +24,7 @@ type Id = MonsterDef['id'];
 
 /** Which monsters come on a given night (stronger mixes on later nights). */
 function waveFor(day: number): { ids: Id[]; boost: number } {
-  const pool: Id[] = day < 2 ? ['slime', 'slime'] : day < 3 ? ['slime', 'wolf', 'goblin'] : day < 5 ? ['wolf', 'goblin', 'skeleton'] : ['goblin', 'skeleton', 'orc'];
+  const pool: Id[] = day < 2 ? ['slime', 'slime_red'] : day < 3 ? ['slime_red', 'wolf', 'goblin', 'bat'] : day < 5 ? ['wolf', 'goblin', 'skeleton', 'zombie'] : ['goblin', 'skeleton', 'orc', 'zombie', 'spider'];
   const count = 3 + day * 2;
   const ids = Array.from({ length: count }, (_, i) => pool[i % pool.length]);
   if (day >= 4) ids.push('orc');
@@ -168,6 +168,7 @@ export class WaveSystem {
 
   /** A little lunge toward what the raider hits. */
   private strike(m: Monster, x: number, y: number) {
+    m.strikeAnim();
     const dx = Math.sign(x - m.x) * 5;
     this.scene.tweens.add({ targets: m.sprite, x: m.sprite.x + dx, duration: 70, yoyo: true });
   }

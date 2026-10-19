@@ -85,6 +85,8 @@ function buildCave(): WorldData {
       { monster: 'slime_blue', x0: GROTTO.x - 3, y0: GROTTO.y - 3, x1: GROTTO.x + 3, y1: GROTTO.y + 3, count: 4 },
       { monster: 'skeleton', x0: BONES.x - 2, y0: BONES.y - 2, x1: BONES.x + 2, y1: BONES.y + 2, count: 3 },
       { monster: 'slime', x0: HALL.x - 2, y0: HALL.y - 3, x1: HALL.x + 2, y1: HALL.y - 1, count: 2 },
+      { monster: 'bat', x0: GROTTO.x - 3, y0: GROTTO.y - 3, x1: GROTTO.x + 3, y1: GROTTO.y + 3, count: 2 },
+      { monster: 'spider', x0: BONES.x - 2, y0: BONES.y - 2, x1: BONES.x + 2, y1: BONES.y + 2, count: 2 },
     ],
   };
 }

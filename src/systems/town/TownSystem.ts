@@ -102,7 +102,7 @@ export class TownSystem {
   private addView(b: PlacedBuilding) {
     const def = BUILDINGS[b.type];
     const a = this.anchor(b.x, b.y, def.size);
-    const flat = def.category === 'trap' || b.type === 'farm';
+    const flat = def.category === 'trap';
     const key = def.sprites[Math.min(b.level, def.sprites.length) - 1];
     const img = this.scene.add.image(a.x, a.y, key).setOrigin(0.5, 1).setScale(spriteScale(key)).setDepth(flat ? -99990 + a.y / 1000 : a.y);
     const scaffold = this.scene.add.image(a.x, a.y, 'b_scaffold').setOrigin(0.5, 1).setScale(2).setDepth(a.y + 1).setVisible(false);
@@ -154,8 +154,13 @@ export class TownSystem {
   private drawStatus(v: View, t: number) {
     const g = v.bar.clear();
     const busy = v.b.status !== 'idle';
-    v.scaffold.setVisible(busy);
-    v.img.setAlpha(v.b.status === 'building' ? 0.45 : 1);
+    // New buildings show their wooden frame going up (or a faded ghost with scaffolding if they have none).
+    const def = BUILDINGS[v.b.type];
+    const site = v.b.status === 'building' && def.site;
+    const want = site || def.sprites[Math.min(v.b.level, def.sprites.length) - 1];
+    if (v.img.texture.key !== want) v.img.setTexture(want).setScale(spriteScale(want));
+    v.scaffold.setVisible(busy && !site);
+    v.img.setAlpha(v.b.status === 'building' && !site ? 0.45 : 1);
     if (!busy) {
       v.label.setText('');
       // Health bar once damaged.
@@ -167,12 +172,11 @@ export class TownSystem {
       }
       return;
     }
-    const def = BUILDINGS[v.b.type];
     const total = (v.b.status === 'building' ? def.levels[0].seconds : def.levels[v.b.level].seconds) * 1000 || 1;
     const left = Math.max(0, v.b.endsAt - t);
     const w = 40, x = v.img.x - w / 2, y = v.img.y - Math.max(v.img.displayHeight, 50) - 12;
     g.fillStyle(0x07080e, 0.8).fillRect(x - 1, y - 1, w + 2, 6);
-    g.fillStyle(0xffd75e).fillRect(x, y, w * (1 - left / total), 4);
+    g.fillStyle(0xffd75e).fillRect(x, y, w * Phaser.Math.Clamp(1 - left / total, 0, 1), 4);
     v.label.setPosition(v.img.x, y - 8).setText(timeText(left / 1000));
   }
 

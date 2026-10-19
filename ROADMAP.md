@@ -120,7 +120,10 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 - [x] Bigger town; NPCs spread out with names, jobs and markers so you can tell who is who
 - [x] NPCs breathe, glance around, and villagers walk around
 - [x] Better walking and attack animation: the 4 starting heroes use frame-by-frame art (walk, attack, hurt) from the owner's sheet
-- [ ] Frame-by-frame art for the job outfits, NPCs and monsters
+- [x] Frame-by-frame monsters from the owner's board: slimes (green, blue, new fire slime), goblin, orc, skeleton, and new zombie, bat and cave spider; they step between idle poses, wind up and strike, flinch when hit, and fall over when defeated (wolf and dragon keep their single picture: the board's versions overlap)
+- [x] Building levels from the owner's board: Ancient Core (crystal shrine), Arrow Tower, Lumber Mill (workshop), Stone Mine (forge) and Farm (windmill) look bigger and grander each level; new buildings show their wooden frame while going up
+- [ ] Frame-by-frame art for the job outfits and NPCs
+- [ ] Weapon and skill effects from the owner's effects board
 
 ## M7: Story chapter 1 and new places 🔄
 - [x] Separate places you walk into through doors (the screen fades, quests and saves come along):
