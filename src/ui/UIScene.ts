@@ -198,7 +198,7 @@ export class UIScene extends Phaser.Scene {
       }
     });
     // Build mode bar: builders free, SHOP and DONE.
-    const bbText = this.add.text(0, 0, '', { ...text(15), backgroundColor: '#1a2034e6', padding: { x: 12, y: 6 } }).setOrigin(0.5, 0);
+    const bbText = this.add.text(0, 0, '', { ...text(15), backgroundColor: '#15120ee6', padding: { x: 12, y: 6 } }).setOrigin(0.5, 0);
     const mkBtn = (label: string, color: number, on: () => void) => {
       const r = this.add.rectangle(0, 0, 120, 48, color).setStrokeStyle(3, 0xf4ead0).setInteractive({ useHandCursor: true }).on('pointerdown', on);
       const t = this.add.text(0, 0, label, text(17)).setOrigin(0.5);
@@ -319,7 +319,8 @@ export class UIScene extends Phaser.Scene {
     const { width, height } = this.scale;
     const huts = state.town.buildings.filter((b) => b.type === 'builder_hut').length;
     const busy = state.town.buildings.filter((b) => b.status !== 'idle').length;
-    this.buildBarText.setText(`BUILD MODE · Builders free: ${huts - busy}/${huts} · drag to look around, tap a building`).setPosition(width / 2, 64 * this.k);
+    this.buildBarText.setText(`BUILD MODE · Builders free: ${huts - busy}/${huts}\nDrag to look around · tap a building`)
+      .setPosition(12, height - 12).setOrigin(0, 1).setScale(this.k);
     this.buildBarBtns[0].setPosition(width - 210 * this.k, height - 40 * this.k).setScale(this.k);
     this.buildBarBtns[1].setPosition(width - 76 * this.k, height - 40 * this.k).setScale(this.k);
     this.buildBar.setVisible(!this.placementBar.visible);
@@ -384,7 +385,6 @@ export class UIScene extends Phaser.Scene {
   private drawObjective(o: { sx: number; sy: number; label: string; onScreen: boolean } | null) {
     if (!o || state.inMenu || state.buildMode) return void this.objArrow.setVisible(false);
     const { width, height } = this.scale;
-    const cx = width / 2, cy = height / 2;
     if (o.onScreen) {
       // Bob just above the goal itself.
       this.objArrow.setVisible(true).setPosition(o.sx, Math.max(60, o.sy - 70));
@@ -393,12 +393,17 @@ export class UIScene extends Phaser.Scene {
       this.objText.setText('');
       return;
     }
-    const ang = Math.atan2(o.sy - cy, o.sx - cx);
-    const mx = width / 2 - 70, my = height / 2 - 70;
-    const t = Math.min(mx / Math.abs(Math.cos(ang) || 1e-6), my / Math.abs(Math.sin(ang) || 1e-6));
-    this.objArrow.setVisible(true).setPosition(cx + Math.cos(ang) * t, cy + Math.sin(ang) * t);
+    // Kept inside the clear middle of the screen: below the top HUD, above the buttons, and away
+    // from the mini-map and the action buttons on the right.
+    const k = this.k;
+    const box = { l: 80 * k, r: width - 200 * k, t: 150 * k, b: height - 120 * k };
+    const bx = (box.l + box.r) / 2, by = (box.t + box.b) / 2;
+    const ang = Math.atan2(o.sy - by, o.sx - bx);
+    const t = Math.min((box.r - box.l) / 2 / Math.abs(Math.cos(ang) || 1e-6), (box.b - box.t) / 2 / Math.abs(Math.sin(ang) || 1e-6));
+    this.objArrow.setVisible(true).setPosition(bx + Math.cos(ang) * t, by + Math.sin(ang) * t);
     (this.objArrow.list[0] as Phaser.GameObjects.Graphics).setRotation(ang);
-    this.objText.setText(o.label).setY(18);
+    // The label goes on the side facing the middle of the screen.
+    this.objText.setText(o.label).setPosition(-Math.cos(ang) * 34, -Math.sin(ang) * 22).setOrigin(Math.cos(ang) > 0.3 ? 1 : Math.cos(ang) < -0.3 ? 0 : 0.5, 0.5);
   }
 
   private layout() {
@@ -410,8 +415,8 @@ export class UIScene extends Phaser.Scene {
     this.questBox.setScale(k);
     this.menuBtn.setScale(k).setPosition(width - 10, 0);
     // Right column under the quest panel: mini-map, and + / − / MAP to its left.
-    this.minimap.root.setScale(k).setPosition(width - 10 - 66 * k, 76 * k + 66 * k);
-    this.zoomBox.setScale(k).setPosition(width - 10 - 132 * k - 22 * k, 92 * k);
+    this.minimap.root.setScale(k);
+    this.zoomBox.setScale(k);
     for (const b of [this.attackBtn, this.talkBtn, this.potionBtn, this.skillBtn, this.dodgeBtn, this.autoBtn]) b.setScale((b.baseScale = k));
     // AUTO sits left of SKILL, above TALK.
     this.autoBtn.setPosition(width - 252 * k, height - 140 * k);
@@ -488,13 +493,16 @@ export class UIScene extends Phaser.Scene {
 
   private drawQuests() {
     if (!this.quests) return;
-    const active = this.quests.active();
-    const lines = active.length === 0
-      ? ['Talk to villagers']
-      : active.map((q) => {
-        const n = this.quests.progress(q.id), max = q.objective.count;
-        return `${q.title}\n  ${q.objective.label}: ${n}/${max}${n >= max ? '  ✓ return' : ''}`;
-      });
+    // One quest in the tracker (the main story first), so the panel stays small.
+    const active = [...this.quests.active()].sort((a, b) => Number(b.id.startsWith('main')) - Number(a.id.startsWith('main')));
+    const q = active[0];
+    let lines = ['Talk to villagers'];
+    if (q) {
+      const n = this.quests.progress(q.id), max = q.objective.count;
+      const goal = q.objective.type === 'talk' ? q.objective.label : `${q.objective.label.split('(')[0].trim()}: ${n}/${max}`;
+      lines = [q.title, n >= max && q.objective.type !== 'talk' ? `${goal} ✓ report back` : goal];
+      if (active.length > 1) lines.push(`+${active.length - 1} more`);
+    }
     this.questText.setText(lines.join('\n'));
     const w = Math.max(190, this.questText.width + 34), h = this.questText.height + 52;
     const x = this.scale.width / this.k - w - 64; // leave room for the MENU button
@@ -503,12 +511,16 @@ export class UIScene extends Phaser.Scene {
     this.questIcon.setPosition(x + 24, 33);
     this.questTitle.setPosition(x + 42, 24);
     this.questText.setPosition(x + 18, 48);
+    // The mini-map and its buttons sit just under the quest panel (never on top of it).
+    const k = this.k, top = (10 + h + 8) * k, width = this.scale.width;
+    this.minimap.root.setPosition(width - 10 - 66 * k, top + 66 * k);
+    this.zoomBox.setPosition(width - 10 - 154 * k, top + 20 * k);
   }
 
   private toasts: Phaser.GameObjects.Text[] = [];
   private toast(msg: string) {
     const t = this.add
-      .text(this.scale.width / 2, 150 + this.toasts.length * 34, msg, { ...text(16), backgroundColor: '#1a2034e6', padding: { x: 14, y: 7 } })
+      .text(this.scale.width / 2, 150 + this.toasts.length * 34, msg, { ...text(16), backgroundColor: '#15120ee6', padding: { x: 14, y: 7 } })
       .setOrigin(0.5)
       .setDepth(60);
     this.toasts.push(t);

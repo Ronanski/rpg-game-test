@@ -4,7 +4,7 @@ import { bus } from '../core/EventBus';
 import { BUILDINGS, builders, costText, placeCost, timeText, type Resource } from '../systems/town/Buildings';
 import { canAfford } from '../systems/town/Economy';
 import { Menu } from './ItemMenus';
-import { text, COLORS } from './theme';
+import { text } from './theme';
 import { spriteScale } from '../assets/sprites';
 
 /** BUILD: every building you can place, with cost and build time. Choosing one starts placement. */
@@ -29,18 +29,19 @@ export class BuildMenu extends Menu {
       const cost = placeCost(d, t.buildings);
       const hut = d.id === 'builder_hut';
       const ok = !!cost && canAfford(cost) && (hut || crew.free > 0);
-      const info = !cost ? 'Max builders reached' : `${costText(cost)} · ${hut ? 'instant' : timeText(lv.seconds)}`;
+      const info = !cost ? 'Max builders reached' : costText(cost);
+      const time = hut ? 'instant' : timeText(lv.seconds);
       add(s.add.rectangle(cx, cy, colW, rowH - 4, 0x141a2c, 0.9).setOrigin(0));
       const img = add(s.add.image(cx + 20, cy + rowH - 8, d.sprites[0]).setOrigin(0.5, 1));
       img.setScale(Math.min(spriteScale(d.sprites[0]), (rowH - 8) / img.height, 34 / img.width));
-      add(s.add.text(cx + 42, cy + 3, d.name, text(12)));
-      add(s.add.text(cx + 42, cy + 19, info, text(10, cost && canAfford(cost) ? '#8fd18a' : '#ff8a7a')));
-      this.button(add, cx + colW - 70, cy + (rowH - 32) / 2, 64, !hut && crew.free <= 0 ? 'BUSY' : 'BUILD', () => {
+      // Name and build time on the first line, cost under it; both stop short of the BUILD button.
+      add(s.add.text(cx + 42, cy + 3, `${d.name} · ${time}`, text(12)).setFixedSize(colW - 104, 0));
+      add(s.add.text(cx + 42, cy + 19, info, text(10, cost && canAfford(cost) ? '#8fd18a' : '#ff8a7a')).setFixedSize(colW - 104, 0));
+      this.button(add, cx + colW - 60, cy + (rowH - 32) / 2, 56, !hut && crew.free <= 0 ? 'BUSY' : 'BUILD', () => {
         this.close();
         bus.emit('build-start', d.id);
       }, ok);
     });
-    add(s.add.text(x + 20, y + h - 20, 'Each builder works on one building at a time. Hit trees, rocks and crystals for wood, stone and mana.', text(11, COLORS.dim)));
   }
 }
 
@@ -100,7 +101,7 @@ export class PlacementBar {
     this.root.removeAll(true).setVisible(true);
     const s = this.scene, { width, height } = s.scale;
     const add = <T extends Phaser.GameObjects.GameObject>(o: T) => (this.root.add(o), o);
-    add(s.add.text(width / 2, height - 96, `Placing ${name}: walk or tap the ground. Green = OK.`, { ...text(14), backgroundColor: '#1a2034e6', padding: { x: 10, y: 6 } }).setOrigin(0.5));
+    add(s.add.text(width / 2, height - 96, `Placing ${name}: walk or tap the ground. Green = OK.`, { ...text(14), backgroundColor: '#15120ee6', padding: { x: 10, y: 6 } }).setOrigin(0.5));
     const mk = (label: string, bx: number, color: number, ev: string) => {
       const r = add(s.add.rectangle(bx, height - 44, 120, 44, color).setStrokeStyle(3, 0xf4ead0));
       add(s.add.text(bx, height - 44, label, text(16)).setOrigin(0.5));

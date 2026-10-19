@@ -6,15 +6,8 @@ import { WorldScene } from './scenes/WorldScene';
 import { UIScene } from './ui/UIScene';
 import { checkForUpdate } from './core/Updater';
 
-// Load the fonts first so the first frame of text already uses them (Alegreya Sans for text,
-// Cinzel for titles; both SIL OFL, files in public/fonts).
-const fonts = [
-  new FontFace('Alegreya Sans', `url(${import.meta.env.BASE_URL}fonts/AlegreyaSans-Bold.ttf)`, { weight: '700' }),
-  new FontFace('Cinzel', `url(${import.meta.env.BASE_URL}fonts/Cinzel.ttf)`, { weight: '400 900' }),
-];
-Promise.all(fonts.map((f) => f.load().then((ff) => (document.fonts as unknown as Set<FontFace>).add(ff))))
-  .catch((e) => console.warn('font failed to load', e))
-  .finally(startGame);
+// Text uses the device's own UI font (see ui/theme.ts), so there is nothing to load first.
+startGame();
 
 // Phone app: fetch the newest version in the background.
 checkForUpdate();

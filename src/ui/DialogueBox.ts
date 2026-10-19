@@ -5,7 +5,7 @@ import { panel, resizePanel, text, COLORS } from './theme';
 const MAX_W = 380;
 const PAD = 16;
 const TAIL = 12;
-const FILL = 0x1a2034;
+const FILL = 0x15120e;
 const RIM = 0x8790b4;
 
 /** Where the speaker's head is on screen, so the bubble can point at it (null = off screen). */
