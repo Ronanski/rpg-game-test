@@ -10,6 +10,8 @@ import { DialogueSystem } from '../systems/dialogue/DialogueSystem';
 import { state, emitStats } from '../core/GameState';
 import { bus } from '../core/EventBus';
 import { LightingSystem, AMBIENT } from '../systems/LightingSystem';
+import { TownSystem } from '../systems/town/TownSystem';
+import type { PlacedBuilding } from '../core/GameState';
 import { saveGame, setSnapshotSource, type SaveData } from '../core/SaveGame';
 
 const TALK_RANGE = 70;
@@ -22,8 +24,10 @@ export class WorldScene extends Phaser.Scene {
   private npcs: Npc[] = [];
   private combat!: CombatSystem;
   private dialogue!: DialogueSystem;
-  private keys!: Record<'up' | 'down' | 'left' | 'right' | 'w' | 'a' | 's' | 'd' | 'space' | 'e' | 'q' | 'shift' | 'f', Phaser.Input.Keyboard.Key>;
+  private keys!: Record<'up' | 'down' | 'left' | 'right' | 'w' | 'a' | 's' | 'd' | 'space' | 'e' | 'q' | 'shift' | 'f' | 'enter', Phaser.Input.Keyboard.Key>;
   private nearNpc: Npc | null = null;
+  private nearBuilding: PlacedBuilding | null = null;
+  private town!: TownSystem;
 
   constructor() {
     super('World');
@@ -48,6 +52,9 @@ export class WorldScene extends Phaser.Scene {
     quests.setExpHandler((n) => this.combat.gainExp(n));
     this.combat.spawnAll(world.spawns);
     this.dialogue = new DialogueSystem(quests);
+
+    this.town = new TownSystem(this, this.map, this.player, this.combat);
+    this.wireTown();
 
     // Continue a saved game: quests and the spot where the hero stood.
     if (data.save) {
@@ -76,7 +83,7 @@ export class WorldScene extends Phaser.Scene {
     cam.setRoundPixels(true);
 
     const kb = this.input.keyboard!;
-    this.keys = kb.addKeys('up,down,left,right,w,a,s,d,space,e,q,shift,f') as typeof this.keys;
+    this.keys = kb.addKeys('up,down,left,right,w,a,s,d,space,e,q,shift,f,enter') as typeof this.keys;
 
     this.scene.launch('UI', { quests });
     emitStats();
@@ -103,17 +110,20 @@ export class WorldScene extends Phaser.Scene {
       if (Phaser.Input.Keyboard.JustDown(this.keys.q)) c.potion = true;
       if (Phaser.Input.Keyboard.JustDown(this.keys.shift)) c.dodge = true;
       if (Phaser.Input.Keyboard.JustDown(this.keys.f)) c.skill = true;
+      if (this.town.isPlacing && Phaser.Input.Keyboard.JustDown(this.keys.enter)) bus.emit('build-confirm');
       if (c.dodge) this.player.roll(mx, my, time);
       if (c.skill) this.combat.useSkill(time);
       if (c.attack) this.combat.playerAttack(time);
       if (c.potion) this.combat.usePotion();
       if (c.talk && this.nearNpc) this.startTalk(this.nearNpc);
+      else if (c.talk && this.nearBuilding) bus.emit('open-building', this.nearBuilding);
     } else {
       this.player.move(0, 0, 0, delta, this.map);
     }
     c.attack = c.talk = c.potion = c.dodge = c.skill = false;
 
     if (!state.inMenu) this.combat.update(time, delta);
+    this.town.update(time);
     this.updateNearbyNpc();
   }
 
@@ -123,10 +133,29 @@ export class WorldScene extends Phaser.Scene {
       const d = n.distanceTo(this.player);
       if (d < bestD) (best = n), (bestD = d);
     }
-    if (best !== this.nearNpc) {
+    // With no one to talk to, TALK opens the nearest building's panel instead.
+    const building = best ? null : this.town.nearest();
+    if (best !== this.nearNpc || building !== this.nearBuilding) {
       this.nearNpc = best;
-      bus.emit('npc-nearby', best?.def.name ?? null);
+      this.nearBuilding = building;
+      bus.emit('npc-nearby', best?.def.name ?? (building ? 'building' : null));
     }
+  }
+
+  /** Build-mode events from the UI scene. */
+  private wireTown() {
+    const handlers: [string, (...a: any[]) => void][] = [
+      ['build-start', (type: string) => (this.town.startPlacing(type), bus.emit('placing', type))],
+      ['build-confirm', () => this.town.confirmPlacing() && bus.emit('placing', null)],
+      ['build-cancel', () => (this.town.cancelPlacing(), bus.emit('placing', null))],
+      ['build-tap', (sx: number, sy: number) => {
+        const p = this.cameras.main.getWorldPoint(sx, sy);
+        this.town.setCursorFromWorld(p.x, p.y);
+      }],
+      ['building-upgrade', (b: PlacedBuilding) => this.town.upgrade(b)],
+    ];
+    for (const [ev, fn] of handlers) bus.on(ev, fn);
+    this.events.once('shutdown', () => handlers.forEach(([ev, fn]) => bus.off(ev, fn)));
   }
 
   private startTalk(npc: Npc) {

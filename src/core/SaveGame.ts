@@ -1,4 +1,4 @@
-import { state, type PlayerStats } from './GameState';
+import { state, newTown, type PlayerStats } from './GameState';
 import type { QuestState } from '../systems/quest/QuestTracker';
 
 // Saves progress in this browser (localStorage), so a refresh or a closed tab doesn't lose it.
@@ -14,6 +14,7 @@ export interface SaveData {
   storyFlags: string[];
   jobs?: typeof state.jobs; // missing in saves made before jobs existed
   equipment?: typeof state.equipment;
+  town?: typeof state.town;
   quests: QuestState;
   pos: { x: number; y: number };
 }
@@ -35,6 +36,7 @@ export function saveGame(): boolean {
     storyFlags: [...state.storyFlags],
     jobs: { ...state.jobs, unlocked: [...state.jobs.unlocked] },
     equipment: { ...state.equipment },
+    town: { ...state.town, buildings: state.town.buildings.map((b) => ({ ...b })) },
     ...snapshot(),
   };
   try {
@@ -73,6 +75,7 @@ export function applySave(data: SaveData) {
   state.storyFlags = new Set(data.storyFlags);
   state.jobs = data.jobs ?? { unlocked: ['adventurer'], kills: 0, crits: 0, built: 0 };
   state.equipment = data.equipment ?? { weapon: null, armor: null, accessory: null };
+  state.town = data.town ?? newTown();
   // Older saves started with a job the player never earned; keep it usable.
   if (!state.jobs.unlocked.includes(state.player.jobId)) state.jobs.unlocked.push(state.player.jobId);
 }

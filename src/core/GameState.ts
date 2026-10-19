@@ -30,6 +30,22 @@ export interface ControlState {
   skill: boolean;
 }
 
+/** A building the player placed in town. Times are real-world epoch ms, so timers survive reloads. */
+export interface PlacedBuilding {
+  id: number;
+  type: string; // key in systems/town/Buildings
+  level: number;
+  x: number; // grid tile (top corner of the footprint)
+  y: number;
+  status: 'building' | 'upgrading' | 'idle';
+  endsAt: number;
+  lastCollected: number;
+}
+
+export function newTown() {
+  return { wood: 20, stone: 0, mana: 0, buildings: [] as PlacedBuilding[], nextId: 1 };
+}
+
 /** Shared runtime state. Persistent parts are mirrored to Supabase via services/api. */
 export const state = {
   online: false,
@@ -42,6 +58,8 @@ export const state = {
   jobs: { unlocked: ['adventurer'] as string[], kills: 0, crits: 0, built: 0 },
   /** Worn items by slot (item ids from systems/items/Items). */
   equipment: { weapon: null, armor: null, accessory: null } as Record<'weapon' | 'armor' | 'accessory', string | null>,
+  /** Town resources (gold is on the player) and placed buildings. */
+  town: newTown(),
   /** Recharge timers the HUD draws on the SKILL and DODGE buttons (game time, ms). */
   cooldowns: { skillReady: 0, skillTotal: 1, dodgeReady: 0, dodgeTotal: 1 },
   /** True while a full-screen menu (e.g. JOBS) is open; the world pauses input like dialogue. */

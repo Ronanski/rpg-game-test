@@ -49,15 +49,24 @@ Target look: detailed 16-bit isometric pixel art with warm torch light, matching
 **Checkpoint**
 - [ ] Level up, refresh the page, press CONTINUE, and you are still that level with the same gold
 
-## M4: Base building (day) ⏳ (next)
-- [ ] Build mode: place walls, towers, farms and mines on the town grid
-- [ ] Wood, stone, gold and mana; buildings take real time to finish
-- [ ] Upgrade buildings
+## M4: Base building (day) ✅
+- [x] Ancient Core on the town grounds north-east of the village; build within its glowing circle
+- [x] BUILD menu (button or B): Wall, Arrow Tower, Spike Trap, Lumber Mill, Stone Mine, Farm, Mana Extractor, with costs and build times from the database design
+- [x] Placement: a green/red ghost in front of the hero (or where you tap); PLACE / CANCEL
+- [x] Gather resources: hit trees for wood, rocks for stone, crystals for mana
+- [x] Real-time build and upgrade timers with a scaffold and countdown; they keep running after a reload
+- [x] Generators fill up over real time (capped); walk past to collect
+- [x] Upgrade from a building's panel (TALK next to it); walls turn to stone at level 3
+- [x] Arrow towers shoot and spike traps hurt monsters that come close
+- [x] Builder job unlocks after 5 buildings and builds 30% faster
+- [x] Town is saved
+- [ ] Cloud save of the town (with M3's cloud save)
 
 **Checkpoint**
-- [ ] Build a wall and a tower, wait for the timer, and refresh: they are still there
+- [ ] Chop trees for wood, build a farm and an arrow tower, wait for the timer, and refresh: they are still there
+- [ ] Leave the farm for a while, walk past it, and collect gold
 
-## M5: Night waves (tower defense) ⏳
+## M5: Night waves (tower defense) ⏳ (next)
 - [ ] Day/night cycle
 - [ ] Monster waves attack the Ancient Core at night; towers shoot and walls block
 - [ ] Rewards for surviving a wave, losses for failing

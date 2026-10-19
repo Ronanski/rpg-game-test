@@ -133,6 +133,8 @@ export class CombatSystem {
     // A quick forward lunge sells the swing.
     this.scene.tweens.add({ targets: this.player.sprite, x: this.player.sprite.x + f.x * 6, duration: 60, yoyo: true });
 
+    // Trees, rocks and crystals in reach give resources (TownSystem listens).
+    bus.emit('player-swing', { x: this.player.x, y: this.player.y, fx: f.x, fy: f.y, range: style.range + 10 });
     for (const m of this.monsters) {
       if (m.dead) continue;
       const dx = m.x - this.player.x, dy = m.y - this.player.y;
@@ -210,6 +212,26 @@ export class CombatSystem {
     }
     this.floatText(p.x, p.y - 70, sk.name, '#ffe08a', 15);
     return true;
+  }
+
+  /** Flat damage from a building (tower arrow, trap). Kills still give EXP and loot. */
+  structureHit(m: Monster, dmg: number) {
+    if (m.dead) return;
+    const d = Math.max(1, dmg - m.def.def);
+    m.hit(d, { x: m.x, y: m.y + 1 });
+    fx.sparks(this.scene, m.x, m.y - m.sprite.displayHeight / 2, 0xffe0b0, 6, 120);
+    this.floatText(m.x, m.y - 40, `${d}`, '#ffe0b0', 16);
+    if (m.hp === 0) this.kill(m);
+  }
+
+  /** Arrow from a tower top at a monster. */
+  towerShot(fromX: number, fromY: number, m: Monster, dmg: number) {
+    const ex = m.x, ey = m.y - 20;
+    const shot = this.scene.add.image(fromX, fromY, 'arrow').setDepth(190000).setRotation(Math.atan2(ey - fromY, ex - fromX));
+    this.scene.tweens.add({
+      targets: shot, x: ex, y: ey, duration: (Math.hypot(ex - fromX, ey - fromY) / 700) * 1000,
+      onComplete: () => (shot.destroy(), this.structureHit(m, dmg)),
+    });
   }
 
   private damage(m: Monster, power: number, critChance: number) {

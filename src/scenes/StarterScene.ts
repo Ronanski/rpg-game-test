@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { state, resetJobs, resetEquipment } from '../core/GameState';
+import { state, resetJobs, resetEquipment, newTown } from '../core/GameState';
 import { recalcStats } from '../systems/items/Items';
 import { computeStats, expToNext, RACES } from '../systems/combat/ClassSystem';
 import { RACES_INFO, START_JOB, type Gender, type RaceDef } from '../systems/combat/Origins';
@@ -255,6 +255,7 @@ export class StarterScene extends Phaser.Scene {
     state.storyFlags.clear();
     resetJobs();
     resetEquipment();
+    state.town = newTown();
     // Everyone starts with a rusty sword in hand.
     state.equipment.weapon = 'rusty_sword';
     recalcStats(true);

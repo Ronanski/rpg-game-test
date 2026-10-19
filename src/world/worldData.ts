@@ -60,6 +60,12 @@ export interface WorldData {
 }
 
 const VILLAGE = { x0: 18, y0: 18, x1: 29, y1: 29 };
+/** Town grounds north-east of the village: the Ancient Core and the area you can build on around it. */
+export const TOWN = { coreX: 27, coreY: 11, radius: 6.5 };
+
+export function inTown(x: number, y: number) {
+  return Math.hypot(x - (TOWN.coreX + 0.5), y - (TOWN.coreY + 0.5)) <= TOWN.radius;
+}
 const RIVER_X = 37;
 
 function inVillage(x: number, y: number) {
@@ -179,7 +185,7 @@ export function buildWorld(): WorldData {
   for (let y = 0; y < MAP_H; y++) {
     for (let x = 0; x < MAP_W; x++) {
       const edge = x < 2 || y < 2 || x >= MAP_W - 2 || y >= MAP_H - 2;
-      const scatter = !inVillage(x, y) && rnd.frac() < 0.07;
+      const scatter = !inVillage(x, y) && !inTown(x, y) && rnd.frac() < 0.07;
       if ((edge || scatter) && free(x, y)) {
         const pine = rnd.frac() < 0.45;
         props.push({ kind: 'tree', texture: pine ? 'pine' : 'tree', frame: rnd.between(0, pine ? 1 : 2), x, y });
@@ -190,7 +196,7 @@ export function buildWorld(): WorldData {
   // Small nature details on open grass: flowers and mushrooms can be walked over; bushes and rocks block.
   for (let y = 2; y < MAP_H - 2; y++) {
     for (let x = 2; x < MAP_W - 2; x++) {
-      if (inVillage(x, y) || !free(x, y)) continue;
+      if (inVillage(x, y) || inTown(x, y) || !free(x, y)) continue;
       const r = rnd.frac();
       if (r < 0.035) props.push({ kind: 'deco', texture: 'flowers', frame: rnd.between(0, 3), x, y });
       else if (r < 0.05) props.push({ kind: 'deco', texture: 'mushroom', frame: rnd.between(0, 1), x, y });
@@ -236,7 +242,7 @@ export function buildWorld(): WorldData {
     playerStart,
     npcs,
     spawns: [
-      { monster: 'slime', x0: 29, y0: 8, x1: 35, y1: 17, count: 5 },
+      { monster: 'slime', x0: 33, y0: 17, x1: 36, y1: 21, count: 5 },
       { monster: 'slime', x0: 10, y0: 31, x1: 20, y1: 40, count: 5 },
       { monster: 'wolf', x0: 41, y0: 28, x1: 45, y1: 42, count: 4 },
       { monster: 'slime_blue', x0: 28, y0: 36, x1: 34, y1: 43, count: 4 },

@@ -6,6 +6,9 @@ import { ActionButton } from './ActionButton';
 import { DialogueBox } from './DialogueBox';
 import { JobMenu } from './JobMenu';
 import { InventoryMenu, ShopMenu, type ShopDef } from './ItemMenus';
+import { BuildMenu, BuildingPanel, PlacementBar } from './BuildMenus';
+import type { PlacedBuilding } from '../core/GameState';
+import { BUILDINGS } from '../systems/town/Buildings';
 import { JOBS } from '../systems/combat/ClassSystem';
 import { panel, resizePanel, text, applyPortrait, COLORS } from './theme';
 import type { Conversation } from '../systems/dialogue/DialogueSystem';
@@ -27,6 +30,10 @@ export class UIScene extends Phaser.Scene {
   private jobMenu!: JobMenu;
   private bagMenu!: InventoryMenu;
   private shopMenu!: ShopMenu;
+  private buildMenu!: BuildMenu;
+  private buildingPanel!: BuildingPanel;
+  private placementBar!: PlacementBar;
+  private resTexts: Phaser.GameObjects.Text[] = [];
   private dodgeBtn!: ActionButton;
   private skillBtn!: ActionButton;
   private jobText!: Phaser.GameObjects.Text;
@@ -73,9 +80,17 @@ export class UIScene extends Phaser.Scene {
     const bagIcon = this.add.image(x + 196, y + STATUS_H + 48, 'item_bag');
     const bagText = this.add.text(x + 210, y + STATUS_H + 48, 'BAG', text(14)).setOrigin(0, 0.5);
     bagPanel.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.openMenu('bag'));
+    // BUILD button (B key too).
+    const buildPanel = panel(this, x + 262, y + STATUS_H + 32, 90, 32);
+    const buildIcon = this.add.image(x + 280, y + STATUS_H + 48, 'icon_build').setScale(2);
+    const buildText = this.add.text(x + 294, y + STATUS_H + 48, 'BUILD', text(14)).setOrigin(0, 0.5);
+    buildPanel.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.openMenu('build'));
+    // Town resources next to the gold.
+    const resIcons = ['res_wood', 'res_stone', 'res_mana'].map((k, i) => this.add.image(x + 96 + i * 70, y + STATUS_H + 18, k).setScale(2));
+    this.resTexts = resIcons.map((_, i) => this.add.text(x + 110 + i * 70, y + STATUS_H + 9, '', text(16)));
     this.jobText = this.add.text(x + 12, y + STATUS_H + 48, '', text(14)).setOrigin(0, 0.5);
     jobPanel.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.toggleJobs());
-    this.statusBox = this.add.container(0, 0, [statusPanel, portraitPanel, portrait, this.nameText, this.levelText, this.barLabels, this.bars, coin, this.goldText, jobPanel, this.jobText, bagPanel, bagIcon, bagText]);
+    this.statusBox = this.add.container(0, 0, [statusPanel, portraitPanel, portrait, this.nameText, this.levelText, this.barLabels, this.bars, coin, this.goldText, jobPanel, this.jobText, bagPanel, bagIcon, bagText, buildPanel, buildIcon, buildText, ...resIcons, ...this.resTexts]);
 
     // Quest tracker (top-right).
     this.questPanel = panel(this, 0, 10, 200, 60);
@@ -96,7 +111,30 @@ export class UIScene extends Phaser.Scene {
     this.jobMenu = new JobMenu(this, () => this.setControlsVisible(true));
     this.bagMenu = new InventoryMenu(this, () => this.setControlsVisible(true));
     this.shopMenu = new ShopMenu(this, () => this.setControlsVisible(true));
-    bus.on('open-shop', (shop: ShopDef) => this.openMenu('shop', shop));
+    this.buildMenu = new BuildMenu(this, () => this.setControlsVisible(!this.placementBar.visible));
+    this.buildingPanel = new BuildingPanel(this, () => this.setControlsVisible(true));
+    this.placementBar = new PlacementBar(this);
+    bus.on('open-building', (b: PlacedBuilding) => {
+      if (state.inMenu || state.inDialogue) return;
+      this.setControlsVisible(false);
+      this.buildingPanel.open(b);
+    });
+    bus.on('placing', (type: string | null) => {
+      if (type) {
+        this.setControlsVisible(false);
+        this.stick.setEnabled(true); // still walk while placing
+        this.placementBar.show(BUILDINGS[type].name);
+      } else {
+        this.placementBar.hide();
+        this.setControlsVisible(true);
+      }
+    });
+    // While placing, a tap on the world moves the build cursor there.
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer, over: unknown[]) => {
+      if (this.placementBar.visible && over.length === 0 && p.x > this.scale.width * 0.45) bus.emit('build-tap', p.x, p.y);
+    });
+    bus.on('resources-changed', () => this.drawResources());
+    bus.on('town-changed', () => (this.drawResources(), this.buildingPanel.draw(), this.buildMenu.draw()));    bus.on('open-shop', (shop: ShopDef) => this.openMenu('shop', shop));
     bus.on('equipment-changed', () => this.bagMenu.draw());
     bus.on('inventory-changed', () => (this.bagMenu.draw(), this.shopMenu.draw()));
     this.layout();
@@ -115,12 +153,17 @@ export class UIScene extends Phaser.Scene {
     kb?.on('keydown-E', () => this.dialogue.advance());
     kb?.on('keydown-J', () => this.toggleJobs());
     kb?.on('keydown-I', () => (this.bagMenu.isOpen ? this.bagMenu.close() : this.openMenu('bag')));
-    kb?.on('keydown-ESC', () => [this.jobMenu, this.bagMenu, this.shopMenu].forEach((m) => m.isOpen && m.close()));
+    kb?.on('keydown-B', () => (this.buildMenu.isOpen ? this.buildMenu.close() : this.openMenu('build')));
+    kb?.on('keydown-ESC', () => {
+      [this.jobMenu, this.bagMenu, this.shopMenu, this.buildMenu, this.buildingPanel].forEach((m) => m.isOpen && m.close());
+      if (this.placementBar.visible) bus.emit('build-cancel');
+    });
     bus.on('jobs-changed', () => this.jobMenu.draw());
 
     if (state.player) this.drawStatus(state.player);
     this.drawQuests();
     this.drawPotions();
+    this.drawResources();
   }
 
   update() {
@@ -134,10 +177,12 @@ export class UIScene extends Phaser.Scene {
     }
   }
 
-  private openMenu(which: 'bag' | 'shop', shop?: ShopDef) {
-    if (state.inMenu) return;
+  private openMenu(which: 'bag' | 'shop' | 'build', shop?: ShopDef) {
+    if (state.inMenu || state.inDialogue) return;
+    if (this.placementBar.visible) bus.emit('build-cancel');
     this.setControlsVisible(false);
     if (which === 'bag') this.bagMenu.open();
+    else if (which === 'build') this.buildMenu.open();
     else this.shopMenu.open(shop!);
   }
 
@@ -216,6 +261,11 @@ export class UIScene extends Phaser.Scene {
     bar(y + 81, s.exp, s.expToNext, COLORS.exp);
     this.goldText.setText(`${s.gold}`);
     this.jobText.setText(`JOB  ${JOBS[s.jobId].name.toUpperCase()}  ▸`);
+  }
+
+  private drawResources() {
+    const t = state.town;
+    [t.wood, t.stone, t.mana].forEach((n, i) => this.resTexts[i].setText(String(n)));
   }
 
   private drawPotions() {

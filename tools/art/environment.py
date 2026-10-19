@@ -384,4 +384,55 @@ def all_sprites() -> dict[str, Image.Image]:
     out['stall_red'] = stall('#b23a32')
     out['stall_yellow'] = stall('#d9a43a')
     out['flowerbed'] = flowerbed()
+    out['b_spikes'] = spike_trap()
+    out['b_farm'] = farm_plot()
+    out['b_scaffold'] = scaffold()
     return out
+
+
+def spike_trap() -> Image.Image:
+    """1x1 wooden frame with iron spikes."""
+    iso = Iso(36, 26, 18, 6)
+    wood = lambda lit: (lambda u, v, x, y: shade(hexc('#6a4426'), lit - (0.2 if (u < 0.1 or u > 0.9 or v < 0.1 or v > 0.9) else 0)))
+    iso.box(0.1, 0.1, 0.9, 0.9, 0, 3, wood(0.1), wood(-0.05), wood(-0.25))
+    im = iso.im
+    px = im.load()
+    for gx in (0.3, 0.5, 0.7):
+        for gy in (0.3, 0.5, 0.7):
+            sx, sy = iso.p(gx, gy, 3)
+            sx, sy = int(sx), int(sy)
+            for k in range(6):
+                for w in range(-(5 - k) // 3, (5 - k) // 3 + 1):
+                    if 0 <= sx + w < im.width and 0 <= sy - k < im.height:
+                        px[sx + w, sy - k] = hexc('#c9ccd6') if w <= 0 else hexc('#7a7f8a')
+    return outline(im)
+
+
+def farm_plot() -> Image.Image:
+    """2x2 tilled field with rows of crops."""
+    iso = Iso(72, 50, 36, 6)
+    def soil(u, v, x, y):
+        row = (u * 6) % 1
+        if 0.35 < row < 0.65:
+            leaf = ((x * 7 + y * 3) % 5) < 3
+            return hexc('#5fae4a') if leaf else hexc('#3f8a3a')
+        return shade(hexc('#7a5230'), -0.1 if row < 0.2 else 0.05)
+    iso.face((0, 0, 2), (2, 0, 2), (0, 2, 2), soil)
+    edge = lambda lit: (lambda u, v, x, y: shade(hexc('#6a4426'), lit))
+    iso.face((0, 2, 0), (2, 2, 0), (0, 2, 2), edge(0))
+    iso.face((2, 2, 0), (2, 0, 0), (2, 2, 2), edge(-0.25))
+    return outline(iso.im)
+
+
+def scaffold() -> Image.Image:
+    """Wooden scaffold shown while something is being built."""
+    im = Image.new('RGBA', (34, 40), CLEAR)
+    d = ImageDraw.Draw(im)
+    wood, dark = hexc('#a0703c'), hexc('#6a4426')
+    for x in (3, 15, 27):
+        d.rectangle([x, 4, x + 3, 39], fill=wood)
+        d.rectangle([x + 3, 4, x + 3, 39], fill=dark)
+    for y in (6, 20, 34):
+        d.rectangle([1, y, 32, y + 2], fill=wood)
+    d.line([4, 36, 28, 8], fill=dark, width=2)
+    return outline(im)

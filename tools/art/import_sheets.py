@@ -61,6 +61,12 @@ SPRITES = {
     'item_wolf_pelt': ('sheet_e.webp', (1398, 953, 1419, 983), 22),
     'item_bag': ('sheet_h.webp', (1156, 871, 1180, 900), 22),
     'item_coin': ('sheet_e.webp', (1371, 991, 1394, 1017), 20),
+    # Town buildings (M4).
+    'b_core': ('sheet_c.png', (384, 566, 556, 723), 104),
+    'b_stone_wall': ('sheet_f.webp', (12, 298, 74, 391), 40),
+    'b_tower': ('sheet_d.webp', (376, 832, 456, 986), 92),
+    'b_mine': ('sheet_f.webp', (96, 167, 180, 252), 62),
+    'b_extractor': ('sheet_c.png', (384, 566, 556, 723), 36),
     # sheet_h: the owner's named cast (see docs/WORLD.md).
     'npc_martha': ('sheet_h.webp', (482, 562, 553, 661), 56),
     'npc_grom': ('sheet_h.webp', (564, 555, 653, 659), 56),
@@ -305,6 +311,21 @@ def walk_frames(im: Image.Image) -> list[Image.Image]:
     return frames
 
 
+# Rock/stone art from the magenta sheet keeps a purple outline; it has no real purple, so drop it all.
+PURGE_PURPLE = {'b_mine', 'b_stone_wall'}
+
+
+def purge_purple(im: Image.Image) -> Image.Image:
+    """Recolors any purple-tinted pixel to a neutral dark grey (for art that has no real purple)."""
+    a = np.asarray(im).copy()
+    r, g, b = (a[..., i].astype(int) for i in range(3))
+    bad = (a[..., 3] > 0) & (r - g > 18) & (b - g > 18)
+    grey = ((r + g + b) // 3 * 0.8).astype(np.uint8)
+    for i in range(3):
+        a[..., i] = np.where(bad, grey, a[..., i])
+    return Image.fromarray(a, 'RGBA')
+
+
 def drop_magenta(im: Image.Image) -> Image.Image:
     """Makes leftover magenta background pixels transparent. Real purples (Lyra's robe, purple
     slime, mushrooms) keep some green and are left alone."""
@@ -331,6 +352,8 @@ def all_sprites() -> dict:
         out[key] = sprite(name, box, height)
         if name in MAGENTA:
             out[key] = drop_magenta(out[key])
+        if key in PURGE_PURPLE:
+            out[key] = purge_purple(out[key])
     # Playable sprites get step frames: front idle/step/step (+ back idle/step/step for the hero).
     front, back = frames_same_canvas([out.pop('hero_front'), out.pop('hero_back')])
     out['hero'] = walk_frames(front) + walk_frames(back)

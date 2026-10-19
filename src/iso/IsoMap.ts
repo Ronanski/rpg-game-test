@@ -4,9 +4,24 @@ import { MAP_H, MAP_W, Tile, TILE_TEXTURE, type WorldData } from '../world/world
 import { frameCount, spriteScale } from '../assets/sprites';
 import { LIGHT_DEPTH } from '../systems/LightingSystem';
 
+/** A tree, rock or crystal the player can hit for wood, stone or mana. */
+export interface ResourceNode {
+  x: number;
+  y: number;
+  sprite: Phaser.GameObjects.Sprite;
+  res: 'wood' | 'stone' | 'mana';
+  amount: number;
+  readyAt: number;
+}
+
+const NODE_RES: Record<string, [ResourceNode['res'], number]> = {
+  tree: ['wood', 3], pine: ['wood', 3], rock: ['stone', 2], crystal: ['mana', 1],
+};
+
 /** Renders the ground and props of a WorldData, and answers collision queries. */
 export class IsoMap {
   private water: Phaser.GameObjects.Image[] = [];
+  readonly nodes: ResourceNode[] = [];
 
   constructor(private scene: Phaser.Scene, private world: WorldData) {}
 
@@ -40,6 +55,8 @@ export class IsoMap {
       }
       const p = gridToScreen(prop.x, prop.y);
       const img = this.scene.add.sprite(p.x, p.y + 6, prop.texture, prop.frame ?? 0).setOrigin(0.5, 1).setDepth(p.y).setScale(s);
+      const node = NODE_RES[prop.texture];
+      if (node) this.nodes.push({ x: p.x, y: p.y, sprite: img, res: node[0], amount: node[1], readyAt: 0 });
       if (prop.light) {
         // Flickering flame + warm light pool on the ground around it.
         if (prop.texture === 'torch') img.play({ key: 'torch_burn', startFrame: (prop.x + prop.y) % frameCount('torch') });
@@ -55,6 +72,19 @@ export class IsoMap {
     const t = screenToTile(x, y);
     if (t.x < 0 || t.y < 0 || t.x >= MAP_W || t.y >= MAP_H) return false;
     return !this.world.blocked[t.y][t.x];
+  }
+
+  /** Tile type at a grid cell (undefined outside the map). */
+  tileAt(x: number, y: number): Tile | undefined {
+    return this.world.tiles[y]?.[x];
+  }
+
+  isBlocked(x: number, y: number): boolean {
+    return this.world.blocked[y]?.[x] ?? true;
+  }
+
+  setBlocked(x: number, y: number, v: boolean) {
+    if (this.world.blocked[y]?.[x] !== undefined) this.world.blocked[y][x] = v;
   }
 
   /** World bounds in screen space, for the camera. */

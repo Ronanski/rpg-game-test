@@ -5,10 +5,10 @@ import { ITEMS, canEquip, equip, unequip, type Slot } from '../systems/items/Ite
 import { panel, text, COLORS } from './theme';
 import { spriteScale } from '../assets/sprites';
 
-type Add = <T extends Phaser.GameObjects.GameObject>(o: T) => T;
+export type Add = <T extends Phaser.GameObjects.GameObject>(o: T) => T;
 
 /** Shared frame for full-screen item menus: dark backdrop, framed panel, title, close button. */
-abstract class Menu {
+export abstract class Menu {
   protected root: Phaser.GameObjects.Container;
   private shade: Phaser.GameObjects.Rectangle;
 

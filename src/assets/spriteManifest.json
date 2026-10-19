@@ -1,5 +1,58 @@
 [
  {
+  "key": "b_core",
+  "w": 114,
+  "h": 104,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "b_extractor",
+  "w": 40,
+  "h": 36,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "b_farm",
+  "w": 74,
+  "h": 52,
+  "scale": 2
+ },
+ {
+  "key": "b_mine",
+  "w": 61,
+  "h": 62,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "b_scaffold",
+  "w": 36,
+  "h": 42,
+  "scale": 2
+ },
+ {
+  "key": "b_spikes",
+  "w": 38,
+  "h": 28,
+  "scale": 2
+ },
+ {
+  "key": "b_stone_wall",
+  "w": 26,
+  "h": 40,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "b_tower",
+  "w": 48,
+  "h": 92,
+  "scale": 1,
+  "imported": true
+ },
+ {
   "key": "barrel",
   "w": 21,
   "h": 28,
@@ -244,6 +297,12 @@
   "key": "icon_bag",
   "w": 12,
   "h": 10,
+  "scale": 2
+ },
+ {
+  "key": "icon_build",
+  "w": 13,
+  "h": 11,
   "scale": 2
  },
  {
@@ -651,6 +710,24 @@
   "h": 20,
   "scale": 1,
   "imported": true
+ },
+ {
+  "key": "res_mana",
+  "w": 11,
+  "h": 9,
+  "scale": 2
+ },
+ {
+  "key": "res_stone",
+  "w": 12,
+  "h": 9,
+  "scale": 2
+ },
+ {
+  "key": "res_wood",
+  "w": 12,
+  "h": 9,
+  "scale": 2
  },
  {
   "key": "rock",
