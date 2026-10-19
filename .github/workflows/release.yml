@@ -1,10 +1,9 @@
-# Android APK -> Releases page.
-# Runs on push to main: if package.json "version" has no release yet (tag v<version>),
-# builds the APK and publishes a release. Bump the version to ship a new release.
+# Android APK -> Releases page. PAUSED: the game is web-first for now.
+# Run it manually (Actions -> Release Android APK -> Run workflow) once the game is ready
+# for Android. If package.json "version" has no release yet (tag v<version>), it builds
+# the APK and publishes a release.
 name: Release Android APK
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 permissions:
   contents: write
