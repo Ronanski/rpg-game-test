@@ -256,8 +256,8 @@ export class StarterScene extends Phaser.Scene {
     resetJobs();
     resetEquipment();
     state.town = newTown();
-    // Everyone starts with a rusty sword in hand.
-    state.equipment.weapon = 'rusty_sword';
+    // Start with the weapon the character's art is holding.
+    state.equipment.weapon = r.weapon[g] ?? 'rusty_sword';
     recalcStats(true);
     this.cameras.main.fadeOut(250);
     this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('World'));

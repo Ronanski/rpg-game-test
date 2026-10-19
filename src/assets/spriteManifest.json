@@ -231,27 +231,27 @@
  },
  {
   "key": "hero",
-  "w": 270,
-  "h": 58,
+  "w": 282,
+  "h": 61,
   "scale": 1,
   "imported": true,
-  "frameWidth": 45
+  "frameWidth": 47
  },
  {
   "key": "hero_lyra",
-  "w": 99,
-  "h": 58,
+  "w": 105,
+  "h": 61,
   "scale": 1,
   "imported": true,
-  "frameWidth": 33
+  "frameWidth": 35
  },
  {
   "key": "hero_rook",
-  "w": 138,
-  "h": 56,
+  "w": 144,
+  "h": 59,
   "scale": 1,
   "imported": true,
-  "frameWidth": 46
+  "frameWidth": 48
  },
  {
   "key": "horse",
@@ -522,11 +522,11 @@
  },
  {
   "key": "npc_healer",
-  "w": 81,
-  "h": 56,
+  "w": 87,
+  "h": 59,
   "scale": 1,
   "imported": true,
-  "frameWidth": 27
+  "frameWidth": 29
  },
  {
   "key": "npc_hilda",

@@ -112,7 +112,9 @@ export class CombatSystem {
       this.lastAttack = now;
       ps.mp -= FIREBOLT.mp;
       emitStats();
-      return this.firebolt();
+      this.player.attackAnim('cast', null);
+      this.scene.time.delayedCall(90, () => this.firebolt());
+      return;
     }
     const style = { ...(STYLES[ps.jobId] ?? STYLES.adventurer) };
     // The weapon in hand changes the swing: daggers are quick, bare hands are weak, bows shoot.
@@ -120,7 +122,10 @@ export class CombatSystem {
     if (wt === 'bow') {
       if (now - this.lastAttack < ARROW.cooldown) return;
       this.lastAttack = now;
-      return this.shoot('arrow', ARROW.range, ARROW.speed, style.power * ARROW.power, style.crit);
+      this.player.attackAnim('bow', null);
+      // The arrow leaves when the string is released (after the draw).
+      this.scene.time.delayedCall(110, () => this.shoot('arrow', ARROW.range, ARROW.speed, style.power * ARROW.power, style.crit));
+      return;
     }
     if (wt === 'dagger') style.cooldown *= 0.8;
     if (!wt) style.power *= 0.6;
@@ -130,8 +135,8 @@ export class CombatSystem {
     const sx = this.player.x + f.x * 28, fy = this.player.y - 20 + f.y * 18;
     const heavy = style.power > 1.1;
     fx.slash(this.scene, sx, fy, Math.atan2(f.y, f.x), heavy ? 1.35 : wt === 'dagger' ? 0.8 : 1, heavy ? 0xffc070 : 0xe8f4ff);
-    // A quick forward lunge sells the swing.
-    this.scene.tweens.add({ targets: this.player.sprite, x: this.player.sprite.x + f.x * 6, duration: 60, yoyo: true });
+    const w = state.equipment.weapon;
+    this.player.attackAnim('swing', w ? ITEMS[w].icon : null);
 
     // Trees, rocks and crystals in reach give resources (TownSystem listens).
     bus.emit('player-swing', { x: this.player.x, y: this.player.y, fx: f.x, fy: f.y, range: style.range + 10 });
@@ -265,7 +270,7 @@ export class CombatSystem {
     }
     const ex = target ? target.x : sx + f.x * range, ey = target ? target.y - 24 : sy + f.y * range;
     const fire = kind === 'firebolt';
-    const shot = this.scene.add.image(sx, sy, kind).setDepth(190000).setRotation(Math.atan2(ey - sy, ex - sx));
+    const shot = this.scene.add.image(sx, sy, kind).setDepth(190000).setRotation(Math.atan2(ey - sy, ex - sx)).setScale(kind === 'arrow' ? 1.6 : 1);
     if (fire) shot.setBlendMode(Phaser.BlendModes.ADD);
     // Trail: fire leaves embers, arrows a faint streak.
     const trail = this.scene.add.particles(0, 0, 'spark', {

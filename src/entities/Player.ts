@@ -98,6 +98,53 @@ export class Player extends Actor {
     this.shadow.setPosition(this.x, this.y).setScale(1 - hop / 16, 1 - hop / 16);
   }
 
+  /**
+   * Arms in motion: a short wind-up, then the strike. Melee swings the held weapon in an arc in
+   * front of the hero; bows are drawn back (body leans away) and released with a recoil.
+   */
+  attackAnim(kind: 'swing' | 'bow' | 'cast', weaponIcon: string | null) {
+    const s = this.sprite, f = this.facing, dir = f.x < 0 ? -1 : 1;
+    this.scene.tweens.killTweensOf(s);
+    s.setAngle(0).setScale(this.baseScale);
+    if (kind === 'bow') {
+      // Draw (lean back, squash), then release (snap forward).
+      this.scene.tweens.chain({ targets: s, tweens: [
+        { angle: -6 * dir, scaleX: this.baseScale * 0.94, duration: 90 },
+        { angle: 3 * dir, scaleX: this.baseScale * 1.04, duration: 50 },
+        { angle: 0, scaleX: this.baseScale, duration: 90 },
+      ] });
+      return;
+    }
+    if (kind === 'cast') {
+      // Raise the staff: stretch up, then thrust.
+      this.scene.tweens.chain({ targets: s, tweens: [
+        { scaleY: this.baseScale * 1.08, angle: -4 * dir, duration: 80 },
+        { scaleY: this.baseScale * 0.96, angle: 6 * dir, duration: 60 },
+        { scaleY: this.baseScale, angle: 0, duration: 100 },
+      ] });
+      return;
+    }
+    // Melee: wind-up away from the target, then a strike that leans in.
+    this.scene.tweens.chain({ targets: s, tweens: [
+      { angle: -10 * dir, duration: 60 },
+      { angle: 12 * dir, scaleY: this.baseScale * 0.95, duration: 70 },
+      { angle: 0, scaleY: this.baseScale, duration: 110 },
+    ] });
+    if (weaponIcon) {
+      // The weapon itself swings from over the shoulder down through the target.
+      const base = Math.atan2(f.y, f.x);
+      // Held at the hand on the facing side (not over the body), small enough not to hide the hero.
+      const handX = () => this.x + dir * 14, handY = () => this.y - 22;
+      const w = this.scene.add.image(handX(), handY(), weaponIcon).setOrigin(0.15, 0.85).setDepth(this.y + 2);
+      w.setScale(Math.min(1.4, 30 / Math.max(w.width, w.height))).setRotation(base - 1.9).setFlipY(dir < 0);
+      this.scene.tweens.add({
+        targets: w, rotation: base + 0.9, duration: 160, delay: 50, ease: 'Cubic.easeOut',
+        onUpdate: () => w.setPosition(handX(), handY()),
+        onComplete: () => this.scene.tweens.add({ targets: w, alpha: 0, duration: 80, onComplete: () => w.destroy() }),
+      });
+    }
+  }
+
   flashHurt(now: number) {
     this.invulnerableUntil = now + 600;
     this.sprite.setTint(0xff6666);

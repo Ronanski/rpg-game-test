@@ -91,6 +91,8 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 - [x] Bow (Hunter Bow from Gus): arrows fly at the first enemy in front; Rogues and Adventurers can use it
 - [x] Hit and skill effects: sword arcs, sparks, shockwave rings, whirlwind, flame burst, firebolt embers, dash afterimages, screen shake on big hits
 - [x] Walking feels like walking: a hop per step, lean and sway, footstep dust
+- [x] Body animation: legs stride and arms swing while walking (robes sway); attacks have a wind-up and strike, the weapon swings at the hand, bows are drawn and released, staffs are raised
+- [x] Starting weapon matches the character art (Elf male: bow, Elf female: staff, Human male: sword, Human female: dagger)
 
 **Checkpoint**
 - [ ] Defeat 15 monsters, open JOBS, change to Warrior, and see stronger, wider hits

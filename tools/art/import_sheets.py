@@ -289,24 +289,98 @@ def texture_tile(name, rect, w: int = 64, h: int = 32) -> Image.Image:
     return Image.fromarray(out, 'RGBA')
 
 
-def walk_frames(im: Image.Image) -> list[Image.Image]:
-    """Idle + two step poses from one standing sprite: the body bobs up 1px and one foot lifts in turn."""
-    a = np.asarray(im)
+def _paste(dst: np.ndarray, src: np.ndarray, dx: int, dy: int):
+    """Pastes the opaque pixels of src onto dst, shifted by (dx, dy)."""
+    h, w = src.shape[:2]
+    ys, xs = np.nonzero(src[..., 3] > 0)
+    ty, tx = ys + dy, xs + dx
+    ok = (ty >= 0) & (ty < dst.shape[0]) & (tx >= 0) & (tx < dst.shape[1])
+    dst[ty[ok], tx[ok]] = src[ys[ok], xs[ok]]
+
+
+def soften_shadow(im: Image.Image) -> Image.Image:
+    """Turns the opaque ground shadow at a character's feet into a soft translucent one.
+
+    Shadow = the largest connected patch of greyish (low-saturation, mid-light) pixels in the
+    bottom of the sprite. Boots are saturated browns and stay; a separate sword tip stays too.
+    """
+    a = np.asarray(im).copy()
     h = a.shape[0]
+    rgb = a[..., :3].astype(int)
+    sat = rgb.max(axis=2) - rgb.min(axis=2)
+    lum = rgb.mean(axis=2)
+    y = np.arange(h)[:, None]
+    cand = (a[..., 3] > 0) & (y > h * 0.76) & (sat < 32) & (lum > 80) & (lum < 215)
+    lab, n = ndi.label(cand)
+    if n:
+        sizes = ndi.sum(cand, lab, index=np.arange(1, n + 1))
+        biggest = 1 + int(np.argmax(sizes))
+        m = ndi.binary_dilation(lab == biggest, iterations=1) & cand | (lab == biggest)
+        a[m] = (20, 16, 30, 90)
+    return Image.fromarray(a, 'RGBA')
+
+
+def walk_frames(im: Image.Image, robe: bool = False) -> list[Image.Image]:
+    """Idle + two stride poses from one standing sprite.
+
+    The figure is split into body, left/right arms (outer columns of the torso) and left/right
+    legs (bottom quarter). In each stride one leg steps forward (down 1px, out 1px) while the
+    other lifts (up 3px), the arms swing the opposite way, and the body bobs up 1px.
+    """
+    a = np.asarray(im)
+    pad = 3
+    a = np.pad(a, ((pad, 0), (1, 1), (0, 0)))  # room for the lift and the stride
+    # The baked-in ground shadow (semi-transparent) stays put; only the solid figure moves.
+    shadow = np.where(a[..., 3:4] < 255, a, 0)
+    a = np.where(a[..., 3:4] == 255, a, 0)
     ys, xs = np.nonzero(a[..., 3] > 0)
     top, bottom = ys.min(), ys.max() + 1
-    cx = (xs.min() + xs.max() + 1) // 2
-    legs = bottom - max(3, (bottom - top) // 5)  # the bottom fifth of the figure
-    frames = [im]
-    for x0, x1 in ((0, cx), (cx, a.shape[1])):
-        f = np.zeros_like(a)
-        f[:legs - 1] = a[1:legs]          # body bobs up
-        f[legs - 1] = a[legs - 1]
-        f[legs:] = a[legs:]               # both feet down...
-        f[legs:, x0:x1] = 0               # ...then lift this side's foot by 2px
-        lifted = a[legs:, x0:x1]
-        dst = f[legs - 2:h - 2, x0:x1]
-        f[legs - 2:h - 2, x0:x1] = np.where(lifted[..., 3:4] > 0, lifted, dst)
+    left, right = xs.min(), xs.max() + 1
+    cx = (left + right) // 2
+    hgt = bottom - top
+    legs = bottom - max(4, hgt // 4)
+    chest, waist = top + hgt * 2 // 5, legs
+    arm_w = max(2, (right - left) // 5)
+
+    def part(y0, y1, x0, x1):
+        p = np.zeros_like(a)
+        p[y0:y1, x0:x1] = a[y0:y1, x0:x1]
+        return p
+
+    body = a.copy()
+    body[legs:] = 0
+    body[chest:waist, left:left + arm_w] = 0
+    body[chest:waist, right - arm_w:right] = 0
+    arm_l, arm_r = part(chest, waist, left, left + arm_w), part(chest, waist, right - arm_w, right)
+    leg_l, leg_r = part(legs, bottom, 0, cx), part(legs, bottom, cx, a.shape[1])
+
+    frames = [Image.fromarray(np.where(a[..., 3:4] > 0, a, shadow), 'RGBA')]
+    if robe:
+        # Long robes: no separate legs. The hem sways 1px each way and the body bobs.
+        for d in (-1, 1):
+            f = shadow.copy()
+            hem = np.zeros_like(a)
+            hem[legs:] = a[legs:]
+            top_part = a.copy()
+            top_part[legs:] = 0
+            _paste(f, hem, d, 0)
+            _paste(f, top_part, 0, -1)
+            # Fill the 1px seam the bob leaves above the hem.
+            seam = np.zeros_like(a)
+            seam[legs - 1] = a[legs - 1]
+            _paste(f, seam, d, 0)
+            frames.append(Image.fromarray(f, 'RGBA'))
+        return frames
+    for step in (0, 1):
+        f = shadow.copy()
+        fwd, back = (leg_l, leg_r) if step == 0 else (leg_r, leg_l)
+        fwd_out = -1 if step == 0 else 1
+        _paste(f, back, 0, -3)          # lifting leg
+        _paste(f, fwd, fwd_out, 1)      # planted leg reaching forward
+        _paste(f, body, 0, -1)
+        # Arms swing opposite to the legs.
+        _paste(f, arm_l, 0, 1 if step == 1 else -2)
+        _paste(f, arm_r, 0, 1 if step == 0 else -2)
         frames.append(Image.fromarray(f, 'RGBA'))
     return frames
 
@@ -356,9 +430,10 @@ def all_sprites() -> dict:
             out[key] = purge_purple(out[key])
     # Playable sprites get step frames: front idle/step/step (+ back idle/step/step for the hero).
     front, back = frames_same_canvas([out.pop('hero_front'), out.pop('hero_back')])
-    out['hero'] = walk_frames(front) + walk_frames(back)
-    for key in ('hero_lyra', 'hero_rook', 'npc_healer'):
-        out[key] = walk_frames(out[key])
+    out['hero'] = walk_frames(soften_shadow(front)) + walk_frames(soften_shadow(back))
+    out['hero_rook'] = walk_frames(soften_shadow(out['hero_rook']))
+    for key in ('hero_lyra', 'npc_healer'):
+        out[key] = walk_frames(soften_shadow(out[key]), robe=True)
     for key, (name, boxes, height) in ANIMS.items():
         frames = [sprite(name, b, height) for b in boxes]
         out[key] = frames_same_canvas(frames)
