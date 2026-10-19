@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { gridToScreen, screenToTile, TILE_H } from './iso';
+import { gridToScreen, screenToGrid, screenToTile, TILE_H } from './iso';
 import { Tile, TILE_TEXTURE, type WorldData } from '../world/worldData';
 import { frameCount, spriteScale } from '../assets/sprites';
 import { LIGHT_DEPTH } from '../systems/LightingSystem';
@@ -23,7 +23,15 @@ export class IsoMap {
   private water: Phaser.GameObjects.Image[] = [];
   readonly nodes: ResourceNode[] = [];
 
-  constructor(private scene: Phaser.Scene, private world: WorldData) {}
+  /**
+   * Tiles blocked only by a small object (a tree trunk, a rock, a barrel): just the middle of the
+   * tile is solid, so you can walk past close to them instead of bumping into empty space.
+   */
+  private soft = new Set<string>();
+
+  constructor(private scene: Phaser.Scene, private world: WorldData) {
+    for (const p of world.props) if (p.kind !== 'building') this.soft.add(`${p.x},${p.y}`);
+  }
 
   render() {
     for (let y = 0; y < this.world.h; y++) {
@@ -72,7 +80,11 @@ export class IsoMap {
   walkable(x: number, y: number): boolean {
     const t = screenToTile(x, y);
     if (t.x < 0 || t.y < 0 || t.x >= this.world.w || t.y >= this.world.h) return false;
-    return !this.world.blocked[t.y][t.x];
+    if (!this.world.blocked[t.y][t.x]) return true;
+    if (!this.soft.has(`${t.x},${t.y}`)) return false;
+    // Inside a small object's tile: only its inner part (a diamond half the tile's size) blocks.
+    const g = screenToGrid(x, y);
+    return Math.abs(g.x - t.x) + Math.abs(g.y - t.y) > 0.32;
   }
 
   /** Tile type at a grid cell (undefined outside the map). */
@@ -86,6 +98,8 @@ export class IsoMap {
 
   setBlocked(x: number, y: number, v: boolean) {
     if (this.world.blocked[y]?.[x] !== undefined) this.world.blocked[y][x] = v;
+    // Town buildings and walls block their whole tile.
+    if (v) this.soft.delete(`${x},${y}`);
   }
 
   /** World bounds in screen space, for the camera. */

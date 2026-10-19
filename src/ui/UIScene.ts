@@ -35,6 +35,7 @@ export class UIScene extends Phaser.Scene {
   private pauseMenu!: PauseMenu;
   private menuBtn!: Phaser.GameObjects.Container;
   private zoomBox!: Phaser.GameObjects.Container;
+  private autoBtn!: ActionButton;
   private minimap!: MinimapView;
   private bigMap!: BigMap;
   private objArrow!: Phaser.GameObjects.Container;
@@ -58,6 +59,8 @@ export class UIScene extends Phaser.Scene {
   private nameText!: Phaser.GameObjects.Text;
   private levelText!: Phaser.GameObjects.Text;
   private barLabels!: Phaser.GameObjects.Text;
+  /** HP / MP / EX labels, one per bar. */
+  private barTags: Phaser.GameObjects.Text[] = [];
   private goldText!: Phaser.GameObjects.Text;
   private questPanel!: Phaser.GameObjects.NineSlice;
   private questTitle!: Phaser.GameObjects.Text;
@@ -93,8 +96,9 @@ export class UIScene extends Phaser.Scene {
     this.listen('appearance-changed', (key: string) => portrait.setY(y + 10 + (PORTRAIT - applyPortrait(portrait, key, PORTRAIT - 12)) / 2));
     this.nameText = this.add.text(x + PORTRAIT + 30, y + 12, '', text(18));
     this.levelText = this.add.text(x + STATUS_W - 16, y + 14, '', text(15, COLORS.gold)).setOrigin(1, 0);
-    this.barLabels = this.add.text(x + PORTRAIT + 30, y + 38, '', { ...text(14), lineSpacing: 6 });
+    this.barLabels = this.add.text(x + PORTRAIT + 30, y + 46, '', { ...text(13), lineSpacing: 0 }).setOrigin(0, 0.5);
     this.bars = this.add.graphics();
+    this.barTags = [0, 1, 2].map((i) => this.add.text(x + PORTRAIT + 30, y + 46 + i * 20, '', text(13)).setOrigin(0, 0.5));
     const coin = this.add.image(x + 16, y + STATUS_H + 18, 'icon_coin').setScale(2);
     this.goldText = this.add.text(x + 32, y + STATUS_H + 9, '', text(16, COLORS.gold));
     // JOB button under the gold: shows the current job, opens the JOBS menu (J key too).
@@ -114,7 +118,7 @@ export class UIScene extends Phaser.Scene {
     this.resTexts = resIcons.map((_, i) => this.add.text(x + 110 + i * 70, y + STATUS_H + 9, '', text(16)));
     this.jobText = this.add.text(x + 12, y + STATUS_H + 48, '', text(14)).setOrigin(0, 0.5);
     jobPanel.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.toggleJobs());
-    this.statusBox = this.add.container(0, 0, [statusPanel, portraitPanel, portrait, this.nameText, this.levelText, this.barLabels, this.bars, coin, this.goldText, jobPanel, this.jobText, bagPanel, bagIcon, bagText, buildPanel, buildIcon, buildText, ...resIcons, ...this.resTexts]);
+    this.statusBox = this.add.container(0, 0, [statusPanel, portraitPanel, portrait, this.nameText, this.levelText, this.barLabels, ...this.barTags, this.bars, coin, this.goldText, jobPanel, this.jobText, bagPanel, bagIcon, bagText, buildPanel, buildIcon, buildText, ...resIcons, ...this.resTexts]);
 
     // Quest tracker (top-right).
     this.questPanel = panel(this, 0, 10, 200, 60);
@@ -159,6 +163,17 @@ export class UIScene extends Phaser.Scene {
     this.potionBtn = new ActionButton(this, 'POTION', 'item_health_potion', 64, () => (state.controls.potion = true));
     this.skillBtn = new ActionButton(this, 'SKILL', 'icon_skill', 64, () => (state.controls.skill = true));
     this.dodgeBtn = new ActionButton(this, 'DODGE', 'icon_dodge', 64, () => (state.controls.dodge = true));
+    // AUTO: attack the nearest monster without pressing ATTACK.
+    this.autoBtn = new ActionButton(this, 'AUTO', 'pin_star', 56, () => {
+      state.autoAttack = !state.autoAttack;
+      try {
+        localStorage.setItem('aethelgard.auto', state.autoAttack ? '1' : '0');
+      } catch {
+        // No storage: the choice lasts until the game closes.
+      }
+      this.autoBtn.setOn(state.autoAttack, state.autoAttack ? 'AUTO ON' : 'AUTO');
+    });
+    this.autoBtn.setOn(state.autoAttack, state.autoAttack ? 'AUTO ON' : 'AUTO');
     this.potionCount = this.add.text(0, 0, '', text(15, COLORS.gold)).setOrigin(1, 0).setDepth(12);
     this.dialogue = new DialogueBox(this);
     this.jobMenu = new JobMenu(this, () => this.setControlsVisible(true));
@@ -354,6 +369,7 @@ export class UIScene extends Phaser.Scene {
     this.potionBtn.setVisible(on);
     this.skillBtn.setVisible(on);
     this.dodgeBtn.setVisible(on);
+    this.autoBtn.setVisible(on);
     this.potionCount.setVisible(on);
     if (!on) this.talkBtn.setVisible(false);
   }
@@ -396,7 +412,9 @@ export class UIScene extends Phaser.Scene {
     // Right column under the quest panel: mini-map, and + / − / MAP to its left.
     this.minimap.root.setScale(k).setPosition(width - 10 - 66 * k, 76 * k + 66 * k);
     this.zoomBox.setScale(k).setPosition(width - 10 - 132 * k - 22 * k, 92 * k);
-    for (const b of [this.attackBtn, this.talkBtn, this.potionBtn, this.skillBtn, this.dodgeBtn]) b.setScale((b.baseScale = k));
+    for (const b of [this.attackBtn, this.talkBtn, this.potionBtn, this.skillBtn, this.dodgeBtn, this.autoBtn]) b.setScale((b.baseScale = k));
+    // AUTO sits left of SKILL, above TALK.
+    this.autoBtn.setPosition(width - 252 * k, height - 140 * k);
     this.potionCount.setScale(k);
     this.attackBtn.setPosition(width - 62 * k, height - 62 * k);
     // Thumb arc around ATTACK: SKILL above-left, DODGE left, POTION above.
@@ -418,7 +436,8 @@ export class UIScene extends Phaser.Scene {
     const x = 10 + PORTRAIT + 30, y = 10;
     this.nameText.setText(s.name.toUpperCase());
     this.levelText.setText(`LV ${String(s.level).padStart(2, '0')}`);
-    this.barLabels.setText(['HP', 'MP', 'EX'].join('\n'));
+    this.barLabels.setText('HP').setVisible(false);
+    this.barTags.forEach((t, i) => t.setText(['HP', 'MP', 'EX'][i]));
     const g = this.bars.clear();
     const bar = (by: number, cur: number, max: number, color: number) => {
       const bx = x + 30, bw = STATUS_W - (bx - 10) - 16, bh = 10;

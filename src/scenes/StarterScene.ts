@@ -3,7 +3,7 @@ import { state, resetJobs, resetEquipment, newTown, newCycle } from '../core/Gam
 import { recalcStats } from '../systems/items/Items';
 import { computeStats, expToNext, RACES } from '../systems/combat/ClassSystem';
 import { RACES_INFO, START_JOB, type Gender, type RaceDef } from '../systems/combat/Origins';
-import { panel, text, COLORS } from '../ui/theme';
+import { panel, text, title, COLORS } from '../ui/theme';
 import { spriteInfo } from '../assets/sprites';
 import { deleteSave } from '../core/SaveGame';
 
@@ -31,7 +31,11 @@ export class StarterScene extends Phaser.Scene {
 
   create() {
     this.starting = false;
-    this.step = 'race';
+    // For now the game focuses on one hero: the Elf archer. Only the name is chosen.
+    this.race = Math.max(0, RACES_INFO.findIndex((r) => r.id === 'elf'));
+    this.gender = 0;
+    this.nameIndex = 0;
+    this.step = 'name';
     this.root = this.add.container();
     this.layout();
     this.scale.on('resize', this.layout, this);
@@ -84,7 +88,7 @@ export class StarterScene extends Phaser.Scene {
 
   private back() {
     const i = STEPS.indexOf(this.step);
-    if (i === 0) return this.scene.start('Title');
+    if (i === 0 || this.step === 'name') return this.scene.start('Title');
     this.step = STEPS[i - 1];
     this.layout();
   }
@@ -95,8 +99,8 @@ export class StarterScene extends Phaser.Scene {
     const add: Add = (o) => (this.root.add(o), o);
     const compact = height < 420;
 
-    add(this.add.text(width / 2, compact ? 6 : 14, 'AETHELGARD: CHRONOS OF FATE', text(compact ? 20 : 30, COLORS.gold)).setOrigin(0.5, 0));
-    const stepTitle = { race: 'Step 1 of 3: Choose your race', gender: 'Step 2 of 3: Choose your gender', name: 'Step 3 of 3: Your name' }[this.step];
+    add(this.add.text(width / 2, compact ? 6 : 14, 'AETHELGARD: CHRONOS OF FATE', title(compact ? 20 : 30)).setOrigin(0.5, 0));
+    const stepTitle = { race: 'Step 1 of 3: Choose your race', gender: 'Step 2 of 3: Choose your gender', name: 'Your archer\'s name' }[this.step];
     add(this.add.text(width / 2, compact ? 30 : 52, stepTitle, text(compact ? 13 : 16, COLORS.dim)).setOrigin(0.5, 0));
 
     const top = compact ? 50 : 84;

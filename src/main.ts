@@ -6,11 +6,13 @@ import { WorldScene } from './scenes/WorldScene';
 import { UIScene } from './ui/UIScene';
 import { checkForUpdate } from './core/Updater';
 
-// Load the pixel font first so the first frame of text already uses it.
-const font = new FontFace('Pixelify Sans', `url(${import.meta.env.BASE_URL}fonts/PixelifySans-Medium.ttf)`);
-font
-  .load()
-  .then((f) => (document.fonts as unknown as Set<FontFace>).add(f))
+// Load the fonts first so the first frame of text already uses them (Alegreya Sans for text,
+// Cinzel for titles; both SIL OFL, files in public/fonts).
+const fonts = [
+  new FontFace('Alegreya Sans', `url(${import.meta.env.BASE_URL}fonts/AlegreyaSans-Bold.ttf)`, { weight: '700' }),
+  new FontFace('Cinzel', `url(${import.meta.env.BASE_URL}fonts/Cinzel.ttf)`, { weight: '400 900' }),
+];
+Promise.all(fonts.map((f) => f.load().then((ff) => (document.fonts as unknown as Set<FontFace>).add(ff))))
   .catch((e) => console.warn('font failed to load', e))
   .finally(startGame);
 

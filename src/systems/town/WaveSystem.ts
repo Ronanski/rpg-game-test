@@ -47,7 +47,7 @@ const BOSSES: { id: Id; title: string }[] = [
 export function bossFor(day: number) {
   const b = BOSSES[(day - 1) % BOSSES.length];
   const round = Math.floor((day - 1) / BOSSES.length); // how many times the list came around
-  return { ...b, hp: 2.5 + day * 0.4 + round * 1.5, atk: 1.2 + day * 0.05 + round * 0.3 };
+  return { ...b, hp: 1.8 + day * 0.25 + round * 1.0, atk: 1.0 + day * 0.03 + round * 0.2 };
 }
 
 export class WaveSystem {

@@ -244,14 +244,14 @@ export function buildWorld(): WorldData {
       }
     }
   }
-  // Small nature details on open grass: flowers and mushrooms can be walked over; bushes and rocks block.
+  // Small nature details on open grass: flowers, mushrooms and bushes can be walked through; rocks block.
   for (let y = 2; y < MAP_H - 2; y++) {
     for (let x = 2; x < MAP_W - 2; x++) {
       if (inVillage(x, y) || inTown(x, y) || !free(x, y)) continue;
       const r = rnd.frac();
       if (r < 0.035) props.push({ kind: 'deco', texture: 'flowers', frame: rnd.between(0, 3), x, y });
       else if (r < 0.05) props.push({ kind: 'deco', texture: 'mushroom', frame: rnd.between(0, 1), x, y });
-      else if (r < 0.07) (props.push({ kind: 'deco', texture: 'bush', frame: rnd.between(0, 2), x, y }), (blocked[y][x] = true));
+      else if (r < 0.07) props.push({ kind: 'deco', texture: 'bush', frame: rnd.between(0, 2), x, y });
       else if (r < 0.08) (props.push({ kind: 'deco', texture: 'rock', frame: rnd.between(0, 1), x, y }), (blocked[y][x] = true));
     }
   }
@@ -286,7 +286,7 @@ export function buildWorld(): WorldData {
   const buildingArea = buildings.flatMap(([bx, by]) => [[bx + 2, by + 2], [bx + 2, by + 1], [bx + 1, by + 2], [bx + 3, by + 3]].map(([x, y]) => ({ x, y })));
   const keepClear = [...npcs, playerStart, ...caveArea, ...buildingArea];
   const near = (p: Prop) => keepClear.some((c) => Math.abs(c.x - p.x) <= 1 && Math.abs(c.y - p.y) <= 1);
-  const kept = props.filter((p) => !['tree', 'bush', 'rock'].includes(p.texture) || !near(p));
+  const kept = props.filter((p) => !['tree', 'pine', 'bush', 'rock'].includes(p.texture) || !near(p));
   for (const p of props) if (!kept.includes(p)) blocked[p.y][p.x] = false;
 
   return {

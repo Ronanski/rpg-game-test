@@ -30,17 +30,17 @@ export class Npc extends Actor {
     this.home = { x, y };
     const key = !!def.role;
     this.label = scene.add
-      .text(x, 0, def.name, { fontFamily: FONT, fontSize: key ? '14px' : '12px', color: key ? '#ffd75e' : '#e8e0c8', stroke: '#07080e', strokeThickness: 3 })
+      .text(x, 0, def.name, { fontFamily: FONT, fontStyle: 'bold', resolution: 2, fontSize: key ? '14px' : '12px', color: key ? '#ffd75e' : '#e8e0c8', stroke: '#07080e', strokeThickness: 3 })
       .setOrigin(0.5, 1)
       .setDepth(100000);
     if (def.role) {
       this.roleText = scene.add
-        .text(x, 0, def.role, { fontFamily: FONT, fontSize: '11px', color: '#c9c3e0', stroke: '#07080e', strokeThickness: 3 })
+        .text(x, 0, def.role, { fontFamily: FONT, fontStyle: 'bold', resolution: 2, fontSize: '11px', color: '#c9c3e0', stroke: '#07080e', strokeThickness: 3 })
         .setOrigin(0.5, 1)
         .setDepth(100000);
     }
     this.marker = scene.add
-      .text(x, 0, '', { fontFamily: FONT, fontSize: '20px', color: '#ffd75e', stroke: '#07080e', strokeThickness: 4 })
+      .text(x, 0, '', { fontFamily: FONT, fontStyle: 'bold', resolution: 2, fontSize: '20px', color: '#ffd75e', stroke: '#07080e', strokeThickness: 4 })
       .setOrigin(0.5, 1)
       .setDepth(100001);
     scene.tweens.add({ targets: this.marker, scale: 1.15, duration: 500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });

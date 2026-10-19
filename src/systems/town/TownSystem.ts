@@ -9,7 +9,7 @@ import type { CombatSystem } from '../combat/CombatSystem';
 import { spriteScale } from '../../assets/sprites';
 import { LIGHT_DEPTH } from '../LightingSystem';
 import { countJobAction } from '../combat/JobSystem';
-import { BUILDINGS, builders, placeCost, timeText, type BuildingDef, type Resource } from './Buildings';
+import { BUILDINGS, builders, placeCost, timeText, type BuildingDef, type LevelDef, type Resource } from './Buildings';
 import { canAfford, give, pay } from './Economy';
 import { FONT } from '../../ui/theme';
 import * as fx from '../combat/Fx';
@@ -105,9 +105,10 @@ export class TownSystem {
     const flat = def.category === 'trap';
     const key = def.sprites[Math.min(b.level, def.sprites.length) - 1];
     const img = this.scene.add.image(a.x, a.y, key).setOrigin(0.5, 1).setScale(spriteScale(key)).setDepth(flat ? -99990 + a.y / 1000 : a.y);
+    if (def.tint) img.setTint(def.tint);
     const scaffold = this.scene.add.image(a.x, a.y, 'b_scaffold').setOrigin(0.5, 1).setScale(2).setDepth(a.y + 1).setVisible(false);
     const bar = this.scene.add.graphics().setDepth(100000);
-    const label = this.scene.add.text(a.x, a.y - img.displayHeight - 22, '', { fontFamily: FONT, fontSize: '11px', color: '#f4ead0', stroke: '#07080e', strokeThickness: 3 }).setOrigin(0.5).setDepth(100001);
+    const label = this.scene.add.text(a.x, a.y - img.displayHeight - 22, '', { fontFamily: FONT, fontStyle: 'bold', resolution: 2, fontSize: '11px', color: '#f4ead0', stroke: '#07080e', strokeThickness: 3 }).setOrigin(0.5).setDepth(100001);
     const res = def.levels[0].produces ? Object.keys(def.levels[0].produces)[0] : 'gold';
     const stored = this.scene.add.image(a.x, a.y - img.displayHeight - 8, res === 'gold' ? 'item_coin' : `res_${res}`).setScale(res === 'gold' ? 1 : 2).setDepth(100001).setVisible(false);
     this.scene.tweens.add({ targets: stored, y: stored.y - 4, duration: 600, yoyo: true, repeat: -1 });
@@ -193,7 +194,7 @@ export class TownSystem {
     }
   }
 
-  private attack(v: View, def: BuildingDef, atk: { dmg: number; range: number; rate: number }, now: number) {
+  private attack(v: View, def: BuildingDef, atk: NonNullable<LevelDef['attack']>, now: number) {
     if (now < v.nextShot) return;
     const range = def.category === 'trap' ? 22 : atk.range * TILE_PX;
     const ax = v.img.x, ay = def.category === 'trap' ? v.img.y - 8 : v.img.y;
@@ -208,7 +209,7 @@ export class TownSystem {
     if (def.category === 'trap') {
       this.combat.structureHit(target, atk.dmg);
       this.scene.tweens.add({ targets: v.img, y: v.img.y - 3, duration: 60, yoyo: true });
-    } else this.combat.towerShot(ax, ay - v.img.displayHeight * 0.8, target, atk.dmg);
+    } else this.combat.towerShot(ax, ay - v.img.displayHeight * 0.8, target, atk.dmg, def.id === 'mage_tower' ? 'frost' : def.id === 'cannon_tower' ? 'cannon' : 'arrow', atk);
   }
 
   // ---------------------------------------------------------------- damage (night raids)
@@ -503,7 +504,7 @@ export class TownSystem {
   }
 
   private float(x: number, y: number, msg: string, color: string) {
-    const t = this.scene.add.text(x, y, msg, { fontFamily: FONT, fontSize: '15px', color, stroke: '#07080e', strokeThickness: 4 }).setOrigin(0.5).setDepth(200000);
+    const t = this.scene.add.text(x, y, msg, { fontFamily: FONT, fontStyle: 'bold', resolution: 2, fontSize: '15px', color, stroke: '#07080e', strokeThickness: 4 }).setOrigin(0.5).setDepth(200000);
     this.scene.tweens.add({ targets: t, y: y - 30, alpha: 0, duration: 900, onComplete: () => t.destroy() });
   }
 }

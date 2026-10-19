@@ -1,12 +1,13 @@
 import Phaser from 'phaser';
 import { spriteInfo } from '../assets/sprites';
 
-/** Pixel font (Pixelify Sans, SIL OFL), loaded in main.ts before the game starts. */
-export const FONT = '"Pixelify Sans", monospace';
+/** Text font (Alegreya Sans Bold) and title font (Cinzel), both SIL OFL, loaded in main.ts. */
+export const FONT = '"Alegreya Sans", sans-serif';
+export const TITLE_FONT = '"Cinzel", serif';
 
 export const COLORS = {
   text: '#f4ead0',
-  dim: '#a9a3c0',
+  dim: '#c9b98f',
   gold: '#ffd75e',
   hp: 0xd93a3a,
   mp: 0x3a72d9,
@@ -18,8 +19,13 @@ export const TEXT_BOOST = typeof window !== 'undefined' && window.innerHeight < 
 
 export const text = (size: number, color = COLORS.text): Phaser.Types.GameObjects.Text.TextStyle => {
   const px = Math.max(11, Math.round(size * TEXT_BOOST));
-  return { fontFamily: FONT, fontSize: `${px}px`, color, stroke: '#07080e', strokeThickness: Math.max(3, Math.round(px / 5)) };
+  return { fontFamily: FONT, fontStyle: 'bold', fontSize: `${px}px`, color, stroke: '#07080e', strokeThickness: Math.max(3, Math.round(px / 6)), resolution: 2 };
 };
+
+/** Title text (Cinzel): screen titles, menu headers. */
+export const title = (size: number, color = COLORS.gold): Phaser.Types.GameObjects.Text.TextStyle => ({
+  ...text(size, color), fontFamily: TITLE_FONT, fontStyle: 'bold',
+});
 
 /**
  * Framed pixel panel (9-slice). The frame art is 2x pixel scale, so the slice is drawn at
