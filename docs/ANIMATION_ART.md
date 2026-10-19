@@ -8,10 +8,10 @@ different poses** (frames), played quickly like a flipbook.
 
 | File name | Who | In game now |
 |---|---|---|
-| `anim_human_m.png` | Human male, brown hair, green tunic, sword | `hero` |
-| `anim_human_f.png` | Human female, healer look, dagger | `npc_healer` |
-| `anim_elf_m.png` | Elf male archer, bow | `hero_rook` |
-| `anim_elf_f.png` | Elf female mage, staff | `hero_lyra` |
+| `anim_human_m.png` | Human male: messy brown hair, green tunic, brown cloak, sword and small shield | `hero` |
+| `anim_human_f.png` | Human female: white-haired healer in a white robe, dagger (the current art is blurry, so a cleaner redraw of the same idea is welcome) | `npc_healer` |
+| `anim_elf_m.png` | Elf male archer: brown hair, green tunic, quiver, longbow | `hero_rook` |
+| `anim_elf_f.png` | Elf female mage: purple witch hat and robe, long brown hair, wooden staff with an orb | `hero_lyra` |
 
 After these work in game, the job outfits (Knight, Hilda, Kaelah, Valerius, Borgan) follow the same way.
 
