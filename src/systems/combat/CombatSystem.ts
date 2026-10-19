@@ -103,9 +103,28 @@ export class CombatSystem {
     }
   }
 
+  /**
+   * Auto-aim: turn to face the nearest living monster within `range` (so attacks go where the
+   * enemies are, not where the hero last walked). Returns true if a target was found.
+   */
+  private aim(range: number): boolean {
+    let best: Monster | null = null, bd = range;
+    for (const m of this.monsters) {
+      if (m.dead) continue;
+      const d = m.distanceTo(this.player);
+      if (d < bd) (bd = d), (best = m);
+    }
+    if (!best) return false;
+    this.player.facing.set(best.x - this.player.x, best.y - this.player.y).normalize();
+    if (Math.abs(this.player.facing.x) > 0.05) this.player.sprite.setFlipX(this.player.facing.x < 0);
+    return true;
+  }
+
   /** Attacks the way the current job does: a melee swing, or a Firebolt for Mages with MP. */
   playerAttack(now: number) {
     const ps = state.player!;
+    const wt0 = weaponType();
+    this.aim(wt0 === 'bow' ? ARROW.range : ps.jobId === 'mage' && wt0 === 'staff' ? FIREBOLT.range : 120);
     // Mages cast Firebolt when they hold a staff and have MP; otherwise they bonk with it.
     if (ps.jobId === 'mage' && weaponType() === 'staff' && ps.mp >= FIREBOLT.mp) {
       if (now - this.lastAttack < FIREBOLT.cooldown) return;
@@ -123,7 +142,11 @@ export class CombatSystem {
       if (now - this.lastAttack < ARROW.cooldown) return;
       this.lastAttack = now;
       this.player.attackAnim('bow', null);
-      // The arrow leaves when the string is released (after the draw).
+      // Nocked arrow at the bow, pulled back during the draw; it flies on release.
+      const f0 = this.player.facing.clone().normalize();
+      const nock = this.scene.add.image(this.player.x + f0.x * 18, this.player.y - 26, 'arrow').setScale(1.6)
+        .setRotation(Math.atan2(f0.y, f0.x)).setDepth(this.player.y + 3);
+      this.scene.tweens.add({ targets: nock, x: nock.x - f0.x * 10, duration: 100, onComplete: () => nock.destroy() });
       this.scene.time.delayedCall(110, () => this.shoot('arrow', ARROW.range, ARROW.speed, style.power * ARROW.power, style.crit));
       return;
     }
@@ -159,6 +182,7 @@ export class CombatSystem {
       bus.emit('toast', `Not enough MP for ${sk.name}`);
       return false;
     }
+    this.aim(160);
     ps.mp -= sk.mp;
     this.skillReadyAt = now + sk.cooldown;
     state.cooldowns.skillReady = this.skillReadyAt;
@@ -172,7 +196,8 @@ export class CombatSystem {
         // Whirlwind: hits everything around you.
         fx.ring(this.scene, p.x, p.y - 6, 95, 0xffc070, 6);
         for (let i = 0; i < 4; i++) this.scene.time.delayedCall(i * 60, () => fx.slash(this.scene, p.x, p.y - 22, (i * Math.PI) / 2, 1.6, 0xffc070));
-        this.scene.tweens.add({ targets: p.sprite, angle: 360, duration: 260, onComplete: () => p.sprite.setAngle(0) });
+        // Spin: flip back and forth quickly (no rotation; see Player.pose).
+        for (let i = 1; i <= 4; i++) this.scene.time.delayedCall(i * 60, () => p.sprite.setFlipX(!p.sprite.flipX));
         this.scene.cameras.main.shake(140, 0.006);
         for (const m of inRadius(95)) this.damage(m, 1.5, crit);
         break;
@@ -259,7 +284,7 @@ export class CombatSystem {
   /** Fires a projectile (firebolt or arrow) at the first monster in the facing direction. */
   private shoot(kind: 'firebolt' | 'arrow', range: number, speed: number, power: number, crit: number) {
     const f = this.player.facing.clone().normalize();
-    const sx = this.player.x + f.x * 10, sy = this.player.y - 24;
+    const sx = this.player.x + f.x * 12, sy = this.player.y - 26;
     let target: Monster | null = null, best = range;
     for (const m of this.monsters) {
       if (m.dead) continue;
@@ -280,7 +305,8 @@ export class CombatSystem {
     }).setDepth(189999);
     this.scene.tweens.add({
       targets: shot, x: ex, y: ey,
-      duration: (Math.hypot(ex - sx, ey - sy) / speed) * 1000,
+      // At least ~120 ms in the air so even point-blank shots are visible.
+      duration: Math.max(120, (Math.hypot(ex - sx, ey - sy) / speed) * 1000),
       onComplete: () => {
         shot.destroy();
         trail.stop();

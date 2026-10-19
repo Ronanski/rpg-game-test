@@ -19,6 +19,11 @@ export class Player extends Actor {
   private rollDir = new Phaser.Math.Vector2();
   nextRollAt = 0;
   private walking = false;
+  /**
+   * Pose offsets for animations (tweened). Sprites are never rotated: rotating these sprites
+   * makes parts of them disappear on screen, so motion is done with small shifts and squash.
+   */
+  readonly pose = { ox: 0, oy: 0, sx: 1, sy: 1 };
   private lastPhase = -1;
 
   constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
@@ -35,8 +40,14 @@ export class Player extends Actor {
     state.cooldowns.dodgeReady = this.nextRollAt;
     state.cooldowns.dodgeTotal = ROLL_COOLDOWN;
     this.invulnerableUntil = Math.max(this.invulnerableUntil, now + ROLL_MS + 60);
-    this.sprite.setAlpha(0.65);
-    this.scene.tweens.add({ targets: this.sprite, angle: dir.x < 0 ? -360 : 360, duration: ROLL_MS, onComplete: () => this.sprite.setAngle(0).setAlpha(1) });
+    // Tuck into a low, squashed roll and spring back up.
+    this.sprite.setAlpha(0.75);
+    this.scene.tweens.killTweensOf(this.pose);
+    this.scene.tweens.chain({ targets: this.pose, tweens: [
+      { sx: 1.15, sy: 0.7, duration: ROLL_MS * 0.4 },
+      { sx: 0.95, sy: 1.08, duration: ROLL_MS * 0.4 },
+      { sx: 1, sy: 1, duration: ROLL_MS * 0.4, onComplete: () => this.sprite.setAlpha(1) },
+    ] });
     return true;
   }
 
@@ -58,7 +69,6 @@ export class Player extends Actor {
       this.bob = 0;
       this.walking = false;
       this.lastPhase = -1;
-      if (!this.scene.tweens.isTweening(this.sprite)) this.sprite.setAngle(0);
       const f = Number(this.sprite.frame.name);
       if (f !== 0 && f !== 3) this.sprite.setFrame(f >= 3 ? 3 : 0);
       this.sync();
@@ -84,8 +94,8 @@ export class Player extends Actor {
     if (phase !== this.lastPhase && (phase === 1 || phase === 3)) fx.dust(this.scene, this.x - nx * 6, this.y);
     this.lastPhase = phase;
     this.walking = true;
-    // Lean into the walk and sway a little with each step, so it reads as walking, not gliding.
-    if (!this.scene.tweens.isTweening(this.sprite)) this.sprite.setAngle(nx * 4 + Math.sin((this.bob * Math.PI) / 2.2) * 3);
+    // Sway side to side with each step, so it reads as walking, not gliding.
+    if (!this.scene.tweens.isTweening(this.pose)) this.pose.ox = Math.round(Math.sin((this.bob * Math.PI) / 2.2));
     this.bob += dtMs / 70;
     this.sync();
   }
@@ -93,7 +103,9 @@ export class Player extends Actor {
   /** One small hop per step while walking (instead of the generic bob). */
   protected sync() {
     const hop = this.walking ? Math.abs(Math.sin((this.bob * Math.PI) / 2.2)) * 4 : 0;
-    this.sprite.setPosition(this.x, this.y + 2 - hop);
+    // The base Actor constructor calls sync() before `pose` exists.
+    const pz = this.pose ?? { ox: 0, oy: 0, sx: 1, sy: 1 };
+    this.sprite.setPosition(Math.round(this.x + pz.ox), Math.round(this.y + 2 - hop + pz.oy)).setScale(this.baseScale * pz.sx, this.baseScale * pz.sy);
     this.sprite.setDepth(this.y);
     this.shadow.setPosition(this.x, this.y).setScale(1 - hop / 16, 1 - hop / 16);
   }
@@ -103,32 +115,32 @@ export class Player extends Actor {
    * front of the hero; bows are drawn back (body leans away) and released with a recoil.
    */
   attackAnim(kind: 'swing' | 'bow' | 'cast', weaponIcon: string | null) {
-    const s = this.sprite, f = this.facing, dir = f.x < 0 ? -1 : 1;
-    this.scene.tweens.killTweensOf(s);
-    s.setAngle(0).setScale(this.baseScale);
+    const f = this.facing, dir = f.x < 0 ? -1 : 1, pz = this.pose;
+    this.scene.tweens.killTweensOf(pz);
+    Object.assign(pz, { ox: 0, oy: 0, sx: 1, sy: 1 });
     if (kind === 'bow') {
-      // Draw (lean back, squash), then release (snap forward).
-      this.scene.tweens.chain({ targets: s, tweens: [
-        { angle: -6 * dir, scaleX: this.baseScale * 0.94, duration: 90 },
-        { angle: 3 * dir, scaleX: this.baseScale * 1.04, duration: 50 },
-        { angle: 0, scaleX: this.baseScale, duration: 90 },
+      // Draw: lean back and tense; release: snap forward; settle.
+      this.scene.tweens.chain({ targets: pz, tweens: [
+        { ox: -4 * dir, sx: 0.93, sy: 1.04, duration: 100 },
+        { ox: 3 * dir, sx: 1.06, sy: 0.97, duration: 50 },
+        { ox: 0, sx: 1, sy: 1, duration: 110 },
       ] });
       return;
     }
     if (kind === 'cast') {
-      // Raise the staff: stretch up, then thrust.
-      this.scene.tweens.chain({ targets: s, tweens: [
-        { scaleY: this.baseScale * 1.08, angle: -4 * dir, duration: 80 },
-        { scaleY: this.baseScale * 0.96, angle: 6 * dir, duration: 60 },
-        { scaleY: this.baseScale, angle: 0, duration: 100 },
+      // Raise the staff (stretch up), then thrust forward.
+      this.scene.tweens.chain({ targets: pz, tweens: [
+        { sy: 1.1, sx: 0.95, oy: -3, duration: 80 },
+        { sy: 0.94, sx: 1.05, oy: 0, ox: 4 * dir, duration: 60 },
+        { sy: 1, sx: 1, ox: 0, duration: 100 },
       ] });
       return;
     }
-    // Melee: wind-up away from the target, then a strike that leans in.
-    this.scene.tweens.chain({ targets: s, tweens: [
-      { angle: -10 * dir, duration: 60 },
-      { angle: 12 * dir, scaleY: this.baseScale * 0.95, duration: 70 },
-      { angle: 0, scaleY: this.baseScale, duration: 110 },
+    // Melee: wind-up (pull back), then a strike that lunges in, then recover.
+    this.scene.tweens.chain({ targets: pz, tweens: [
+      { ox: -3 * dir, sx: 0.96, sy: 1.05, duration: 60 },
+      { ox: 6 * dir, sx: 1.07, sy: 0.94, duration: 70 },
+      { ox: 0, sx: 1, sy: 1, duration: 120 },
     ] });
     if (weaponIcon) {
       // The weapon itself swings from over the shoulder down through the target.

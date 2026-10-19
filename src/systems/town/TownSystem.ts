@@ -192,7 +192,8 @@ export class TownSystem {
       if (now < n.readyAt) continue;
       n.readyAt = now + GATHER_COOLDOWN;
       give(n.res, n.amount);
-      this.scene.tweens.add({ targets: n.sprite, angle: { from: -4, to: 4 }, duration: 60, yoyo: true, repeat: 2, onComplete: () => n.sprite.setAngle(0) });
+      const x0 = n.sprite.x;
+      this.scene.tweens.add({ targets: n.sprite, x: { from: x0 - 2, to: x0 + 2 }, duration: 50, yoyo: true, repeat: 2, onComplete: () => n.sprite.setX(x0) });
       fx.sparks(this.scene, n.x, n.y - 20, n.res === 'wood' ? 0xc9915a : n.res === 'stone' ? 0xc9c4bc : 0x5ad1ff, 8, 120);
       this.float(n.x, n.y - n.sprite.displayHeight * 0.6, `+${n.amount} ${n.res}`, n.res === 'mana' ? '#9fe3ff' : '#f4ead0');
       return; // one node per swing
