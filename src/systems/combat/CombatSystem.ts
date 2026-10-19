@@ -359,6 +359,29 @@ export class CombatSystem {
     if (m.hp === 0) this.kill(m);
   }
 
+  /** An ally's arrow (Hana): flies from (x, y) to the monster and deals fixed damage. */
+  allyShot(x: number, y: number, m: Monster, dmg: number) {
+    const sy = y - 26;
+    const shot = this.scene.add.image(x, sy, 'arrow').setDepth(190000).setScale(1.5).setRotation(Math.atan2(m.y - 24 - sy, m.x - x));
+    this.scene.tweens.add({
+      targets: shot, x: m.x, y: m.y - 24,
+      duration: Math.max(120, (Math.hypot(m.x - x, m.y - 24 - sy) / ARROW.speed) * 1000),
+      onComplete: () => {
+        shot.destroy();
+        if (m.dead) return;
+        const hit = Math.max(1, dmg - m.def.def);
+        m.hit(hit, { x, y });
+        fx.impact(this.scene, m.x, m.y - m.sprite.displayHeight / 2, 0.8);
+        this.floatText(m.x, m.y - 40, `${hit}`, '#9fe3ff', 16);
+        if (m.hp === 0) this.kill(m);
+      },
+    });
+  }
+
+  get liveMonsters() {
+    return this.monsters;
+  }
+
   /** Mage spell: a fireball flies in the facing direction and burns the first monster in its path. */
   private firebolt() {
     this.shoot('firebolt', FIREBOLT.range, FIREBOLT.speed, FIREBOLT.power, 0.05);

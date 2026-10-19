@@ -178,6 +178,11 @@ export class DialogueSystem {
               },
             }
           : { lines: say('A bed is 10 gold, love. Come back when your purse is heavier.') };
+      case 'apprentice':
+        return {
+          lines: say('Grom does the big jobs. I do the fine work. Steel, yew and crystal, the best in Oakhaven.'),
+          onEnd: () => bus.emit('open-shop', { name: "Bree's Forge", sells: ['steel_sword', 'steel_dagger', 'yew_bow', 'crystal_staff', 'chain_mail'] }),
+        };
       case 'farmer':
         return { lines: say('Slimes ate half my cabbages again!', 'They only come at night now. And there are more of them every week.') };
       case 'drunk':
@@ -185,6 +190,19 @@ export class DialogueSystem {
       case 'villager3':
         return { lines: say('The windmill west of here has been creaking all night.', 'Nobody has been inside it for years.') };
       case 'villager2':
+        if (this.quests.statusOf('main_05_locket') === 'completed' && !state.storyFlags.has('hana_joined')) {
+          return {
+            lines: say(
+              'I can\'t stay here. Not after this. Not with Martha smiling at me every morning.',
+              'Rowan taught me to shoot. Let me come with you. Whatever the Core is, I want to see it end.',
+            ),
+            onEnd: () => {
+              state.storyFlags.add('hana_joined');
+              bus.emit('toast', 'Hana joined you! She follows you and shoots at monsters.');
+              bus.emit('ally-joined');
+            },
+          };
+        }
         return { lines: say('My brother went to the mountain ruins last spring.', 'He never wrote back.') };
       default:
         return { lines: say('...') };

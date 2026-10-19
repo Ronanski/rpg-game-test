@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import {
-  buildWorld, CAVE_ENTRY, OUTSIDE_CAVE, OUTSIDE_TAVERN, TAVERN_ENTRY, Tile,
+  buildWorld, CAVE_ENTRY, OUTSIDE_CAVE, OUTSIDE_SMITHY, OUTSIDE_TAVERN, SMITHY_ENTRY, TAVERN_ENTRY, Tile,
   type AreaId, type NpcDef, type Prop, type WorldData,
 } from './worldData';
 
@@ -8,6 +8,7 @@ import {
 export function buildArea(id: AreaId): WorldData {
   if (id === 'cave') return buildCave();
   if (id === 'tavern') return buildTavern();
+  if (id === 'smithy') return buildSmithy();
   return buildWorld();
 }
 
@@ -126,6 +127,42 @@ function buildTavern(): WorldData {
     doors: [{ x: TAVERN_ENTRY.x, y: TAVERN_ENTRY.y + 2.2, to: 'overworld', at: OUTSIDE_TAVERN, label: 'Oakhaven' }],
     tiles, blocked, props,
     playerStart: TAVERN_ENTRY,
+    npcs,
+    spawns: [],
+  };
+}
+
+// Grom's smithy: the forge, racks of gear, and Bree, his apprentice, who sells the better blades.
+const SMI_W = 11, SMI_H = 11;
+
+function buildSmithy(): WorldData {
+  const { tiles, blocked, floor } = blank(SMI_W, SMI_H);
+  for (let y = 2; y <= 8; y++) for (let x = 2; x <= 8; x++) floor(x, y, Tile.Stone);
+  floor(SMITHY_ENTRY.x, SMITHY_ENTRY.y + 2, Tile.Stone);
+  floor(SMITHY_ENTRY.x, SMITHY_ENTRY.y + 3, Tile.Path);
+  const props: Prop[] = [];
+  const put = (texture: string, x: number, y: number, solid = true, light = false) => {
+    props.push({ kind: 'deco', texture, x, y, light });
+    if (solid) blocked[y][x] = true;
+  };
+  // The forge glows in the back corner; crates of ore and finished gear along the walls.
+  put('campfire', 7, 2, true, true);
+  put('torch', 2, 2, true, true);
+  put('lamp', 8, 6, true, true);
+  [[3, 2], [4, 2], [2, 4], [2, 5]].forEach(([x, y]) => put('crate', x, y));
+  put('barrels', 8, 8);
+  put('cart', 3, 7);
+
+  const npcs: NpcDef[] = [
+    { id: 'apprentice', name: 'Bree', texture: 'npcanim_villager_f', x: 6, y: 3, role: "Grom's Apprentice", mark: 'shop' },
+  ];
+  return {
+    id: 'smithy', w: SMI_W, h: SMI_H,
+    ambient: { color: 0xffc890, alpha: 0.14 },
+    bg: 0x0d0906,
+    doors: [{ x: SMITHY_ENTRY.x, y: SMITHY_ENTRY.y + 3.2, to: 'overworld', at: OUTSIDE_SMITHY, label: 'Oakhaven' }],
+    tiles, blocked, props,
+    playerStart: SMITHY_ENTRY,
     npcs,
     spawns: [],
   };

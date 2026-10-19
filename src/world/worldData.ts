@@ -61,7 +61,7 @@ export interface SpawnZone {
 }
 
 /** Separate maps: the open world, and places you walk into (cave, tavern). */
-export type AreaId = 'overworld' | 'cave' | 'tavern';
+export type AreaId = 'overworld' | 'cave' | 'tavern' | 'smithy';
 
 /** Step on it to go to another area; you arrive at `at` (grid) there. */
 export interface Door {
@@ -92,8 +92,10 @@ export interface WorldData {
 /** Where you arrive inside the cave and the tavern (grid), and where you come back out. */
 export const CAVE_ENTRY = { x: 7, y: 35 };
 export const TAVERN_ENTRY = { x: 5, y: 8 };
+export const SMITHY_ENTRY = { x: 5, y: 7 };
 export const OUTSIDE_CAVE = { x: 24.6, y: 4.4 };
 export const OUTSIDE_TAVERN = { x: 19.4, y: 22.6 };
+export const OUTSIDE_SMITHY = { x: 19.4, y: 29.6 };
 
 const VILLAGE = { x0: 18, y0: 18, x1: 29, y1: 29 };
 /** Town grounds south-east of the village, across the bridge: the Ancient Core and the land around it. */
@@ -294,6 +296,7 @@ export function buildWorld(): WorldData {
     doors: [
       { x: 24.2, y: 3.2, to: 'cave', at: CAVE_ENTRY, label: 'Old Cave' },
       { x: 19.8, y: 21.1, to: 'tavern', at: TAVERN_ENTRY, label: 'Tavern' },
+      { x: 19.8, y: 28.1, to: 'smithy', at: SMITHY_ENTRY, label: 'Smithy' },
     ],
     tiles,
     props: kept,

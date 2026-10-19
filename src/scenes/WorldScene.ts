@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { setActiveArea, type AreaId, type Door } from '../world/worldData';
 import { buildArea, PIT } from '../world/areas';
 import { GRAVEMAW } from '../entities/Monster';
+import { Companion } from '../entities/Companion';
 import { IsoMap } from '../iso/IsoMap';
 import { gridToScreen } from '../iso/iso';
 import { Player } from '../entities/Player';
@@ -21,6 +22,8 @@ import { saveGame, setSnapshotSource, type SaveData } from '../core/SaveGame';
 import type { QuestState } from '../systems/quest/QuestTracker';
 
 const TALK_RANGE = 70;
+/** Names shown when you walk into a place, and on the clock while inside. */
+const AREA_NAMES: Partial<Record<AreaId, string>> = { cave: 'The Old Cave', tavern: 'The Sleeping Fox', smithy: "Grom's Smithy" };
 const AUTOSAVE_MS = 5000;
 
 /** Free-roam field: the hero explores, talks to NPCs and fights monsters. */
@@ -43,6 +46,8 @@ export class WorldScene extends Phaser.Scene {
   /** Doors work once the hero has stepped away from the one they came through. */
   private doorArmed = false;
   private leaving = false;
+  /** Hana travels with the hero once she has joined (story flag hana_joined). */
+  private ally: Companion | null = null;
   private lighting!: LightingSystem;
 
   constructor() {
@@ -76,6 +81,19 @@ export class WorldScene extends Phaser.Scene {
     quests.setExpHandler((n) => this.combat.gainExp(n));
     this.combat.spawnAll(world.spawns);
     this.dialogue = new DialogueSystem(quests);
+    // Hana leaves her spot in the village once she travels with you.
+    if (state.storyFlags.has('hana_joined')) {
+      this.npcs = this.npcs.filter((n) => (n.def.id === 'villager2' ? (n.destroy(), false) : true));
+    }
+    this.ally = null;
+    const joinAlly = () => {
+      if (this.ally) return;
+      this.npcs = this.npcs.filter((n) => (n.def.id === 'villager2' ? (n.destroy(), false) : true));
+      this.ally = new Companion(this, this.player.x - 24, this.player.y + 10, 'npc_archer', 'Hana');
+    };
+    if (state.storyFlags.has('hana_joined')) joinAlly();
+    bus.on('ally-joined', joinAlly);
+    this.events.once('shutdown', () => bus.off('ally-joined', joinAlly));
     if (data.quests) quests.importState(data.quests);
     if (data.save) quests.importState(data.save.quests);
     // Gravemaw waits at the bottom of the cave once Martha has asked you to go there.
@@ -140,7 +158,7 @@ export class WorldScene extends Phaser.Scene {
     const label = world.doors[0]?.label;
     if (data.area && !data.save) {
       this.cameras.main.fadeIn(300);
-      bus.emit('toast', this.area === 'cave' ? 'The Old Cave' : this.area === 'tavern' ? 'The Sleeping Fox' : `Back to ${label}`);
+      bus.emit('toast', AREA_NAMES[this.area] ?? `Back to ${label}`);
     } else bus.emit('toast', data.save ? `Welcome back, ${state.player!.name}.` : 'Welcome to Oakhaven. Talk to Martha.');
   }
 
@@ -201,9 +219,13 @@ export class WorldScene extends Phaser.Scene {
     if (!state.inMenu) this.combat.update(time, delta);
     this.town?.update(time);
     this.waves?.update(time, delta);
-    if (!this.waves) bus.emit('cycle-tick', { raiders: 0, coreHp: 1, coreMax: 1, indoor: this.area === 'cave' ? 'OLD CAVE' : 'SLEEPING FOX' });
+    if (!this.waves) bus.emit('cycle-tick', { raiders: 0, coreHp: 1, coreMax: 1, indoor: (AREA_NAMES[this.area] ?? '').toUpperCase() });
     this.checkDoors();
     this.updateNpcs(time, delta);
+    if (this.ally && !state.inMenu) {
+      const target = this.ally.update(time, delta, this.player, this.map, this.combat.liveMonsters);
+      if (target) this.combat.allyShot(this.ally.x, this.ally.y, target, 8 + state.player!.level * 2);
+    }
     this.updateNearbyNpc();
   }
 

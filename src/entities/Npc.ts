@@ -108,6 +108,13 @@ export class Npc extends Actor {
     this.marker.setPosition(this.x, this.label.y - 13);
   }
 
+  destroy() {
+    super.destroy();
+    this.label.destroy();
+    this.roleText?.destroy();
+    this.marker.destroy();
+  }
+
   face(x: number) {
     this.sprite.setFlipX(x < this.x);
   }

@@ -126,7 +126,7 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 - [x] Weapon and skill effects from the owner's effects board: sword and flame slashes, hit stars, the Mage's fireball and fire bursts (also in Flame Nova), Power Strike blast, and a healing ring for potions
 - [ ] Frame-by-frame art for the job outfits
 
-## M7: Story chapter 1 and new places 🔄
+## M7: Story chapter 1 and new places ✅
 - [x] Separate places you walk into through doors (the screen fades, quests and saves come along):
   - **Old Cave** at the end of the north road: entrance hall, slime grotto, bone hall with skeletons, and Gravemaw's pit; dark, lit by torches, crystals to mine
   - **The Sleeping Fox** tavern: Mabel the innkeeper (rest for 10 gold: full HP and MP) and Old Tam
@@ -137,8 +137,8 @@ Jobs are earned by what you do in the game (start classless), and can be changed
   4. The Old Cave (Martha: defeat Gravemaw at the bottom of the cave)
   5. A Locket in the Dark (the Stranger: show the locket to Hana), ending on the first dark twist
 - [x] The day clock stops while you are inside a cave or building; saving inside brings you back there
-- [ ] Smithy interior
-- [ ] Recruit a second hero
+- [x] Grom's Smithy (walk in through the blacksmith's door): Bree, Grom's apprentice, sells stronger gear (Steel Sword, Steel Dagger, Yew Bow, Crystal Staff, Chain Mail)
+- [x] Second hero: after Chapter 1, talk to Hana again and she joins you. She follows you everywhere (caves and buildings too), shoots arrows at monsters near you, and stays in your party after saving
 
 **Checkpoint**
 - [ ] Play chapter 1 from start to end without getting stuck (scripted run passes; a full hand-played run is still to do)
