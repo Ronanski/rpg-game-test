@@ -7,6 +7,7 @@ Runs on PC (web) and Android, with iOS planned.
 - **Android APK:** see [Releases](https://github.com/Ronanski/rpg-game-test/releases)
 - **Architecture and database:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - **Art asset list:** [docs/ASSETS.md](docs/ASSETS.md)
+- **Roadmap and checkpoints:** [ROADMAP.md](ROADMAP.md)
 
 ## Dev
 
