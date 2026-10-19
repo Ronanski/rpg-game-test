@@ -27,16 +27,16 @@ Database schema, isometric free-roam village, NPC dialogue, real-time combat, an
 - [ ] Open the test link, make a character (race, gender, name), and talk to Martha: the speech bubble appears over her head.
 - [ ] Get hurt by a slime, press POT, and watch the HP go up and the potion count go down.
 
-## M2: Art overhaul (reference style) 🔄
+## M2: Art overhaul (reference style) ✅
 Target look: detailed 16-bit isometric pixel art with warm torch light, matching the reference images in [docs/ASSETS.md](docs/ASSETS.md).
 - [x] Art pipeline: sheets in `art/raw/` are cut out, resized and loaded into the game automatically (`python3 tools/art/build.py`)
 - [x] Owner's sheets imported (`art/raw/sheet_a` … `sheet_g`): heroes, 17 NPCs, slimes, wolf, goblin, orc, skeleton, dragon, 14 buildings (tavern, forge, inn, chapel, windmill, watchtower, market, stable, ruins, tent…), trees, plants, rocks, fences, stalls, carts, lamps, animals, cave entrance, ground tiles
 - [x] Code-drawn fill-ins: water, bridge, HUD frames and icons
 - [x] HUD restyle: framed portrait panel, quest panel, icon action buttons, portrait dialogue box, pixel font
 - [x] New enemies in the world: blue slimes (south woods), goblins (north-west ruins)
-- [ ] Walking animation frames for heroes (every sheet so far has blurry or front-facing walk frames)
-- [ ] Water, bridge and cliff tiles in the sheet style (the current ones are code-drawn)
-- [ ] Lighting: darker evening tint so torch light shows
+- [x] Walking animation: step frames (front and back for the human hero) made from the clear hero sprites. The sheets' own walk frames were too blurry and their "up" frames faced the camera, so they were not used.
+- [x] Water and bridge tiles from the owner's sheet (sheet_f), with all pink background removed
+- [x] Lighting: golden-hour dusk tint, and torches, lamps and the campfire glow through it (M5 adds the full day/night cycle)
 
 **Checkpoint**
 - [ ] A side-by-side screenshot of the village next to the reference looks like the same game

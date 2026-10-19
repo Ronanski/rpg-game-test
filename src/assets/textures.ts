@@ -23,9 +23,14 @@ export function createTextures(scene: Phaser.Scene) {
   fb.generateTexture('firebolt', 24, 24);
   fb.destroy();
 
-  // Warm light pool for torches and windows (drawn additively).
-  const g = scene.add.graphics();
-  for (let r = 64; r > 0; r -= 4) g.fillStyle(0xffa040, 0.025).fillCircle(64, 64, r);
-  g.generateTexture('glow', 128, 128);
-  g.destroy();
+  // Warm light pool for torches and lamps (drawn additively): a smooth radial falloff.
+  const glow = scene.textures.createCanvas('glow', 128, 128)!;
+  const ctx = glow.getContext();
+  const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+  grad.addColorStop(0, 'rgba(255, 190, 110, 0.75)');
+  grad.addColorStop(0.35, 'rgba(255, 150, 60, 0.35)');
+  grad.addColorStop(1, 'rgba(255, 120, 40, 0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 128, 128);
+  glow.refresh();
 }

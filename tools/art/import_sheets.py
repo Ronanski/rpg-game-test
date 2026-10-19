@@ -212,7 +212,7 @@ def sprite(name, box, height) -> Image.Image:
     return shrink(*cut(name, box), height)
 
 
-def tile(name, box, w: int = 64, h: int = 32) -> Image.Image:
+def tile(name, box, w: int = 64, h: int = 32, inset: float = 0.9) -> Image.Image:
     """Samples the top diamond of an iso block (inset past its outline) into a w x h tile."""
     rgb, alpha = cut(name, box, pad=0)
     ys, xs = np.nonzero(alpha > 0.5)
@@ -223,7 +223,6 @@ def tile(name, box, w: int = 64, h: int = 32) -> Image.Image:
     L, R, T = np.array([left_x, left_y], float), np.array([right_x, right_y], float), np.array([top_x, top_y], float)
     B = L + R - T
     C = (L + R + T + B) / 4
-    inset = 0.9
     L, R, T, B = [C + (p - C) * inset for p in (L, R, T, B)]
     # Area-average the source down first so sampling is not noisy.
     scale = (R[0] - L[0]) / w
@@ -243,6 +242,68 @@ def tile(name, box, w: int = 64, h: int = 32) -> Image.Image:
     return Image.fromarray(np.dstack([np.asarray(q), out[..., 3]]), 'RGBA')
 
 
+def fill_magenta(im: Image.Image) -> Image.Image:
+    """Paints over leftover magenta background pixels with the colors of their neighbours."""
+    a = np.asarray(im).copy()
+    r, g, b = (a[..., i].astype(int) for i in range(3))
+    # Any pink / purple tint (red and blue both well above green), dark or bright.
+    bad = (a[..., 3] > 0) & (r - g > 25) & (b - g > 25)
+    for _ in range(24):
+        if not bad.any():
+            break
+        for dy, dx in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+            src = np.roll(np.roll(a, dy, 0), dx, 1)
+            ok = np.roll(np.roll(~bad & (a[..., 3] > 0), dy, 0), dx, 1)
+            fix = bad & ok
+            a[fix, :3] = src[fix, :3]
+            bad &= ~fix
+    return Image.fromarray(a, 'RGBA')
+
+
+def texture_tile(name, rect, w: int = 64, h: int = 32) -> Image.Image:
+    """Fills a w x h diamond with a flat rectangle of the sheet (e.g. bridge planks), stretched to fit."""
+    x0, y0, x1, y1 = rect
+    src = np.asarray(Image.fromarray(sheet(name)[y0:y1, x0:x1].astype(np.uint8)).resize((w // 2, h), Image.BOX))
+    out = np.zeros((h, w, 4), np.uint8)
+    for y in range(h):
+        half = (y + 1) * (w // h) if y < h // 2 else (h - y) * (w // h)
+        for x in range(w // 2 - half, w // 2 + half):
+            out[y, x, :3] = src[y, (x // 2) % src.shape[1]]
+            out[y, x, 3] = 255
+    return Image.fromarray(out, 'RGBA')
+
+
+def walk_frames(im: Image.Image) -> list[Image.Image]:
+    """Idle + two step poses from one standing sprite: the body bobs up 1px and one foot lifts in turn."""
+    a = np.asarray(im)
+    h = a.shape[0]
+    ys, xs = np.nonzero(a[..., 3] > 0)
+    top, bottom = ys.min(), ys.max() + 1
+    cx = (xs.min() + xs.max() + 1) // 2
+    legs = bottom - max(3, (bottom - top) // 5)  # the bottom fifth of the figure
+    frames = [im]
+    for x0, x1 in ((0, cx), (cx, a.shape[1])):
+        f = np.zeros_like(a)
+        f[:legs - 1] = a[1:legs]          # body bobs up
+        f[legs - 1] = a[legs - 1]
+        f[legs:] = a[legs:]               # both feet down...
+        f[legs:, x0:x1] = 0               # ...then lift this side's foot by 2px
+        lifted = a[legs:, x0:x1]
+        dst = f[legs - 2:h - 2, x0:x1]
+        f[legs - 2:h - 2, x0:x1] = np.where(lifted[..., 3:4] > 0, lifted, dst)
+        frames.append(Image.fromarray(f, 'RGBA'))
+    return frames
+
+
+def drop_magenta(im: Image.Image) -> Image.Image:
+    """Makes leftover magenta background pixels transparent. Real purples (Lyra's robe, purple
+    slime, mushrooms) keep some green and are left alone."""
+    a = np.asarray(im).copy()
+    r, g, b = (a[..., i].astype(int) for i in range(3))
+    a[(r > 140) & (b > 140) & (g < 60) & (np.abs(r - b) < 60), 3] = 0
+    return Image.fromarray(a, 'RGBA')
+
+
 def frames_same_canvas(frames: list[Image.Image]) -> list[Image.Image]:
     w = max(f.width for f in frames)
     h = max(f.height for f in frames)
@@ -258,10 +319,19 @@ def all_sprites() -> dict:
     out: dict = {}
     for key, (name, box, height) in SPRITES.items():
         out[key] = sprite(name, box, height)
-    out['hero'] = frames_same_canvas([out.pop('hero_front'), out.pop('hero_back')])
+        if name in MAGENTA:
+            out[key] = drop_magenta(out[key])
+    # Playable sprites get step frames: front idle/step/step (+ back idle/step/step for the hero).
+    front, back = frames_same_canvas([out.pop('hero_front'), out.pop('hero_back')])
+    out['hero'] = walk_frames(front) + walk_frames(back)
+    for key in ('hero_lyra', 'hero_rook', 'npc_healer'):
+        out[key] = walk_frames(out[key])
     for key, (name, boxes, height) in ANIMS.items():
         frames = [sprite(name, b, height) for b in boxes]
         out[key] = frames_same_canvas(frames)
+    water = fill_magenta(tile('sheet_f.webp', (272, 49, 358, 127), inset=0.5))
+    out['tile_water'] = [water, water.transpose(Image.FLIP_LEFT_RIGHT), water.transpose(Image.ROTATE_180), water.transpose(Image.FLIP_TOP_BOTTOM)]
+    out['tile_bridge'] = fill_magenta(texture_tile('sheet_f.webp', (158, 324, 198, 342)))
     for key, (name, box) in TILES.items():
         t = tile(name, box)
         # Mirrored copies break up the repeat (a mirrored diamond is still a diamond).

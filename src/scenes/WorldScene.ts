@@ -9,6 +9,7 @@ import { QuestTracker } from '../systems/quest/QuestTracker';
 import { DialogueSystem } from '../systems/dialogue/DialogueSystem';
 import { state, emitStats } from '../core/GameState';
 import { bus } from '../core/EventBus';
+import { LightingSystem, AMBIENT } from '../systems/LightingSystem';
 import { saveGame, setSnapshotSource, type SaveData } from '../core/SaveGame';
 
 const TALK_RANGE = 70;
@@ -32,6 +33,8 @@ export class WorldScene extends Phaser.Scene {
     const world = buildWorld();
     this.map = new IsoMap(this, world);
     this.map.render();
+    // Golden-hour dusk for now; M5 adds the full day/night cycle.
+    new LightingSystem(this).setAmbient(AMBIENT.dusk);
 
     const start = gridToScreen(world.playerStart.x, world.playerStart.y);
     this.player = new Player(this, start.x, start.y, state.player!.texture);

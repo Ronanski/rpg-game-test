@@ -18,6 +18,8 @@ export class Player extends Actor {
     const len = Math.hypot(dx, dy);
     if (len < 0.15) {
       this.bob = 0;
+      const f = Number(this.sprite.frame.name);
+      if (f !== 0 && f !== 3) this.sprite.setFrame(f >= 3 ? 3 : 0);
       this.sync();
       return;
     }
@@ -28,8 +30,14 @@ export class Player extends Actor {
     if (map.walkable(this.x, this.y + ny * step)) this.y += ny * step;
     this.facing.set(nx, ny).normalize();
     if (Math.abs(nx) > 0.1) this.sprite.setFlipX(nx < 0);
-    // Frame 1 (when the sheet has it) is the back view, used while walking away from the camera.
-    if (frameCount(this.sprite.texture.key) > 1) this.sprite.setFrame(ny < -0.3 ? 1 : 0);
+    // Walk cycle: idle, step, idle, step (frames 0-2). Sheets with 6 frames have a back view
+    // (frames 3-5) used while walking away from the camera.
+    const n = frameCount(this.sprite.texture.key);
+    if (n >= 3) {
+      const base = n >= 6 && ny < -0.3 ? 3 : 0;
+      const phase = Math.floor(this.bob / 2.2) % 4;
+      this.sprite.setFrame(base + [0, 1, 0, 2][phase]);
+    }
     this.bob += dtMs / 70;
     this.sync();
   }

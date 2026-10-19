@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { gridToScreen, screenToTile, TILE_H } from './iso';
 import { MAP_H, MAP_W, Tile, TILE_TEXTURE, type WorldData } from '../world/worldData';
 import { frameCount, spriteScale } from '../assets/sprites';
+import { LIGHT_DEPTH } from '../systems/LightingSystem';
 
 /** Renders the ground and props of a WorldData, and answers collision queries. */
 export class IsoMap {
@@ -42,7 +43,8 @@ export class IsoMap {
       if (prop.light) {
         // Flickering flame + warm light pool on the ground around it.
         if (prop.texture === 'torch') img.play({ key: 'torch_burn', startFrame: (prop.x + prop.y) % frameCount('torch') });
-        const glow = this.scene.add.image(p.x, p.y - 30, 'glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(p.y + 1).setScale(1.6);
+        // Drawn above the ambient overlay so it lights up the dusk.
+        const glow = this.scene.add.image(p.x, p.y - 30, 'glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(LIGHT_DEPTH).setScale(1.6);
         this.scene.tweens.add({ targets: glow, alpha: 0.75, scale: 1.5, duration: 180 + (prop.x % 3) * 40, yoyo: true, repeat: -1 });
       }
     }

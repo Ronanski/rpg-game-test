@@ -178,7 +178,7 @@
  },
  {
   "key": "hero",
-  "w": 90,
+  "w": 270,
   "h": 58,
   "scale": 1,
   "imported": true,
@@ -186,17 +186,19 @@
  },
  {
   "key": "hero_lyra",
-  "w": 33,
+  "w": 99,
   "h": 58,
   "scale": 1,
-  "imported": true
+  "imported": true,
+  "frameWidth": 33
  },
  {
   "key": "hero_rook",
-  "w": 46,
+  "w": 138,
   "h": 56,
   "scale": 1,
-  "imported": true
+  "imported": true,
+  "frameWidth": 46
  },
  {
   "key": "horse",
@@ -368,10 +370,11 @@
  },
  {
   "key": "npc_healer",
-  "w": 27,
+  "w": 81,
   "h": 56,
   "scale": 1,
-  "imported": true
+  "imported": true,
+  "frameWidth": 27
  },
  {
   "key": "npc_hilda",
@@ -672,9 +675,10 @@
  },
  {
   "key": "tile_bridge",
-  "w": 32,
-  "h": 16,
-  "scale": 2
+  "w": 64,
+  "h": 32,
+  "scale": 1,
+  "imported": true
  },
  {
   "key": "tile_flowers",
@@ -716,10 +720,11 @@
  },
  {
   "key": "tile_water",
-  "w": 128,
-  "h": 16,
-  "scale": 2,
-  "frameWidth": 32
+  "w": 256,
+  "h": 32,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 64
  },
  {
   "key": "torch",
