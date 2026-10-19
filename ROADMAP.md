@@ -31,7 +31,7 @@ Database schema, isometric free-roam village, NPC dialogue, real-time combat, an
 Target look: detailed 16-bit isometric pixel art with warm torch light, matching the reference images in [docs/ASSETS.md](docs/ASSETS.md).
 - [x] Art pipeline: sheets in `art/raw/` are cut out, resized and loaded into the game automatically (`python3 tools/art/build.py`)
 - [x] Owner's sheets imported (`art/raw/sheet_a` … `sheet_g`): heroes, 17 NPCs, slimes, wolf, goblin, orc, skeleton, dragon, 14 buildings (tavern, forge, inn, chapel, windmill, watchtower, market, stable, ruins, tent…), trees, plants, rocks, fences, stalls, carts, lamps, animals, cave entrance, ground tiles
-- [x] Code-drawn fill-ins: water, bridge, HUD frames and icons
+- [x] Code-drawn fill-ins: HUD frames and icons
 - [x] HUD restyle: framed portrait panel, quest panel, icon action buttons, portrait dialogue box, pixel font
 - [x] New enemies in the world: blue slimes (south woods), goblins (north-west ruins)
 - [x] Walking animation: step frames (front and back for the human hero) made from the clear hero sprites. The sheets' own walk frames were too blurry and their "up" frames faced the camera, so they were not used.
