@@ -6,6 +6,7 @@ import { canAfford } from '../systems/town/Economy';
 import { Menu } from './ItemMenus';
 import { text } from './theme';
 import { spriteScale } from '../assets/sprites';
+import { view } from '../core/Screen';
 
 /** BUILD: every building you can place, with cost and build time. Choosing one starts placement. */
 export class BuildMenu extends Menu {
@@ -99,7 +100,7 @@ export class PlacementBar {
 
   show(name: string) {
     this.root.removeAll(true).setVisible(true);
-    const s = this.scene, { width, height } = s.scale;
+    const s = this.scene, { width, height } = view(s);
     const add = <T extends Phaser.GameObjects.GameObject>(o: T) => (this.root.add(o), o);
     add(s.add.text(width / 2, height - 96, `Placing ${name}: walk or tap the ground. Green = OK.`, { ...text(14), backgroundColor: '#15120ee6', padding: { x: 10, y: 6 } }).setOrigin(0.5));
     const mk = (label: string, bx: number, color: number, ev: string) => {

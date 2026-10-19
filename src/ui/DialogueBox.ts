@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { DialogueLine } from '../systems/dialogue/DialogueSystem';
 import { panel, resizePanel, text, COLORS } from './theme';
+import { view } from '../core/Screen';
 
 const MAX_W = 380;
 const PAD = 16;
@@ -79,7 +80,7 @@ export class DialogueBox {
   /** Re-places the bubble; called every frame so it follows the speaker as the camera moves. */
   layout() {
     if (!this.isOpen) return;
-    const { width, height } = this.scene.scale;
+    const { width, height } = view(this.scene);
     const w = this.boxW, h = this.boxH;
     const a = this.anchor?.() ?? null;
     let x: number, y: number;
@@ -122,7 +123,7 @@ export class DialogueBox {
 
   private show() {
     const line = this.lines[this.index];
-    const { width } = this.scene.scale;
+    const { width } = view(this.scene);
     this.nameText.setText(line.speaker);
     // Size the bubble to the whole line first, so it doesn't grow while typing.
     this.boxW = Math.min(MAX_W, width - 24);

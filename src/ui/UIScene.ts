@@ -18,6 +18,7 @@ import { ARCHER } from '../systems/combat/CombatSystem';
 import { panel, resizePanel, text, applyPortrait, COLORS } from './theme';
 import type { Conversation } from '../systems/dialogue/DialogueSystem';
 import type { QuestTracker } from '../systems/quest/QuestTracker';
+import { DPR, fitCamera, view } from '../core/Screen';
 
 const STATUS_W = 300, STATUS_H = 104, PORTRAIT = 84;
 
@@ -77,6 +78,8 @@ export class UIScene extends Phaser.Scene {
   private questBox!: Phaser.GameObjects.Container;
   /** HUD scale: smaller on short (phone) screens so the world stays visible. */
   private k = 1;
+  /** Touch-button scale (see layout). */
+  private kb = 1;
 
   constructor() {
     super('UI');
@@ -90,6 +93,7 @@ export class UIScene extends Phaser.Scene {
 
   create(data: { quests: QuestTracker }) {
     this.quests = data.quests;
+    fitCamera(this);
     this.tutorial = new Tutorial(this, this.quests);
     this.input.addPointer(2);
 
@@ -248,9 +252,9 @@ export class UIScene extends Phaser.Scene {
         tap = null;
         return;
       }
-      if (tap && Math.hypot(p.x - tap.x, p.y - tap.y) > 12) tap = null;
+      if (tap && Math.hypot(p.x - tap.x, p.y - tap.y) > 12 * DPR) tap = null;
       if (!down || !p.isDown) return;
-      if (!down.drag && Math.hypot(p.x - down.x, p.y - down.y) > 8) down.drag = true;
+      if (!down.drag && Math.hypot(p.x - down.x, p.y - down.y) > 8 * DPR) down.drag = true;
       if (down.drag) bus.emit('build-drag', p.x, p.y, p.x - down.lx, p.y - down.ly);
       down.lx = p.x;
       down.ly = p.y;
@@ -304,7 +308,8 @@ export class UIScene extends Phaser.Scene {
 
   update() {
     this.dialogue.layout();
-    this.tutorial.update(this.scale.width, this.scale.height, this.k);
+    const v = view(this);
+    this.tutorial.update(v.width, v.height, this.k);
     const now = this.time.now, cd = state.cooldowns;
     this.skillBtn.setCooldown((cd.skillReady - now) / cd.skillTotal);
     this.rainBtn.setCooldown((cd.rainReady - now) / cd.rainTotal);
@@ -332,13 +337,13 @@ export class UIScene extends Phaser.Scene {
   /** Build mode bar: shows how many builders are free; SHOP lists buildings, DONE leaves. */
   private showBuildBar() {
     if (!state.buildMode) return this.setControlsVisible(!state.inMenu);
-    const { width, height } = this.scale;
+    const { width, height } = view(this);
     const huts = state.town.buildings.filter((b) => b.type === 'builder_hut').length;
     const busy = state.town.buildings.filter((b) => b.status !== 'idle').length;
     this.buildBarText.setText(`BUILD MODE · Builders free: ${huts - busy}/${huts}\nDrag to look around · tap a building`)
       .setPosition(12, height - 12).setOrigin(0, 1).setScale(this.k);
-    this.buildBarBtns[0].setPosition(width - 210 * this.k, height - 40 * this.k).setScale(this.k);
-    this.buildBarBtns[1].setPosition(width - 76 * this.k, height - 40 * this.k).setScale(this.k);
+    this.buildBarBtns[0].setPosition(width - 210 * this.kb, height - 40 * this.kb).setScale(this.kb);
+    this.buildBarBtns[1].setPosition(width - 76 * this.kb, height - 40 * this.kb).setScale(this.kb);
     this.buildBar.setVisible(!this.placementBar.visible);
   }
 
@@ -401,7 +406,7 @@ export class UIScene extends Phaser.Scene {
   /** Points the guide arrow at the next goal (hidden when it's already on screen). */
   private drawObjective(o: { sx: number; sy: number; label: string; onScreen: boolean } | null) {
     if (!o || state.inMenu || state.buildMode) return void this.objArrow.setVisible(false);
-    const { width, height } = this.scale;
+    const { width, height } = view(this);
     if (o.onScreen) {
       // Bob just above the goal itself.
       this.objArrow.setVisible(true).setPosition(o.sx, Math.max(60, o.sy - 70));
@@ -413,7 +418,7 @@ export class UIScene extends Phaser.Scene {
     // Kept inside the clear middle of the screen: below the top HUD, above the buttons, and away
     // from the mini-map and the action buttons on the right.
     const k = this.k;
-    const box = { l: 80 * k, r: width - 200 * k, t: 185 * k, b: height - 110 * k };
+    const box = { l: 80 * k, r: width - 200 * this.kb, t: 185 * k, b: height - 110 * this.kb };
     const bx = (box.l + box.r) / 2, by = (box.t + box.b) / 2;
     const ang = Math.atan2(o.sy - by, o.sx - bx);
     const t = Math.min((box.r - box.l) / 2 / Math.abs(Math.cos(ang) || 1e-6), (box.b - box.t) / 2 / Math.abs(Math.sin(ang) || 1e-6));
@@ -424,29 +429,32 @@ export class UIScene extends Phaser.Scene {
   }
 
   private layout() {
-    const { width, height } = this.scale;
-    // Short phone screens get a slightly smaller HUD, but not so small the text can't be read.
-    const k = (this.k = height < 450 ? 0.88 : 1);
+    const { width, height } = view(this);
+    // Phone screens (landscape, under 450 px tall): a compact HUD. Info panels shrink more than
+    // the touch buttons, which stay at least ~45 px so a thumb still hits them easily.
+    const phone = height < 450;
+    const k = (this.k = phone ? 0.75 : 1);
+    const kb = (this.kb = phone ? 0.8 : 1);
     this.statusBox.setScale(k);
-    this.cycleBox.setScale(k).setPosition(width / 2, 10);
+    this.cycleBox.setScale(k).setPosition(width / 2, 8);
     this.questBox.setScale(k);
-    this.menuBtn.setScale(k).setPosition(width - 10, 0);
+    this.menuBtn.setScale(k).setPosition(width - 8, 0);
     // Right column under the quest panel: mini-map, and + / − / MAP to its left.
     this.minimap.root.setScale(k);
     this.zoomBox.setScale(k);
-    for (const b of [this.attackBtn, this.talkBtn, this.potionBtn, this.skillBtn, this.dodgeBtn, this.autoBtn, this.rainBtn]) b.setScale((b.baseScale = k));
+    for (const b of [this.attackBtn, this.talkBtn, this.potionBtn, this.skillBtn, this.dodgeBtn, this.autoBtn, this.rainBtn]) b.setScale((b.baseScale = kb));
     // RAIN above AUTO (clear of the mini-map).
-    this.rainBtn.setPosition(width - 252 * k, height - 222 * k);
+    this.rainBtn.setPosition(width - 252 * kb, height - 222 * kb);
     // AUTO sits left of SKILL, above TALK.
-    this.autoBtn.setPosition(width - 252 * k, height - 140 * k);
-    this.potionCount.setScale(k);
-    this.attackBtn.setPosition(width - 62 * k, height - 62 * k);
+    this.autoBtn.setPosition(width - 252 * kb, height - 140 * kb);
+    this.potionCount.setScale(kb);
+    this.attackBtn.setPosition(width - 62 * kb, height - 62 * kb);
     // Thumb arc around ATTACK: SKILL above-left, DODGE left, POTION above.
-    this.skillBtn.setPosition(width - 150 * k, height - 140 * k);
-    this.dodgeBtn.setPosition(width - 168 * k, height - 52 * k);
-    this.talkBtn.setPosition(width - 252 * k, height - 52 * k);
-    this.potionBtn.setPosition(width - 62 * k, height - 164 * k);
-    this.potionCount.setPosition(width - 34 * k, height - 194 * k);
+    this.skillBtn.setPosition(width - 150 * kb, height - 140 * kb);
+    this.dodgeBtn.setPosition(width - 168 * kb, height - 52 * kb);
+    this.talkBtn.setPosition(width - 252 * kb, height - 52 * kb);
+    this.potionBtn.setPosition(width - 62 * kb, height - 164 * kb);
+    this.potionCount.setPosition(width - 34 * kb, height - 194 * kb);
     this.stick.resetPosition();
     this.dialogue.layout();
     this.jobMenu.draw();
@@ -524,14 +532,14 @@ export class UIScene extends Phaser.Scene {
     }
     this.questText.setText(lines.join('\n'));
     const w = Math.max(190, this.questText.width + 34), h = this.questText.height + 52;
-    const x = this.scale.width / this.k - w - 64; // leave room for the MENU button
+    const x = view(this).width / this.k - w - 64; // leave room for the MENU button
     resizePanel(this.questPanel, w, h);
     this.questPanel.setPosition(x, 10);
     this.questIcon.setPosition(x + 24, 33);
     this.questTitle.setPosition(x + 42, 24);
     this.questText.setPosition(x + 18, 48);
     // The mini-map and its buttons sit just under the quest panel (never on top of it).
-    const k = this.k, top = (10 + h + 8) * k, width = this.scale.width;
+    const k = this.k, top = (10 + h + 8) * k, width = view(this).width;
     this.minimap.root.setPosition(width - 10 - 66 * k, top + 66 * k);
     this.zoomBox.setPosition(width - 10 - 154 * k, top + 20 * k);
   }
@@ -539,7 +547,7 @@ export class UIScene extends Phaser.Scene {
   private toasts: Phaser.GameObjects.Text[] = [];
   private toast(msg: string) {
     const t = this.add
-      .text(this.scale.width / 2, 150 + this.toasts.length * 34, msg, { ...text(16), backgroundColor: '#15120ee6', padding: { x: 14, y: 7 } })
+      .text(view(this).width / 2, 150 + this.toasts.length * 34, msg, { ...text(16), backgroundColor: '#15120ee6', padding: { x: 14, y: 7 } })
       .setOrigin(0.5)
       .setDepth(60);
     this.toasts.push(t);

@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { spriteInfo } from '../assets/sprites';
+import { DPR } from '../core/Screen';
 
 /** The device's own UI font (Roboto on Android, San Francisco on iPhone, Segoe UI on Windows). */
 export const FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", Arial, sans-serif';
@@ -29,7 +30,7 @@ function snap(size: number) {
 
 export const text = (size: number, color = COLORS.text): Phaser.Types.GameObjects.Text.TextStyle => {
   const px = snap(size);
-  return { fontFamily: FONT, fontStyle: 'bold', fontSize: `${px}px`, color, stroke: '#07080e', strokeThickness: px >= 26 ? 5 : 3, resolution: 2 };
+  return { fontFamily: FONT, fontStyle: 'bold', fontSize: `${px}px`, color, stroke: '#07080e', strokeThickness: px >= 26 ? 5 : 3, resolution: Math.max(2, DPR) };
 };
 
 /** Titles and menu headers: same font, gold by default. */
@@ -38,6 +39,8 @@ export const title = (size: number, color = COLORS.gold): Phaser.Types.GameObjec
 /** Labels over people and things in the world (names, damage numbers): small or body size. */
 export const worldText = (size: 'small' | 'body', color: string): Phaser.Types.GameObjects.Text.TextStyle => ({
   ...text(SIZES[size], color),
+  // The world camera is zoomed in (up to 2.5x, times DPR): draw the letters with enough pixels.
+  resolution: 3 * DPR,
 });
 
 /**
