@@ -16,6 +16,8 @@ import characters  # noqa: E402
 import environment  # noqa: E402
 import ui  # noqa: E402
 import import_sheets  # noqa: E402
+import import_monsters  # noqa: E402
+import import_buildings  # noqa: E402
 from pix import hstack  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -33,6 +35,9 @@ def main():
     sprites.update(ui.all_sprites())
     # The owner's sheets in art/raw/ replace the code-drawn versions where they exist.
     imported = import_sheets.all_sprites()
+    monsters = import_monsters.monster_anims()
+    imported.update(monsters)
+    imported.update(import_buildings.building_levels())
     sprites.update(imported)
     manifest = []
     for key, art in sorted(sprites.items()):
@@ -44,6 +49,8 @@ def main():
             entry['imported'] = True
         if isinstance(art, list):
             entry['frameWidth'] = im.width // len(art)
+        if key in monsters:
+            entry['manim'] = True  # monster: 0-1 idle, 2-3 attack, 4 hurt, 5-6 dying (gets the game's shadow)
         if key.startswith('anim_'):
             entry['anim'] = True  # frame-by-frame hero: idle, 5 walk, wind-up, strike, hurt
         manifest.append(entry)

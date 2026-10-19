@@ -166,6 +166,7 @@ export class CombatSystem {
       // Contact damage.
       if (!m.dead && m.distanceTo(this.player) < 30 && now > this.player.invulnerableUntil && !state.inDialogue && !state.inMenu) {
         const dmg = Math.max(1, m.def.atk - Math.floor(ps.def / 2) + Phaser.Math.Between(-1, 2));
+        m.strikeAnim();
         ps.hp = Math.max(0, ps.hp - dmg);
         this.player.flashHurt(now);
         this.floatText(this.player.x, this.player.y - 50, `-${dmg}`, '#ff6b6b');
@@ -415,10 +416,12 @@ export class CombatSystem {
   private kill(m: Monster) {
     m.dead = true;
     m.hpBar.clear();
+    // Drawn monsters fall over, then fade; others squash away.
+    const drawn = m.dieAnim();
     this.scene.tweens.add({
       targets: [m.sprite, m.shadow],
       alpha: 0,
-      scaleY: 0.5,
+      ...(drawn ? { delay: 450 } : { scaleY: 0.5 }),
       duration: 300,
       onComplete: () => {
         m.destroy();

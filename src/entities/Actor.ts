@@ -18,8 +18,8 @@ export class Actor {
     this.y = y;
     const info = spriteInfo(texture);
     this.baseScale = info.scale;
-    // Art cut from the sheets already has its own soft shadow baked in.
-    this.shadow = scene.add.image(x, y, 'shadow').setDepth(-99998).setVisible(!info.imported);
+    // Art cut from the sheets already has its own soft shadow baked in (animated monsters don't).
+    this.shadow = scene.add.image(x, y, 'shadow').setDepth(-99998).setVisible(!info.imported || !!info.manim);
     this.sprite = scene.add.sprite(x, y, texture, 0).setOrigin(0.5, 1).setScale(info.scale);
     this.sync();
   }

@@ -23,6 +23,8 @@ export interface BuildingDef {
   solid: boolean;
   /** Sprite per level (the last one repeats). */
   sprites: string[];
+  /** Shown while it is being built (the wooden frame going up). */
+  site?: string;
   desc: string;
   levels: LevelDef[];
   /** Hidden from the build menu (the Core is there from the start). */
@@ -32,7 +34,7 @@ export interface BuildingDef {
 export const BUILDINGS: Record<string, BuildingDef> = {
   ancient_core: {
     id: 'ancient_core', name: 'Ancient Core', category: 'utility', size: 2, solid: true, unique: true,
-    sprites: ['b_core'], desc: 'The heart of the town. Build within its light.',
+    sprites: ['bl_crystal_3', 'bl_crystal_5', 'bl_crystal_7'], desc: 'The heart of the town. Build within its light.',
     levels: [
       { cost: { gold: 0 }, seconds: 0, hp: 2000 },
       { cost: { gold: 800, stone: 400, mana: 100 }, seconds: 1800, hp: 3000 },
@@ -41,7 +43,7 @@ export const BUILDINGS: Record<string, BuildingDef> = {
   },
   builder_hut: {
     id: 'builder_hut', name: "Builder's Hut", category: 'utility', size: 2, solid: true,
-    sprites: ['house_small'], desc: 'Home of one builder. Each builder works on one building at a time.',
+    sprites: ['bl_hut_2'], site: 'bl_hut_1', desc: 'Home of one builder. Each builder works on one building at a time.',
     levels: [{ cost: { gold: 0 }, seconds: 0, hp: 300 }],
   },
   wooden_wall: {
@@ -55,7 +57,7 @@ export const BUILDINGS: Record<string, BuildingDef> = {
   },
   arrow_tower: {
     id: 'arrow_tower', name: 'Arrow Tower', category: 'tower', size: 1, solid: true,
-    sprites: ['b_tower'], desc: 'Shoots monsters in range.',
+    sprites: ['bl_tower_3', 'bl_tower_5', 'bl_tower_7'], site: 'bl_tower_1', desc: 'Shoots monsters in range.',
     levels: [
       { cost: { gold: 50, wood: 40 }, seconds: 30, hp: 200, attack: { dmg: 8, range: 4, rate: 1.0 } },
       { cost: { gold: 120, wood: 80 }, seconds: 180, hp: 300, attack: { dmg: 14, range: 5, rate: 1.2 } },
@@ -72,7 +74,7 @@ export const BUILDINGS: Record<string, BuildingDef> = {
   },
   lumber_mill: {
     id: 'lumber_mill', name: 'Lumber Mill', category: 'generator', size: 2, solid: true,
-    sprites: ['warehouse'], desc: 'Makes wood over time.',
+    sprites: ['bl_workshop_2', 'bl_workshop_4', 'bl_workshop_6'], site: 'bl_workshop_1', desc: 'Makes wood over time.',
     levels: [
       { cost: { gold: 40 }, seconds: 20, hp: 200, produces: { wood: 60 }, per: 3600, cap: 300 },
       { cost: { gold: 120, wood: 50 }, seconds: 300, hp: 300, produces: { wood: 120 }, per: 3600, cap: 700 },
@@ -81,7 +83,7 @@ export const BUILDINGS: Record<string, BuildingDef> = {
   },
   stone_mine: {
     id: 'stone_mine', name: 'Stone Mine', category: 'generator', size: 2, solid: true,
-    sprites: ['b_mine'], desc: 'Digs up stone over time.',
+    sprites: ['bl_forge_3', 'bl_forge_5', 'bl_forge_7'], site: 'bl_forge_1', desc: 'Digs up stone over time.',
     levels: [
       { cost: { gold: 60, wood: 30 }, seconds: 30, hp: 250, produces: { stone: 40 }, per: 3600, cap: 200 },
       { cost: { gold: 150, wood: 80 }, seconds: 400, hp: 350, produces: { stone: 90 }, per: 3600, cap: 500 },
@@ -89,8 +91,8 @@ export const BUILDINGS: Record<string, BuildingDef> = {
     ],
   },
   farm: {
-    id: 'farm', name: 'Farm', category: 'generator', size: 2, solid: false,
-    sprites: ['b_farm'], desc: 'Grows crops you sell for gold.',
+    id: 'farm', name: 'Farm', category: 'generator', size: 2, solid: true,
+    sprites: ['bl_farm_3', 'bl_farm_5', 'bl_farm_7'], site: 'bl_farm_1', desc: 'Grows crops you sell for gold.',
     levels: [
       { cost: { wood: 30 }, seconds: 20, hp: 150, produces: { gold: 50 }, per: 3600, cap: 250 },
       { cost: { gold: 80, wood: 80 }, seconds: 300, hp: 220, produces: { gold: 110 }, per: 3600, cap: 600 },
