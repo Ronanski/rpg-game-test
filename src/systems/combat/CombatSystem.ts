@@ -12,7 +12,7 @@ import type { QuestTracker } from '../quest/QuestTracker';
 const ATTACK_COOLDOWN = 380;
 const ATTACK_RANGE = 70;
 const RESPAWN_MS = 9000;
-const RACE = 'human';
+const POTION_HEAL = 50; // health_potion effect.heal_hp in seed.sql
 
 /** Spawns monsters, resolves attacks both ways, and awards EXP / gold / loot. */
 export class CombatSystem {
@@ -84,6 +84,19 @@ export class CombatSystem {
     }
   }
 
+  /** Drinks a health potion. Does nothing at full HP or with none left. */
+  usePotion() {
+    const ps = state.player!;
+    const have = state.inventory.get('health_potion') ?? 0;
+    if (have <= 0) return bus.emit('toast', 'No health potions left');
+    if (ps.hp >= ps.maxHp) return bus.emit('toast', 'HP is already full');
+    addItem('health_potion', -1);
+    const healed = Math.min(POTION_HEAL, ps.maxHp - ps.hp);
+    ps.hp += healed;
+    this.floatText(this.player.x, this.player.y - 50, `+${healed}`, '#7dff8a');
+    emitStats();
+  }
+
   private kill(m: Monster) {
     m.dead = true;
     m.hpBar.clear();
@@ -120,7 +133,7 @@ export class CombatSystem {
       ps.exp -= ps.expToNext;
       ps.level++;
       ps.expToNext = expToNext(ps.level);
-      const s = computeStats(RACE, ps.jobId, ps.level);
+      const s = computeStats(ps.raceId, ps.jobId, ps.level);
       Object.assign(ps, { maxHp: s.hp, maxMp: s.mp, atk: s.atk, def: s.def, spd: s.spd, hp: s.hp, mp: s.mp });
       this.floatText(this.player.x, this.player.y - 80, 'LEVEL UP!', '#ffd75e', 26);
       bus.emit('toast', `Level ${ps.level}!`);

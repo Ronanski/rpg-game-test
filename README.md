@@ -24,8 +24,9 @@ Copy `.env.example` to `.env.local` and fill in your Supabase keys to save progr
 - [x] Free-roam isometric world: village, roads, river, forest
 - [x] NPC dialogue with quests (Elder Maren, Toma the Smith, Hooded Stranger)
 - [x] Real-time combat: slimes and wolves, EXP, level up, gold, loot, respawn
-- [x] Touch controls (virtual stick, ATK, TALK) and keyboard; landscape-only Android APK
-- [ ] Starter hero selection (race, faction, origin)
+- [x] Starter hero selection: Kael (Human Warrior), Lyra (Elf Mage), Rook (Beastkin Rogue)
+- [x] Health potions: POT button or Q key (+50 HP)
+- [x] Touch controls (virtual stick, ATK, TALK, POT) and keyboard; landscape-only Android APK
 - [ ] Base building mode (day) and wave defense (night)
 - [ ] Job change menu and sub-classes, inventory and equipment UI
 - [ ] Real pixel art and Tiled maps

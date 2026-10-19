@@ -9,8 +9,8 @@ export class Player extends Actor {
   facing = new Phaser.Math.Vector2(1, 0);
   invulnerableUntil = 0;
 
-  constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene, x, y, 'hero');
+  constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
+    super(scene, x, y, texture);
   }
 
   move(dx: number, dy: number, spd: number, dtMs: number, map: IsoMap) {

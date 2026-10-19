@@ -74,7 +74,7 @@ export class QuestTracker {
   complete(id: string) {
     const q = this.get(id);
     if (q.objective.type === 'collect') {
-      state.inventory.set(q.objective.target, (state.inventory.get(q.objective.target) ?? 0) - q.objective.count);
+      addItem(q.objective.target, -q.objective.count);
     }
     this.status.set(id, 'completed');
     state.player!.gold += q.rewards.gold;

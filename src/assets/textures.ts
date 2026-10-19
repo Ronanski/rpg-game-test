@@ -107,6 +107,37 @@ export function createTextures(scene: Phaser.Scene) {
   ];
   const base = { S: 0xf1c27d, E: 0x1a1a1a, B: 0x4a2c17, L: 0x5b4a3a, F: 0x3a2412 };
   pixelSprite(scene, 'hero', human, { ...base, H: 0x7a4426, C: 0x3f7d3a });
+  // Starter heroes: Lyra (elf mage, pointed ears), Rook (beastkin rogue, wolf ears).
+  pixelSprite(scene, 'hero_lyra', [
+    '....HHHH....',
+    '...HHHHHH...',
+    '..SHSSSSHS..',
+    '...SESSES...',
+    '....SSSS....',
+    '...CCCCCC...',
+    '..SCCBBCCS..',
+    '..SCCCCCCS..',
+    '..CCCCCCCC..',
+    '..CCCCCCCC..',
+    '...CC..CC...',
+    '...LL..LL...',
+    '...FF..FF...',
+  ], { ...base, H: 0xf2dc8a, C: 0x2f6f8f, B: 0xc9a14a, L: 0x2a4f66 });
+  pixelSprite(scene, 'hero_rook', [
+    '...H....H...',
+    '...HH..HH...',
+    '...HHHHHH...',
+    '...SESSES...',
+    '....SSSS....',
+    '...CCCCCC...',
+    '..SCCBBCCS..',
+    '..SCCCCCCS..',
+    '...CCCCCC...',
+    '...CCBBCC...',
+    '...LL..LL...',
+    '...LL..LL...',
+    '...FF..FF...',
+  ], { ...base, S: 0xc98e5a, H: 0x3a3a44, C: 0x4a4458, L: 0x2e2a36 });
   pixelSprite(scene, 'npc_elder', human, { ...base, H: 0xe8e8e8, C: 0x6a4c93 });
   pixelSprite(scene, 'npc_smith', human, { ...base, H: 0x2a2a2a, C: 0x8a5a2b, L: 0x444444 });
   pixelSprite(scene, 'npc_stranger', [

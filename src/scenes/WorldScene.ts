@@ -19,7 +19,7 @@ export class WorldScene extends Phaser.Scene {
   private npcs: Npc[] = [];
   private combat!: CombatSystem;
   private dialogue!: DialogueSystem;
-  private keys!: Record<'up' | 'down' | 'left' | 'right' | 'w' | 'a' | 's' | 'd' | 'space' | 'e', Phaser.Input.Keyboard.Key>;
+  private keys!: Record<'up' | 'down' | 'left' | 'right' | 'w' | 'a' | 's' | 'd' | 'space' | 'e' | 'q', Phaser.Input.Keyboard.Key>;
   private nearNpc: Npc | null = null;
 
   constructor() {
@@ -32,7 +32,7 @@ export class WorldScene extends Phaser.Scene {
     this.map.render();
 
     const start = gridToScreen(world.playerStart.x, world.playerStart.y);
-    this.player = new Player(this, start.x, start.y);
+    this.player = new Player(this, start.x, start.y, state.player!.texture);
     this.npcs = world.npcs.map((d) => {
       const p = gridToScreen(d.x, d.y);
       return new Npc(this, p.x, p.y, d);
@@ -52,7 +52,7 @@ export class WorldScene extends Phaser.Scene {
     cam.setRoundPixels(true);
 
     const kb = this.input.keyboard!;
-    this.keys = kb.addKeys('up,down,left,right,w,a,s,d,space,e') as typeof this.keys;
+    this.keys = kb.addKeys('up,down,left,right,w,a,s,d,space,e,q') as typeof this.keys;
 
     this.scene.launch('UI', { quests });
     emitStats();
@@ -72,12 +72,14 @@ export class WorldScene extends Phaser.Scene {
 
       if (Phaser.Input.Keyboard.JustDown(this.keys.space)) c.attack = true;
       if (Phaser.Input.Keyboard.JustDown(this.keys.e)) c.talk = true;
+      if (Phaser.Input.Keyboard.JustDown(this.keys.q)) c.potion = true;
       if (c.attack) this.combat.playerAttack(time);
+      if (c.potion) this.combat.usePotion();
       if (c.talk && this.nearNpc) this.startTalk(this.nearNpc);
     } else {
       this.player.move(0, 0, 0, delta, this.map);
     }
-    c.attack = c.talk = false;
+    c.attack = c.talk = c.potion = false;
 
     this.combat.update(time, delta);
     this.updateNearbyNpc();

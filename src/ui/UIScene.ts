@@ -17,6 +17,8 @@ export class UIScene extends Phaser.Scene {
   private stick!: VirtualJoystick;
   private attackBtn!: ActionButton;
   private talkBtn!: ActionButton;
+  private potionBtn!: ActionButton;
+  private potionCount!: Phaser.GameObjects.Text;
   private dialogue!: DialogueBox;
   private status!: Phaser.GameObjects.Graphics;
   private statusText!: Phaser.GameObjects.Text;
@@ -33,13 +35,15 @@ export class UIScene extends Phaser.Scene {
     this.input.addPointer(2);
 
     this.status = this.add.graphics();
-    this.portrait = this.add.image(0, 0, 'hero').setScale(3.2);
+    this.portrait = this.add.image(0, 0, state.player!.texture).setScale(3.2);
     this.statusText = this.add.text(0, 0, '', { ...FONT, fontSize: '14px', lineSpacing: 6 });
     this.questText = this.add.text(0, 0, '', { ...FONT, fontSize: '13px', backgroundColor: '#15122acc', padding: { x: 10, y: 8 }, lineSpacing: 4 }).setOrigin(1, 0);
 
     this.stick = new VirtualJoystick(this);
     this.attackBtn = new ActionButton(this, 'ATK', 46, 0x8a2b2b, () => (state.controls.attack = true));
     this.talkBtn = new ActionButton(this, 'TALK', 34, 0x2b4f8a, () => (state.controls.talk = true)).setVisible(false);
+    this.potionBtn = new ActionButton(this, 'POT', 28, 0x2b7a3f, () => (state.controls.potion = true));
+    this.potionCount = this.add.text(0, 0, '', { ...FONT, fontSize: '12px', fontStyle: 'bold', backgroundColor: '#15122a', padding: { x: 4, y: 1 } }).setOrigin(0.5).setDepth(11);
     this.dialogue = new DialogueBox(this);
 
     this.layout();
@@ -50,6 +54,7 @@ export class UIScene extends Phaser.Scene {
     bus.on('npc-nearby', (name: string | null) => this.talkBtn.setVisible(!!name && !state.inDialogue));
     bus.on('toast', (msg: string) => this.toast(msg));
     bus.on('dialogue-open', (c: Conversation) => this.openDialogue(c));
+    bus.on('inventory-changed', () => this.drawPotions());
 
     const kb = this.input.keyboard;
     kb?.on('keydown-SPACE', () => this.dialogue.advance());
@@ -57,6 +62,7 @@ export class UIScene extends Phaser.Scene {
 
     if (state.player) this.drawStatus(state.player);
     this.drawQuests();
+    this.drawPotions();
   }
 
   update() {
@@ -84,6 +90,8 @@ export class UIScene extends Phaser.Scene {
   private setControlsVisible(on: boolean) {
     this.stick.setEnabled(on);
     this.attackBtn.setVisible(on);
+    this.potionBtn.setVisible(on);
+    this.potionCount.setVisible(on);
     if (!on) this.talkBtn.setVisible(false);
   }
 
@@ -91,6 +99,8 @@ export class UIScene extends Phaser.Scene {
     const { width, height } = this.scale;
     this.attackBtn.setPosition(width - 80, height - 90);
     this.talkBtn.setPosition(width - 175, height - 60);
+    this.potionBtn.setPosition(width - 70, height - 200);
+    this.potionCount.setPosition(width - 50, height - 222);
     this.questText.setPosition(width - 12, 12);
     this.stick.resetPosition();
     this.dialogue.layout();
@@ -121,6 +131,10 @@ export class UIScene extends Phaser.Scene {
   private drawGold(gold: number) {
     this.goldText ??= this.add.text(16, 110, '', { ...FONT, fontSize: '14px', color: '#ffd75e', stroke: '#000', strokeThickness: 3 });
     this.goldText.setText(`● ${gold} gold`);
+  }
+
+  private drawPotions() {
+    this.potionCount.setText(`x${state.inventory.get('health_potion') ?? 0}`);
   }
 
   private drawQuests() {
