@@ -79,6 +79,8 @@ Target look: detailed 16-bit isometric pixel art with warm torch light, matching
 - [x] Survive: +gold, wood and stone (more each night), and buildings are repaired at dawn
 - [x] Core falls: raiders steal 25% of gold, wood and stone, and morning comes
 - [x] Day number saved; a night in progress resumes as the end of that day
+- [x] Fewer wild monsters by day (at least 3 per area, so quests can always be done), many more at night, and they come back faster at night
+- [x] A different boss leads each night (Alpha Wolf, Goblin Chief, King Slime, Skeleton Knight, Orc Warlord, Ancient Dragon), bigger and stronger every night; after the Dragon the list repeats, tougher
 
 **Checkpoint**
 - [ ] Build two towers and a wall north of the Core, press START NIGHT, and survive night 1
@@ -117,7 +119,8 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 - [x] Safe zones: wild monsters stop chasing at the village and town edge and give up when you run far
 - [x] Bigger town; NPCs spread out with names, jobs and markers so you can tell who is who
 - [x] NPCs breathe, glance around, and villagers walk around
-- [ ] Better walking and attack animation ("paper" look): needs new frame-by-frame art, waiting on the owner's choice
+- [x] Better walking and attack animation: the 4 starting heroes use frame-by-frame art (walk, attack, hurt) from the owner's sheet
+- [ ] Frame-by-frame art for the job outfits, NPCs and monsters
 
 ## M7: Story chapter 1 and new places ⏳
 - [ ] Building interiors (tavern, smithy) and a cave dungeon, like the reference images

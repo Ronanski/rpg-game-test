@@ -31,9 +31,26 @@ function waveFor(day: number): { ids: Id[]; boost: number } {
   return { ids, boost: 1 + Math.max(0, day - 3) * 0.12 };
 }
 
+/** Each night a different boss leads the raid; after the Dragon the list repeats, stronger. */
+const BOSSES: { id: Id; title: string }[] = [
+  { id: 'wolf', title: 'Alpha Wolf' },
+  { id: 'goblin', title: 'Goblin Chief' },
+  { id: 'slime_king', title: 'King Slime' },
+  { id: 'skeleton', title: 'Skeleton Knight' },
+  { id: 'orc', title: 'Orc Warlord' },
+  { id: 'dragon', title: 'Ancient Dragon' },
+];
+
+/** Tonight's boss and how much tougher than a normal one it is (grows every night). */
+export function bossFor(day: number) {
+  const b = BOSSES[(day - 1) % BOSSES.length];
+  const round = Math.floor((day - 1) / BOSSES.length); // how many times the list came around
+  return { ...b, hp: 2.5 + day * 0.4 + round * 1.5, atk: 1.2 + day * 0.05 + round * 0.3 };
+}
+
 export class WaveSystem {
   private raiders: Monster[] = [];
-  private toSpawn: { id: Id; at: number; boost: number }[] = [];
+  private toSpawn: { id: Id; at: number; boost: number; boss?: ReturnType<typeof bossFor> }[] = [];
 
   constructor(
     private scene: Phaser.Scene,
@@ -81,7 +98,10 @@ export class WaveSystem {
     const { ids, boost } = waveFor(c.day);
     const t = this.scene.time.now;
     this.toSpawn = ids.map((id, i) => ({ id, at: t + 800 + i * 900, boost }));
-    bus.emit('toast', `Night ${c.day}: monsters are coming for the Ancient Core!`);
+    // The boss walks in behind its pack.
+    const boss = bossFor(c.day);
+    this.toSpawn.push({ id: boss.id, at: t + 800 + ids.length * 900 + 1500, boost, boss });
+    bus.emit('toast', `Night ${c.day}: the ${boss.title} leads the monsters to the Ancient Core!`);
     this.scene.cameras.main.flash(500, 40, 20, 80);
   }
 
@@ -112,7 +132,11 @@ export class WaveSystem {
       let p = gridToScreen(gx + Phaser.Math.FloatBetween(-0.4, 0.4), gy + Phaser.Math.FloatBetween(-0.4, 0.4));
       // Nudge off trees and rocks.
       for (let k = 0; k < 12 && !this.combat.walkable(p.x, p.y); k++) p = gridToScreen(gx + Phaser.Math.Between(-2, 2), gy + Phaser.Math.Between(0, 3));
-      const m = this.combat.spawnRaider(s.id, p.x, p.y, { x: goal.x + Phaser.Math.Between(-20, 20), y: goal.y + Phaser.Math.Between(-8, 8) }, s.boost);
+      const m = this.combat.spawnRaider(s.id, p.x, p.y, { x: goal.x + Phaser.Math.Between(-20, 20), y: goal.y + Phaser.Math.Between(-8, 8) }, s.boost, s.boss);
+      if (s.boss) {
+        bus.emit('toast', `The ${s.boss.title} has appeared!`);
+        this.scene.cameras.main.shake(300, 0.006);
+      }
       this.raiders.push(m);
     }
     if (!this.toSpawn.length && !this.raiders.length && state.cycle.phase === 'night') this.dawn(true);

@@ -3,6 +3,7 @@ import { Actor } from './Actor';
 import type { IsoMap } from '../iso/IsoMap';
 import { screenToTile } from '../iso/iso';
 import { isSafeTile } from '../world/worldData';
+import { FONT } from '../ui/theme';
 
 const LEASH = 280; // wild monsters give up a chase this far from home
 
@@ -12,7 +13,7 @@ function safeAt(x: number, y: number) {
 }
 
 export interface MonsterDef {
-  id: 'slime' | 'slime_blue' | 'wolf' | 'goblin' | 'orc' | 'skeleton';
+  id: 'slime' | 'slime_blue' | 'wolf' | 'goblin' | 'orc' | 'skeleton' | 'slime_king' | 'dragon';
   name: string;
   hp: number;
   atk: number;
@@ -24,6 +25,10 @@ export interface MonsterDef {
   drop: { item: string; chance: number };
   /** Rarer extra drops (gear, potions). */
   extra?: { item: string; chance: number }[];
+  /** Night boss: shown with this title, a big health bar and a larger body. */
+  boss?: string;
+  /** Size multiplier for the sprite. */
+  size?: number;
 }
 
 export const MONSTERS: Record<MonsterDef['id'], MonsterDef> = {
@@ -32,6 +37,9 @@ export const MONSTERS: Record<MonsterDef['id'], MonsterDef> = {
   goblin: { id: 'goblin', name: 'Goblin', hp: 50, atk: 11, def: 2, speed: 90, aggroRange: 210, exp: 24, gold: 10, drop: { item: 'health_potion', chance: 0.2 }, extra: [{ item: 'iron_sword', chance: 0.04 }, { item: 'leather_armor', chance: 0.05 }, { item: 'oak_staff', chance: 0.04 }] },
   orc: { id: 'orc', name: 'Orc', hp: 120, atk: 16, def: 5, speed: 60, aggroRange: 200, exp: 45, gold: 18, drop: { item: 'health_potion', chance: 0.3 }, extra: [{ item: 'iron_sword', chance: 0.06 }] },
   skeleton: { id: 'skeleton', name: 'Skeleton', hp: 70, atk: 13, def: 4, speed: 80, aggroRange: 200, exp: 32, gold: 12, drop: { item: 'mana_potion', chance: 0.2 } },
+  // Night bosses only (never in the wilds).
+  slime_king: { id: 'slime_king', name: 'King Slime', hp: 160, atk: 14, def: 4, speed: 50, aggroRange: 200, exp: 60, gold: 25, drop: { item: 'slime_gel', chance: 1 }, extra: [{ item: 'health_potion', chance: 0.6 }] },
+  dragon: { id: 'dragon', name: 'Dragon', hp: 220, atk: 18, def: 8, speed: 55, aggroRange: 240, exp: 150, gold: 80, drop: { item: 'health_potion', chance: 1 }, extra: [{ item: 'iron_sword', chance: 0.3 }], size: 0.6 },
   wolf: { id: 'wolf', name: 'Wolf', hp: 60, atk: 12, def: 3, speed: 105, aggroRange: 230, exp: 28, gold: 8, drop: { item: 'wolf_pelt', chance: 0.5 } },
 };
 
@@ -39,6 +47,7 @@ export const MONSTERS: Record<MonsterDef['id'], MonsterDef> = {
 export class Monster extends Actor {
   hp: number;
   readonly hpBar: Phaser.GameObjects.Graphics;
+  private title: Phaser.GameObjects.Text | null = null;
   private wanderTarget: { x: number; y: number } | null = null;
   private nextThink = 0;
   private knockback = new Phaser.Math.Vector2();
@@ -60,7 +69,16 @@ export class Monster extends Actor {
   constructor(scene: Phaser.Scene, x: number, y: number, readonly def: MonsterDef, readonly home: { x: number; y: number }) {
     super(scene, x, y, def.id);
     this.hp = def.hp;
+    if (def.size) (this.baseScale *= def.size), this.sprite.setScale(this.baseScale);
     this.hpBar = scene.add.graphics().setDepth(100000);
+    if (def.boss) {
+      this.title = scene.add
+        .text(x, y, def.boss, { fontFamily: FONT, fontSize: '13px', color: '#ffb347', stroke: '#07080e', strokeThickness: 4 })
+        .setOrigin(0.5, 1)
+        .setDepth(100000);
+      // A dark-red glow under the boss's feet.
+      this.shadow.setVisible(true).setTint(0x8a1a1a).setScale(1.8);
+    }
     this.drawHp();
   }
 
@@ -121,7 +139,7 @@ export class Monster extends Actor {
     this.heading.set(vx, vy).normalize();
     this.stuck = len > 1 && Math.hypot(this.x - ox, this.y - oy) < 0.05 * Math.hypot(mx, my) + 0.01;
     this.stuckMs = this.stuck ? this.stuckMs + dtMs : 0;
-    if (Math.abs(mx) > 0.01) this.sprite.setFlipX(['wolf', 'goblin', 'orc', 'skeleton'].includes(this.def.id) ? mx < 0 : false);
+    if (Math.abs(mx) > 0.01) this.sprite.setFlipX(['wolf', 'goblin', 'orc', 'skeleton'].includes(this.def.id) ? mx < 0 : this.def.id === 'dragon' ? mx > 0 : false);
     if (len > 1) this.bob += dtMs / (this.def.id.startsWith('slime') ? 120 : 60);
     // Slimes squish through their 3 frames as they hop.
     if (this.def.id === 'slime') this.sprite.setFrame(len > 1 ? Math.floor(now / 160) % 3 : 0);
@@ -140,8 +158,10 @@ export class Monster extends Actor {
 
   private drawHp() {
     const g = this.hpBar.clear();
-    if (this.hp >= this.def.hp || this.dead) return;
-    const w = 32, x = this.x - w / 2, y = this.y - this.sprite.displayHeight - 6;
+    const top = this.y - this.sprite.displayHeight - 6;
+    this.title?.setPosition(this.x, top - 4).setVisible(!this.dead);
+    if (this.dead || (this.hp >= this.def.hp && !this.def.boss)) return;
+    const w = this.def.boss ? 64 : 32, x = this.x - w / 2, y = top;
     g.fillStyle(0x000000, 0.7).fillRect(x - 1, y - 1, w + 2, 6);
     g.fillStyle(0xd94a3d).fillRect(x, y, (w * this.hp) / this.def.hp, 4);
   }
@@ -149,5 +169,6 @@ export class Monster extends Actor {
   destroy() {
     super.destroy();
     this.hpBar.destroy();
+    this.title?.destroy();
   }
 }
