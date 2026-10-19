@@ -420,6 +420,68 @@ def frames_same_canvas(frames: list[Image.Image]) -> list[Image.Image]:
     return out
 
 
+# Frame-by-frame heroes (sheet_anim.webp, transparent): one row per hero, 9 poses per row:
+# idle, 5 walk frames, attack wind-up, attack strike, hurt.
+ANIM_ROWS = ['anim_human_m', 'anim_human_f', 'anim_elf_m', 'anim_elf_f']
+ANIM_HEIGHT = 58  # standing height in game pixels
+
+
+def anim_heroes() -> dict:
+    """Cuts the hero animation sheet into one spritesheet per hero, every frame on the same canvas
+    with the feet at the same spot, so switching frames never makes the hero jump."""
+    a = np.asarray(Image.open(RAW / 'sheet_anim.webp').convert('RGBA')).astype(np.float32)
+    alpha = a[..., 3] / 255
+    solid = alpha > 0.15
+    rows_fg = solid.sum(axis=1)
+    # Row bands: split at the emptiest line between rows (rows nearly touch on this sheet).
+    h = a.shape[0]
+    cuts = [0]
+    for k in range(1, len(ANIM_ROWS)):
+        guess = h * k // len(ANIM_ROWS)
+        lo, hi = guess - 30, guess + 30
+        cuts.append(lo + int(np.argmin(rows_fg[lo:hi])))
+    cuts.append(h)
+    out = {}
+    for r, key in enumerate(ANIM_ROWS):
+        y0, y1 = cuts[r], cuts[r + 1]
+        band = solid[y0:y1]
+        lab, n = ndi.label(ndi.binary_dilation(band, iterations=4))
+        objs = ndi.find_objects(lab)
+        sizes = ndi.sum(band, lab, index=np.arange(1, n + 1))
+        parts = [(o, z) for o, z in zip(objs, sizes) if z > 40]
+        big = sorted([o for o, z in parts if z > 3000], key=lambda o: o[1].start)
+        centers = [(o[1].start + o[1].stop) / 2 for o in big]
+        cells: list[list] = [[] for _ in centers]
+        for o, z in parts:
+            cx = (o[1].start + o[1].stop) / 2
+            cells[int(np.argmin([abs(cx - c) for c in centers]))].append(o)
+        frames, anchors = [], []
+        scale = None
+        for objs_in in cells:
+            ya = min(o[0].start for o in objs_in) + y0
+            yb = max(o[0].stop for o in objs_in) + y0
+            xa = min(o[1].start for o in objs_in)
+            xb = max(o[1].stop for o in objs_in)
+            rgb, al = a[ya:yb, xa:xb, :3], alpha[ya:yb, xa:xb].copy()
+            al[al < 0.15] = 0
+            if scale is None:
+                scale = ANIM_HEIGHT / (yb - ya)  # the idle frame sets the size
+            im = shrink(rgb, al, max(8, round((yb - ya) * scale)))
+            fa = np.asarray(im)[..., 3] > 0
+            feet = fa[int(fa.shape[0] * 0.85):]
+            anchors.append(int(round(np.nonzero(feet)[1].mean())) if feet.any() else im.width // 2)
+            frames.append(im)
+        half = max(max(ax, f.width - ax) for f, ax in zip(frames, anchors)) + 1
+        hgt = max(f.height for f in frames)
+        canvas = []
+        for f, ax in zip(frames, anchors):
+            c = Image.new('RGBA', (half * 2, hgt), (0, 0, 0, 0))
+            c.paste(f, (half - ax, hgt - f.height))
+            canvas.append(c)
+        out[key] = canvas
+    return out
+
+
 def all_sprites() -> dict:
     out: dict = {}
     for key, (name, box, height) in SPRITES.items():
@@ -439,6 +501,7 @@ def all_sprites() -> dict:
     for key, (name, boxes, height) in ANIMS.items():
         frames = [sprite(name, b, height) for b in boxes]
         out[key] = frames_same_canvas(frames)
+    out.update(anim_heroes())
     water = fill_magenta(tile('sheet_f.webp', (272, 49, 358, 127), inset=0.5))
     out['tile_water'] = [water, water.transpose(Image.FLIP_LEFT_RIGHT), water.transpose(Image.ROTATE_180), water.transpose(Image.FLIP_TOP_BOTTOM)]
     out['tile_bridge'] = fill_magenta(texture_tile('sheet_f.webp', (158, 324, 198, 342)))

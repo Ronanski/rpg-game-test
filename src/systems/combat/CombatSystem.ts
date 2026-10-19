@@ -47,11 +47,19 @@ export const SKILLS: Record<string, SkillDef> = {
 const MP_REGEN_MS = 1200; // 1 MP per tick
 const RACE_BONUS = { humanExp: 1.1, elfMpRegen: 1.2 };
 const RESPAWN_MS = 9000;
+const NIGHT_RESPAWN_MS = 2500;
+/** Wild monsters per zone compared with its base count: by day, and at night. */
+const WILD_DAY = 0.6;
+const WILD_NIGHT = 1.6;
 
 /** Spawns monsters, resolves attacks both ways, and awards EXP / gold / loot. */
 export class CombatSystem {
   readonly monsters: Monster[] = [];
   private zoneOf = new Map<Monster, SpawnZone>();
+  private zones: SpawnZone[] = [];
+  /** Earliest time each zone may spawn its next monster. */
+  private zoneNext = new Map<SpawnZone, number>();
+  private nextWildTick = 0;
   private lastAttack = 0;
   private mpTimer = 0;
   /** When the current job's skill is ready again (time in ms). */
@@ -66,7 +74,43 @@ export class CombatSystem {
   ) {}
 
   spawnAll(zones: SpawnZone[]) {
-    for (const z of zones) for (let i = 0; i < z.count; i++) this.spawn(z);
+    this.zones = zones;
+    for (const z of zones) for (let i = 0; i < this.wildTarget(z); i++) this.spawn(z);
+  }
+
+  /**
+   * How many wild monsters a zone holds: fewer by day (but at least 3, so quests can always be
+   * done), many more at night.
+   */
+  private wildTarget(z: SpawnZone) {
+    return state.cycle.phase === 'night' ? Math.ceil(z.count * WILD_NIGHT) : Math.max(3, Math.ceil(z.count * WILD_DAY));
+  }
+
+  /** Tops zones up to their day/night size; at dawn the extra night monsters slip away. */
+  private tickWild(now: number) {
+    if (now < this.nextWildTick) return;
+    this.nextWildTick = now + 1000;
+    const night = state.cycle.phase === 'night';
+    for (const z of this.zones) {
+      const alive = [...this.zoneOf].filter(([m, mz]) => mz === z && !m.dead).map(([m]) => m);
+      const target = this.wildTarget(z);
+      if (alive.length < target && now >= (this.zoneNext.get(z) ?? 0)) {
+        this.spawn(z);
+        this.zoneNext.set(z, now + (night ? NIGHT_RESPAWN_MS : RESPAWN_MS));
+      } else if (alive.length > target) {
+        // Only ones out of sight and not fighting leave.
+        const m = alive.find((a) => a.distanceTo(this.player) > 500 && a.hp >= a.def.hp);
+        if (m) {
+          this.zoneOf.delete(m);
+          m.dead = true;
+          m.hpBar.clear();
+          this.scene.tweens.add({ targets: [m.sprite, m.shadow], alpha: 0, duration: 600, onComplete: () => {
+            m.destroy();
+            this.monsters.splice(this.monsters.indexOf(m), 1);
+          } });
+        }
+      }
+    }
   }
 
   private spawn(z: SpawnZone) {
@@ -85,8 +129,14 @@ export class CombatSystem {
   }
 
   /** A night raider: marches on `goal`, never respawns. */
-  spawnRaider(id: keyof typeof MONSTERS, x: number, y: number, goal: { x: number; y: number }, boost = 1) {
-    const def = { ...MONSTERS[id], hp: Math.round(MONSTERS[id].hp * boost), atk: Math.round(MONSTERS[id].atk * boost) };
+  spawnRaider(id: keyof typeof MONSTERS, x: number, y: number, goal: { x: number; y: number }, boost = 1, boss?: { title: string; hp: number; atk: number }) {
+    const base = MONSTERS[id];
+    const def = boss
+      ? {
+          ...base, boss: boss.title, hp: Math.round(base.hp * boost * boss.hp), atk: Math.round(base.atk * boost * boss.atk),
+          exp: base.exp * 5, gold: base.gold * 6, size: (base.size ?? 1) * 1.4, speed: base.speed * 0.85,
+        }
+      : { ...base, hp: Math.round(base.hp * boost), atk: Math.round(base.atk * boost) };
     const m = new Monster(this.scene, x, y, def, { x, y });
     m.goal = goal;
     m.sprite.setAlpha(0);
@@ -103,6 +153,7 @@ export class CombatSystem {
       this.mpTimer -= MP_REGEN_MS;
       if (ps.mp < ps.maxMp) (ps.mp++, emitStats());
     }
+    this.tickWild(now);
     for (const m of this.monsters) {
       m.update(now, dtMs, this.player, this.map);
       // Contact damage.
@@ -158,10 +209,13 @@ export class CombatSystem {
       this.lastAttack = now;
       this.player.attackAnim('bow', null);
       // Nocked arrow at the bow, pulled back during the draw; it flies on release.
+      // (Drawn heroes already hold the nocked arrow in their wind-up frame.)
+      if (!this.player.animated) {
       const f0 = this.player.facing.clone().normalize();
       const nock = this.scene.add.image(this.player.x + f0.x * 18, this.player.y - 26, 'arrow').setScale(1.6)
         .setRotation(Math.atan2(f0.y, f0.x)).setDepth(this.player.y + 3);
       this.scene.tweens.add({ targets: nock, x: nock.x - f0.x * 10, duration: 100, onComplete: () => nock.destroy() });
+      }
       this.scene.time.delayedCall(110, () => this.shoot('arrow', ARROW.range, ARROW.speed, style.power * ARROW.power, style.crit));
       return;
     }
@@ -379,7 +433,7 @@ export class CombatSystem {
 
     const zone = this.zoneOf.get(m);
     this.zoneOf.delete(m);
-    if (zone) this.scene.time.delayedCall(RESPAWN_MS, () => this.spawn(zone));
+    if (zone) this.zoneNext.set(zone, Math.max(this.zoneNext.get(zone) ?? 0, this.scene.time.now + (state.cycle.phase === 'night' ? NIGHT_RESPAWN_MS : RESPAWN_MS)));
     else bus.emit('raider-down', m);
   }
 

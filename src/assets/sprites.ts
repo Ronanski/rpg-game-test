@@ -11,6 +11,8 @@ export interface SpriteInfo {
   scale: number;
   frameWidth?: number;
   imported?: boolean;
+  /** Frame-by-frame hero: 0 idle, 1-5 walk, 6 wind-up, 7 strike, 8 hurt. */
+  anim?: boolean;
 }
 
 const byKey = new Map<string, SpriteInfo>((manifest as SpriteInfo[]).map((s) => [s.key, s]));
@@ -24,6 +26,10 @@ export function spriteInfo(key: string): SpriteInfo {
 /** World scale to draw a sprite at. */
 export function spriteScale(key: string): number {
   return byKey.get(key)?.scale ?? 1;
+}
+
+export function isAnimated(key: string): boolean {
+  return !!byKey.get(key)?.anim;
 }
 
 export function frameCount(key: string): number {
