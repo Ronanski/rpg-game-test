@@ -86,4 +86,6 @@ Oakhaven believes the Ancient Core protects it. The Hooded Stranger knows better
 
 The twist: every slime was someone, once. The Core does not protect Oakhaven; it feeds on it, and Martha has always known.
 
-New places and people: the **Old Cave** (north road), **The Sleeping Fox** tavern with **Mabel** (innkeeper) and **Old Tam** (a regular).
+New places and people: the **Old Cave** (north road), **The Sleeping Fox** tavern with **Mabel** (innkeeper) and **Old Tam** (a regular), **Grom's Smithy** with **Bree** (his apprentice, who sells the better gear), and **Jory** the farmer.
+
+After the chapter, **Hana** joins the hero to find out what the Core did to her brother. She is the first companion: she follows the hero and shoots at monsters.

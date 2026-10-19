@@ -29,6 +29,12 @@ export const ITEMS: Record<string, ItemDef> = {
   hunter_dagger: { id: 'hunter_dagger', name: 'Hunter Dagger', type: 'weapon', weapon: 'dagger', stats: { atk: 6, spd: 2 }, buy: 80, sell: 15, icon: 'item_dagger', desc: 'Light and quick.' },
   oak_staff: { id: 'oak_staff', name: 'Oak Staff', type: 'weapon', weapon: 'staff', stats: { atk: 3, mp: 15 }, buy: 60, sell: 10, icon: 'item_staff', desc: 'Channels magic. Mages need a staff.' },
   hunter_bow: { id: 'hunter_bow', name: 'Hunter Bow', type: 'weapon', weapon: 'bow', stats: { atk: 5 }, buy: 90, sell: 20, icon: 'item_bow', desc: 'Shoots arrows from afar.' },
+  // Bree's stock in the smithy: a step up from Gus's goods.
+  steel_sword: { id: 'steel_sword', name: 'Steel Sword', type: 'weapon', weapon: 'sword', stats: { atk: 14 }, buy: 320, sell: 80, icon: 'item_sword', tint: 0xcfe0f0, desc: 'Folded steel from Grom\'s forge.' },
+  steel_dagger: { id: 'steel_dagger', name: 'Steel Dagger', type: 'weapon', weapon: 'dagger', stats: { atk: 10, spd: 3 }, buy: 260, sell: 60, icon: 'item_dagger', tint: 0xcfe0f0, desc: 'Thin, quick and wicked sharp.' },
+  yew_bow: { id: 'yew_bow', name: 'Yew Bow', type: 'weapon', weapon: 'bow', stats: { atk: 9 }, buy: 280, sell: 70, icon: 'item_bow', tint: 0xe0b070, desc: 'A strong bow of old yew.' },
+  crystal_staff: { id: 'crystal_staff', name: 'Crystal Staff', type: 'weapon', weapon: 'staff', stats: { atk: 6, mp: 35 }, buy: 300, sell: 75, icon: 'item_staff', tint: 0x9fe3ff, desc: 'Topped with a Core crystal. It hums.' },
+  chain_mail: { id: 'chain_mail', name: 'Chain Mail', type: 'armor', stats: { def: 10 }, buy: 240, sell: 60, icon: 'item_shield', tint: 0xcfe0f0, desc: 'Heavy, but it stops a goblin blade.' },
   leather_armor: { id: 'leather_armor', name: 'Leather Armor', type: 'armor', stats: { def: 5 }, buy: 70, sell: 15, icon: 'item_shield', desc: 'Light protection.' },
   core_shard: { id: 'core_shard', name: 'Core Shard', type: 'accessory', stats: { mp: 20 }, sell: 100, icon: 'item_core_shard', desc: 'It hums faintly. Warm to the touch.' },
   health_potion: { id: 'health_potion', name: 'Health Potion', type: 'consumable', heal: { hp: 50 }, buy: 25, sell: 5, icon: 'item_health_potion', desc: 'Restores 50 HP.' },
