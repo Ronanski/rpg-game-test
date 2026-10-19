@@ -4,7 +4,8 @@ Isometric pixel-art action RPG with base building, tower defense, free job switc
 Runs on PC (web) and Android, with iOS planned.
 
 - **Play on the web:** https://ronanski.github.io/rpg-game-test/
-- **Android APK:** see [Releases](https://github.com/Ronanski/rpg-game-test/releases)
+- **Android APK:** see [Releases](https://github.com/Ronanski/rpg-game-test/releases). Install it once:
+  the app updates itself from the web version (every merge to `main` publishes a new one).
 - **Architecture and database:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - **Art asset list:** [docs/ASSETS.md](docs/ASSETS.md)
 - **Roadmap and checkpoints:** [ROADMAP.md](ROADMAP.md)

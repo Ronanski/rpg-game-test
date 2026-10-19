@@ -4,6 +4,7 @@ import { StarterScene } from './scenes/StarterScene';
 import { TitleScene } from './scenes/TitleScene';
 import { WorldScene } from './scenes/WorldScene';
 import { UIScene } from './ui/UIScene';
+import { checkForUpdate } from './core/Updater';
 
 // Load the pixel font first so the first frame of text already uses it.
 const font = new FontFace('Pixelify Sans', `url(${import.meta.env.BASE_URL}fonts/PixelifySans-Medium.ttf)`);
@@ -12,6 +13,9 @@ font
   .then((f) => (document.fonts as unknown as Set<FontFace>).add(f))
   .catch((e) => console.warn('font failed to load', e))
   .finally(startGame);
+
+// Phone app: fetch the newest version in the background.
+checkForUpdate();
 
 function startGame() {
   const game = new Phaser.Game({

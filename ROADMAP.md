@@ -128,6 +128,8 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 - [ ] Play chapter 1 from start to end without getting stuck
 
 ## M8: Beta, then Stable ⏳
+- [x] In-app update: install the APK once; on launch the app downloads the newest game from the web version in the background and uses it next start (or tap UPDATE READY on the title). No internet = plays the version it has. Saves are kept.
+- [ ] Check in-app update on a real phone (needs the first APK with the updater, after a merge to main)
 - [ ] Bug fixing and balance pass
 - [ ] Beta APK (only on "GO BETA")
 - [ ] Stable release (only on "GO STABLE")

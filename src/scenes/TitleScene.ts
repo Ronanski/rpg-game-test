@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { panel, text, COLORS } from '../ui/theme';
 import { applySave, loadSave, type SaveData } from '../core/SaveGame';
+import { applyUpdate, BUILD_ID, onUpdateReady, readyUpdate } from '../core/Updater';
 
 /**
  * Main menu shown at launch and after "Quit to title": CONTINUE the saved game (if there is one)
@@ -21,6 +22,7 @@ export class TitleScene extends Phaser.Scene {
     this.root = this.add.container();
     this.layout();
     this.scale.on('resize', this.layout, this);
+    onUpdateReady(() => this.scene.isActive() && this.layout());
     this.events.once('shutdown', () => this.scale.off('resize', this.layout, this));
     const kb = this.input.keyboard;
     kb?.on('keydown-C', () => this.continueGame());
@@ -59,7 +61,10 @@ export class TitleScene extends Phaser.Scene {
       !this.save, this.confirmNew ? '#ff8a7a' : COLORS.text,
       () => this.newGame(),
     );
-    add(this.add.text(width / 2, height - 14, 'Progress is saved on this device.', text(11, COLORS.dim)).setOrigin(0.5, 1));
+    if (readyUpdate) {
+      button('UPDATE READY', 'Tap to restart with the new version', false, '#8fd18a', () => applyUpdate());
+    }
+    add(this.add.text(width / 2, height - 14, `Progress is saved on this device. · build ${BUILD_ID.slice(0, 7)}`, text(11, COLORS.dim)).setOrigin(0.5, 1));
   }
 
   private continueGame() {
