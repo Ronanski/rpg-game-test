@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { panel, text, COLORS } from '../ui/theme';
 import { applySave, loadSave, type SaveData } from '../core/SaveGame';
-import { applyUpdate, BUILD_ID, onUpdateReady, readyUpdate } from '../core/Updater';
+import { applyUpdate, BUILD_ID, checkForUpdate, isPhoneApp, onUpdateReady, readyUpdate, updateStatus } from '../core/Updater';
 
 /**
  * Main menu shown at launch and after "Quit to title": CONTINUE the saved game (if there is one)
@@ -22,7 +22,8 @@ export class TitleScene extends Phaser.Scene {
     this.root = this.add.container();
     this.layout();
     this.scale.on('resize', this.layout, this);
-    onUpdateReady(() => this.scene.isActive() && this.layout());
+    const stop = onUpdateReady(() => this.scene.isActive() && this.layout());
+    this.events.once('shutdown', stop);
     this.events.once('shutdown', () => this.scale.off('resize', this.layout, this));
     const kb = this.input.keyboard;
     kb?.on('keydown-C', () => this.continueGame());
@@ -65,6 +66,14 @@ export class TitleScene extends Phaser.Scene {
       button('UPDATE READY', 'Tap to restart with the new version', false, '#8fd18a', () => applyUpdate());
     }
     add(this.add.text(width / 2, height - 14, `Progress is saved on this device. · build ${BUILD_ID.slice(0, 7)}`, text(11, COLORS.dim)).setOrigin(0.5, 1));
+    // Phone app: what the updater is doing, and a button to check again.
+    if (isPhoneApp()) {
+      add(this.add.text(width / 2, height - 34, updateStatus, text(12, readyUpdate ? '#8fd18a' : COLORS.text)).setOrigin(0.5, 1));
+      if (!readyUpdate && /date|fail|Could not/.test(updateStatus)) {
+        add(this.add.text(width - 14, height - 14, 'CHECK FOR UPDATE', text(12, COLORS.gold)).setOrigin(1, 1))
+          .setInteractive({ useHandCursor: true }).on('pointerdown', () => checkForUpdate());
+      }
+    }
   }
 
   private continueGame() {
