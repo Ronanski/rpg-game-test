@@ -51,6 +51,22 @@ SPRITES = {
     'cart': ('sheet_e.webp', (1356, 262, 1468, 348), 46),
     'hay_cart': ('sheet_e.webp', (1386, 362, 1474, 452), 44),
     'lamp': ('sheet_e.webp', (1474, 260, 1530, 384), 56),
+    # sheet_h: the owner's named cast (see docs/WORLD.md).
+    'npc_martha': ('sheet_h.webp', (482, 562, 553, 661), 56),
+    'npc_grom': ('sheet_h.webp', (564, 555, 653, 659), 56),
+    'npc_serena': ('sheet_h.webp', (671, 555, 741, 658), 54),
+    'npc_vaelen': ('sheet_h.webp', (768, 548, 873, 659), 62),
+    'npc_kaelah': ('sheet_h.webp', (878, 560, 978, 659), 54),
+    'npc_lyra': ('sheet_h.webp', (1000, 555, 1086, 660), 54),
+    'npc_bran': ('sheet_h.webp', (485, 708, 547, 798), 54),
+    'npc_ignis': ('sheet_h.webp', (551, 713, 605, 798), 54),
+    'npc_valerius': ('sheet_h.webp', (609, 717, 670, 798), 54),
+    'npc_borgan': ('sheet_h.webp', (674, 712, 740, 798), 54),
+    'npc_nixie': ('sheet_h.webp', (745, 712, 795, 799), 54),
+    'npc_torbin': ('sheet_h.webp', (805, 710, 878, 798), 52),
+    'npc_hilda': ('sheet_h.webp', (884, 710, 936, 798), 56),
+    'npc_harek': ('sheet_h.webp', (935, 712, 986, 798), 54),
+    'npc_zephyr': ('sheet_h.webp', (1038, 716, 1108, 798), 56),
     # sheet_f (magenta): more NPCs, monsters, buildings, animals and props.
     'npc_merchant': ('sheet_f.webp', (710, 562, 773, 657), 56),
     'npc_healer': ('sheet_f.webp', (959, 555, 1009, 655), 56),
@@ -122,7 +138,7 @@ def sheet(name: str) -> np.ndarray:
 
 
 # Sheets drawn on a grey/white checkerboard ("fake transparency") instead of plain white.
-CHECKER = {'sheet_d.webp', 'sheet_e.webp'}
+CHECKER = {'sheet_d.webp', 'sheet_e.webp', 'sheet_h.webp'}
 # Sheets drawn on solid magenta.
 MAGENTA = {'sheet_f.webp'}
 

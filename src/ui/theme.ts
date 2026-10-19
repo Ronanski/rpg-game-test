@@ -44,8 +44,12 @@ export function applyPortrait(img: Phaser.GameObjects.Image, key: string, size: 
   const p = img.scene.textures.exists(`portrait_${key}`) ? `portrait_${key}` : key;
   const info = spriteInfo(p);
   const fw = info.frameWidth ?? info.w;
-  const cropH = p.startsWith('portrait_') ? info.h : Math.round(info.h * 0.5);
-  const s = Math.max(1, Math.floor(size / Math.max(fw, cropH)));
-  img.setTexture(p, 0).setCrop(0, 0, fw, cropH).setScale(s).setOrigin(0.5, 0);
+  const isPortrait = p.startsWith('portrait_');
+  // From a full-body sprite, take a square around the head so wide props (hammers, bows) don't shrink it.
+  const cropH = isPortrait ? info.h : Math.round(info.h * 0.5);
+  const cropW = isPortrait ? fw : Math.min(fw, Math.round(cropH * 1.2));
+  const cropX = Math.round((fw - cropW) / 2);
+  const s = Math.max(1, Math.floor(size / Math.max(cropW, cropH)));
+  img.setTexture(p, 0).setCrop(cropX, 0, cropW, cropH).setScale(s).setOrigin(0.5, 0);
   return cropH * s;
 }

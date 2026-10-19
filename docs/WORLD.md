@@ -1,7 +1,8 @@
 # World of Aethelgard: Chronos of Fate
 
 The owner's cast and regions. Each region (set) is one area of the game with its own town.
-"In game" says who already exists in the build.
+"In game" says who already exists in the build. Every named character's art is cut from
+`art/raw/sheet_h.webp` into a sprite called `npc_<name>` (for example `npc_vaelen`), ready for their region.
 
 | Set | Region | Town | Main characters |
 |---|---|---|---|

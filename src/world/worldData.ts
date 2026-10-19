@@ -203,8 +203,8 @@ export function buildWorld(): WorldData {
   for (let i = 0; i < MAP_W; i++) blocked[0][i] = blocked[MAP_H - 1][i] = blocked[i][0] = blocked[i][MAP_W - 1] = true;
 
   const npcs: NpcDef[] = [
-    { id: 'elder', name: 'Martha', texture: 'npc_elder', x: 23, y: 21 },
-    { id: 'smith', name: 'Grom', texture: 'npc_smith', x: 21, y: 25 },
+    { id: 'elder', name: 'Martha', texture: 'npc_martha', x: 23, y: 21 },
+    { id: 'smith', name: 'Grom', texture: 'npc_grom', x: 21, y: 25 },
     { id: 'stranger', name: 'Hooded Stranger', texture: 'npc_stranger', x: 43, y: 21 },
     { id: 'guard', name: 'Guard Bren', texture: 'npc_guard', x: 30, y: 23 },
     { id: 'wizard', name: 'Old Fennick', texture: 'npc_wizard', x: 26, y: 26 },
@@ -212,7 +212,7 @@ export function buildWorld(): WorldData {
     { id: 'villager2', name: 'Sela', texture: 'npc_archer', x: 27, y: 24 },
     { id: 'villager3', name: 'Tobin', texture: 'npc_villager_m', x: 30, y: 28 },
     { id: 'merchant', name: 'Gus the Merchant', texture: 'npc_merchant', x: 33, y: 26 },
-    { id: 'healer', name: 'Serena', texture: 'npc_healer', x: 22, y: 22 },
+    { id: 'healer', name: 'Serena', texture: 'npc_serena', x: 22, y: 22 },
     { id: 'child', name: 'Pip', texture: 'npc_child', x: 24, y: 28 },
     { id: 'bard', name: 'Lute the Bard', texture: 'npc_bard', x: 28, y: 20 },
     { id: 'ranger', name: 'Ranger Wren', texture: 'npc_ranger', x: 35, y: 22 },

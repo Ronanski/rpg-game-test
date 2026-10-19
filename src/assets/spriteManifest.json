@@ -318,6 +318,20 @@
   "imported": true
  },
  {
+  "key": "npc_borgan",
+  "w": 40,
+  "h": 54,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_bran",
+  "w": 36,
+  "h": 54,
+  "scale": 1,
+  "imported": true
+ },
+ {
   "key": "npc_child",
   "w": 19,
   "h": 42,
@@ -332,9 +346,23 @@
   "imported": true
  },
  {
+  "key": "npc_grom",
+  "w": 47,
+  "h": 56,
+  "scale": 1,
+  "imported": true
+ },
+ {
   "key": "npc_guard",
   "w": 41,
   "h": 56,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_harek",
+  "w": 35,
+  "h": 54,
   "scale": 1,
   "imported": true
  },
@@ -346,7 +374,42 @@
   "imported": true
  },
  {
+  "key": "npc_hilda",
+  "w": 34,
+  "h": 56,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_ignis",
+  "w": 33,
+  "h": 54,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_kaelah",
+  "w": 55,
+  "h": 54,
+  "scale": 1,
+  "imported": true
+ },
+ {
   "key": "npc_knight",
+  "w": 39,
+  "h": 56,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_lyra",
+  "w": 43,
+  "h": 54,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_martha",
   "w": 39,
   "h": 56,
   "scale": 1,
@@ -360,9 +423,23 @@
   "imported": true
  },
  {
+  "key": "npc_nixie",
+  "w": 30,
+  "h": 54,
+  "scale": 1,
+  "imported": true
+ },
+ {
   "key": "npc_ranger",
   "w": 35,
   "h": 56,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_serena",
+  "w": 36,
+  "h": 54,
   "scale": 1,
   "imported": true
  },
@@ -383,6 +460,27 @@
  {
   "key": "npc_thief",
   "w": 33,
+  "h": 54,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_torbin",
+  "w": 42,
+  "h": 52,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_vaelen",
+  "w": 59,
+  "h": 62,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_valerius",
+  "w": 35,
   "h": 54,
   "scale": 1,
   "imported": true
@@ -419,6 +517,13 @@
   "key": "npc_wizard",
   "w": 35,
   "h": 58,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_zephyr",
+  "w": 41,
+  "h": 56,
   "scale": 1,
   "imported": true
  },
