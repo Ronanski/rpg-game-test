@@ -2,11 +2,21 @@ import Phaser from 'phaser';
 import { Actor } from './Actor';
 import type { IsoMap } from '../iso/IsoMap';
 import { screenToTile } from '../iso/iso';
-import { isSafeTile } from '../world/worldData';
+import { inTown, isSafeTile } from '../world/worldData';
 import { FONT } from '../ui/theme';
 import { isMonsterAnim } from '../assets/sprites';
 
 const LEASH = 280; // wild monsters give up a chase this far from home
+
+/** Which way each monster's art faces (it is mirrored to face the other way). */
+const FACES_LEFT = new Set(['goblin', 'orc', 'skeleton', 'zombie', 'bat']);
+const FACES_RIGHT = new Set(['wolf', 'dragon']);
+
+/** Raiders push through trees and rocks in the wilds (only the town's walls stop them). */
+function inTownAt(x: number, y: number) {
+  const t = screenToTile(x, y);
+  return inTown(t.x, t.y);
+}
 
 function safeAt(x: number, y: number) {
   const t = screenToTile(x, y);
@@ -151,13 +161,17 @@ export class Monster extends Actor {
 
     const ox = this.x, oy = this.y;
     // Wild monsters stay out of the village and the town (raiders don't).
-    const ok = (x: number, y: number) => map.walkable(x, y) && (!!this.goal || !safeAt(x, y));
+    const ok = (x: number, y: number) =>
+      this.goal ? map.walkable(x, y) || !inTownAt(x, y) : map.walkable(x, y) && !safeAt(x, y);
     if (ok(this.x + mx, this.y)) this.x += mx;
     if (ok(this.x, this.y + my)) this.y += my;
     this.heading.set(vx, vy).normalize();
     this.stuck = len > 1 && Math.hypot(this.x - ox, this.y - oy) < 0.05 * Math.hypot(mx, my) + 0.01;
     this.stuckMs = this.stuck ? this.stuckMs + dtMs : 0;
-    if (Math.abs(mx) > 0.01) this.sprite.setFlipX(['wolf', 'goblin', 'orc', 'skeleton', 'zombie', 'spider', 'bat'].includes(this.def.id) ? mx < 0 : this.def.id === 'dragon' ? mx > 0 : false);
+    if (Math.abs(mx) > 0.01) {
+      if (FACES_LEFT.has(this.def.id)) this.sprite.setFlipX(mx > 0);
+      else if (FACES_RIGHT.has(this.def.id)) this.sprite.setFlipX(mx < 0);
+    }
     if (len > 1) this.bob += dtMs / (this.def.id.startsWith('slime') ? 120 : 60);
     // Drawn monsters step between their two idle poses (faster while moving).
     // (Attack and hurt frames are timed on the scene clock, like strikeAnim and hit.)

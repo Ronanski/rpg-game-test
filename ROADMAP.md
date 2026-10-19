@@ -126,6 +126,16 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 - [x] Weapon and skill effects from the owner's effects board: sword and flame slashes, hit stars, the Mage's fireball and fire bursts (also in Flame Nova), Power Strike blast, and a healing ring for potions
 - [ ] Frame-by-frame art for the job outfits
 
+## Playtest 3 fixes (owner's phone test) ✅
+- [x] Monsters no longer walk backwards (each one's art facing is known)
+- [x] Nights always end: raiders push through trees in the wilds, and after 2.5 minutes the rest flee at dawn
+- [x] Zoom: + / − buttons, pinch with two fingers, mouse wheel
+- [x] Tap an NPC to walk over and talk
+- [x] ATTACK auto-targets the nearest monster (dashing in if needed); a red ring shows the target
+- [x] A guide arrow at the screen edge points to the next goal (new quest, monsters to defeat, who to report to, the Core at night)
+- [x] Bigger, easier to read HUD text on phones; townsfolk, heroes and Hana the same height; orcs bigger
+- [ ] Characters still have one facing (3/4 front): walking up shows their face. Needs back and side walk frames (owner's art)
+
 ## M7: Story chapter 1 and new places ✅
 - [x] Separate places you walk into through doors (the screen fades, quests and saves come along):
   - **Old Cave** at the end of the north road: entrance hall, slime grotto, bone hall with skeletons, and Gravemaw's pit; dark, lit by torches, crystals to mine

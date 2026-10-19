@@ -47,6 +47,8 @@ export const SKILLS: Record<string, SkillDef> = {
 const MP_REGEN_MS = 1200; // 1 MP per tick
 const RACE_BONUS = { humanExp: 1.1, elfMpRegen: 1.2 };
 const RESPAWN_MS = 9000;
+/** ATTACK goes for the nearest monster this close, dashing in if it is out of sword reach. */
+const AUTO_RANGE = 200;
 const NIGHT_RESPAWN_MS = 2500;
 /** Wild monsters per zone compared with its base count: by day, and at night. */
 const WILD_DAY = 0.6;
@@ -231,6 +233,22 @@ export class CombatSystem {
     if (!wt) style.power *= 0.6;
     if (now - this.lastAttack < style.cooldown) return;
     this.lastAttack = now;
+    // Auto-target: dash at the nearest monster if it is out of reach (no need to steer first).
+    const tgt = this.nearestTarget();
+    if (tgt) {
+      const dx = tgt.x - this.player.x, dy = tgt.y - this.player.y, d = Math.hypot(dx, dy);
+      this.player.facing.set(dx, dy).normalize();
+      if (Math.abs(dx) > 1) this.player.sprite.setFlipX(dx < 0);
+      if (d > style.range * 0.75) {
+        const step = Math.min(d - 30, 120);
+        let ok = true;
+        for (let t = 0.25; t <= 1; t += 0.25) ok &&= this.map.walkable(this.player.x + (dx / d) * step * t, this.player.y + (dy / d) * step * t);
+        if (ok) {
+          fx.afterimage(this.scene, this.player.sprite);
+          this.player.teleport(this.player.x + (dx / d) * step, this.player.y + (dy / d) * step);
+        }
+      }
+    }
     const f = this.player.facing;
     const sx = this.player.x + f.x * 28, fy = this.player.y - 20 + f.y * 18;
     const heavy = style.power > 1.1;
@@ -376,6 +394,24 @@ export class CombatSystem {
         if (m.hp === 0) this.kill(m);
       },
     });
+  }
+
+  /** The monster the next attack goes for: the nearest one within reach of a dash. */
+  nearestTarget(range = AUTO_RANGE): Monster | null {
+    let best: Monster | null = null, bd = range;
+    for (const m of this.monsters) {
+      if (m.dead) continue;
+      const d = m.distanceTo(this.player);
+      if (d < bd) (bd = d), (best = m);
+    }
+    return best;
+  }
+
+  /** Takes a monster out of the world without a kill (fleeing raiders). */
+  remove(m: Monster) {
+    m.destroy();
+    const i = this.monsters.indexOf(m);
+    if (i >= 0) this.monsters.splice(i, 1);
   }
 
   get liveMonsters() {

@@ -13,13 +13,13 @@ export const COLORS = {
   exp: 0xd9b43d,
 };
 
-export const text = (size: number, color = COLORS.text): Phaser.Types.GameObjects.Text.TextStyle => ({
-  fontFamily: FONT,
-  fontSize: `${size}px`,
-  color,
-  stroke: '#07080e',
-  strokeThickness: Math.max(2, Math.round(size / 6)),
-});
+/** Phones in landscape are short: text is drawn a bit bigger there so it stays readable. */
+export const TEXT_BOOST = typeof window !== 'undefined' && window.innerHeight < 500 ? 1.15 : 1;
+
+export const text = (size: number, color = COLORS.text): Phaser.Types.GameObjects.Text.TextStyle => {
+  const px = Math.max(11, Math.round(size * TEXT_BOOST));
+  return { fontFamily: FONT, fontSize: `${px}px`, color, stroke: '#07080e', strokeThickness: Math.max(3, Math.round(px / 5)) };
+};
 
 /**
  * Framed pixel panel (9-slice). The frame art is 2x pixel scale, so the slice is drawn at

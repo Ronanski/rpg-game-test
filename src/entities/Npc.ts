@@ -30,12 +30,12 @@ export class Npc extends Actor {
     this.home = { x, y };
     const key = !!def.role;
     this.label = scene.add
-      .text(x, 0, def.name, { fontFamily: FONT, fontSize: key ? '13px' : '11px', color: key ? '#ffd75e' : '#e8e0c8', stroke: '#07080e', strokeThickness: 3 })
+      .text(x, 0, def.name, { fontFamily: FONT, fontSize: key ? '14px' : '12px', color: key ? '#ffd75e' : '#e8e0c8', stroke: '#07080e', strokeThickness: 3 })
       .setOrigin(0.5, 1)
       .setDepth(100000);
     if (def.role) {
       this.roleText = scene.add
-        .text(x, 0, def.role, { fontFamily: FONT, fontSize: '10px', color: '#c9c3e0', stroke: '#07080e', strokeThickness: 3 })
+        .text(x, 0, def.role, { fontFamily: FONT, fontSize: '11px', color: '#c9c3e0', stroke: '#07080e', strokeThickness: 3 })
         .setOrigin(0.5, 1)
         .setDepth(100000);
     }
