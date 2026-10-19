@@ -34,7 +34,7 @@ export class WorldScene extends Phaser.Scene {
   private npcs: Npc[] = [];
   private combat!: CombatSystem;
   private dialogue!: DialogueSystem;
-  private keys!: Record<'up' | 'down' | 'left' | 'right' | 'w' | 'a' | 's' | 'd' | 'space' | 'e' | 'q' | 'shift' | 'f' | 'enter', Phaser.Input.Keyboard.Key>;
+  private keys!: Record<'up' | 'down' | 'left' | 'right' | 'w' | 'a' | 's' | 'd' | 'space' | 'e' | 'q' | 'shift' | 'f' | 'r' | 'enter', Phaser.Input.Keyboard.Key>;
   private nearNpc: Npc | null = null;
   private nearBuilding: PlacedBuilding | null = null;
   /** The town and the night raids only exist in the overworld. */
@@ -171,7 +171,7 @@ export class WorldScene extends Phaser.Scene {
     this.walkTo = null;
 
     const kb = this.input.keyboard!;
-    this.keys = kb.addKeys('up,down,left,right,w,a,s,d,space,e,q,shift,f,enter') as typeof this.keys;
+    this.keys = kb.addKeys('up,down,left,right,w,a,s,d,space,e,q,shift,f,r,enter') as typeof this.keys;
 
     this.scene.launch('UI', { quests });
     emitStats();
@@ -245,11 +245,13 @@ export class WorldScene extends Phaser.Scene {
       if (Phaser.Input.Keyboard.JustDown(this.keys.q)) c.potion = true;
       if (Phaser.Input.Keyboard.JustDown(this.keys.shift)) c.dodge = true;
       if (Phaser.Input.Keyboard.JustDown(this.keys.f)) c.skill = true;
+      if (Phaser.Input.Keyboard.JustDown(this.keys.r)) c.rain = true;
       if (this.town?.isPlacing && Phaser.Input.Keyboard.JustDown(this.keys.enter)) bus.emit('build-confirm');
       // AUTO: attack the nearest monster in reach (the attack's own cooldown sets the pace).
       if (state.autoAttack && !this.walkTo && this.combat.nearestTarget(this.combat.attackReach())) c.attack = true;
       if (c.dodge) this.player.roll(mx, my, time);
       if (c.skill) this.combat.useSkill(time);
+      if (c.rain) this.combat.rainOfArrows(time);
       if (c.attack) this.combat.playerAttack(time);
       if (c.potion) this.combat.usePotion();
       if (c.talk && this.nearNpc) this.startTalk(this.nearNpc);
@@ -257,7 +259,7 @@ export class WorldScene extends Phaser.Scene {
     } else {
       this.player.move(0, 0, 0, delta, this.map);
     }
-    c.attack = c.talk = c.potion = c.dodge = c.skill = false;
+    c.attack = c.talk = c.potion = c.dodge = c.skill = c.rain = false;
 
     if (!state.inMenu) this.combat.update(time, delta);
     this.town?.update(time);

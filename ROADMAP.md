@@ -140,6 +140,23 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 - [x] Elf archer walks in 3 directions from the owner's sheet: toward the camera, away from it (you see his back), and sideways (mirrored for left); he keeps facing that way when he stops
 - [ ] 3-direction walks for the other heroes (characters without them still have one facing, 3/4 front): walking up shows their face. Needs back and side walk frames (owner's art)
 
+## Next: roadmap from here
+| # | Stage | What | Needs GO? |
+|---|---|---|---|
+| R1 | Archer kit ✅ | Multi Shot, Piercing (Lv3), Rain of Arrows (Lv5), Fire Arrows (Lv7) | no |
+| R2 | Balance and bug pass | long automated runs (10 nights), difficulty, prices, EXP, gold | no |
+| R3 | Tutorial | short guide on the first play: walk, AUTO, quests, build, night | no |
+| R4 | Chapter 2: Sylvan | new region, monsters, boss, story after the Core's secret | no |
+| R5 | Beta | Beta APK for other testers | GO BETA |
+| R6 | Stable | official release | GO STABLE |
+
+## R1: Archer kit ✅
+- [x] SKILL with a bow is **Multi Shot**: three arrows, each locked on a different nearby monster
+- [x] Level 3: **Piercing Arrows**, each arrow flies on to one more monster close by
+- [x] Level 5: **Rain of Arrows** (RAIN button, R key): volleys fall on the nearest monster's spot and hit everything around it
+- [x] Level 7: **Fire Arrows**, hits burn for three more ticks
+- [x] New abilities are announced on level up
+
 ## Playtest 4 fixes (archer focus) ✅
 - [x] One hero for now: New Game makes an Elf archer, you only pick the name
 - [x] Readable text: the phone's own standard font, only 5 text sizes in the whole game, nothing overlapping (quest panel, mini-map, guide arrow, build bar, build shop checked at phone size); black-and-gold panels like the owner's UI kit

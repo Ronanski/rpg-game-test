@@ -12,6 +12,8 @@ import { BigMap, MinimapView, type MapData } from './MinimapView';
 import type { PlacedBuilding } from '../core/GameState';
 import { BUILDINGS } from '../systems/town/Buildings';
 import { JOBS } from '../systems/combat/ClassSystem';
+import { weaponType } from '../systems/items/Items';
+import { ARCHER } from '../systems/combat/CombatSystem';
 import { panel, resizePanel, text, applyPortrait, COLORS } from './theme';
 import type { Conversation } from '../systems/dialogue/DialogueSystem';
 import type { QuestTracker } from '../systems/quest/QuestTracker';
@@ -36,6 +38,8 @@ export class UIScene extends Phaser.Scene {
   private menuBtn!: Phaser.GameObjects.Container;
   private zoomBox!: Phaser.GameObjects.Container;
   private autoBtn!: ActionButton;
+  private rainBtn!: ActionButton;
+  private controlsOn = true;
   private minimap!: MinimapView;
   private bigMap!: BigMap;
   private objArrow!: Phaser.GameObjects.Container;
@@ -163,6 +167,8 @@ export class UIScene extends Phaser.Scene {
     this.potionBtn = new ActionButton(this, 'POTION', 'item_health_potion', 64, () => (state.controls.potion = true));
     this.skillBtn = new ActionButton(this, 'SKILL', 'icon_skill', 64, () => (state.controls.skill = true));
     this.dodgeBtn = new ActionButton(this, 'DODGE', 'icon_dodge', 64, () => (state.controls.dodge = true));
+    // RAIN: the archer's Rain of Arrows (shown from level 5 with a bow).
+    this.rainBtn = new ActionButton(this, 'RAIN', 'item_bow', 56, () => (state.controls.rain = true));
     // AUTO: attack the nearest monster without pressing ATTACK.
     this.autoBtn = new ActionButton(this, 'AUTO', 'pin_star', 56, () => {
       state.autoAttack = !state.autoAttack;
@@ -297,6 +303,12 @@ export class UIScene extends Phaser.Scene {
     this.dialogue.layout();
     const now = this.time.now, cd = state.cooldowns;
     this.skillBtn.setCooldown((cd.skillReady - now) / cd.skillTotal);
+    this.rainBtn.setCooldown((cd.rainReady - now) / cd.rainTotal);
+    // RAIN only for archers who have learned it.
+    const ps = state.player;
+    const canRain = !!ps && ps.level >= ARCHER.rain.level && weaponType() === 'bow';
+    this.rainBtn.setVisible(this.controlsOn && canRain);
+    this.autoBtn.setOn(state.autoAttack, state.autoAttack ? 'AUTO ON' : 'AUTO');
     this.dodgeBtn.setCooldown((cd.dodgeReady - now) / cd.dodgeTotal);
     if (!state.inDialogue && !state.inMenu) {
       state.controls.moveX = this.stick.value.x;
@@ -371,6 +383,7 @@ export class UIScene extends Phaser.Scene {
     this.skillBtn.setVisible(on);
     this.dodgeBtn.setVisible(on);
     this.autoBtn.setVisible(on);
+    this.controlsOn = on;
     this.potionCount.setVisible(on);
     if (!on) this.talkBtn.setVisible(false);
   }
@@ -396,7 +409,7 @@ export class UIScene extends Phaser.Scene {
     // Kept inside the clear middle of the screen: below the top HUD, above the buttons, and away
     // from the mini-map and the action buttons on the right.
     const k = this.k;
-    const box = { l: 80 * k, r: width - 200 * k, t: 150 * k, b: height - 120 * k };
+    const box = { l: 80 * k, r: width - 200 * k, t: 185 * k, b: height - 110 * k };
     const bx = (box.l + box.r) / 2, by = (box.t + box.b) / 2;
     const ang = Math.atan2(o.sy - by, o.sx - bx);
     const t = Math.min((box.r - box.l) / 2 / Math.abs(Math.cos(ang) || 1e-6), (box.b - box.t) / 2 / Math.abs(Math.sin(ang) || 1e-6));
@@ -417,7 +430,9 @@ export class UIScene extends Phaser.Scene {
     // Right column under the quest panel: mini-map, and + / − / MAP to its left.
     this.minimap.root.setScale(k);
     this.zoomBox.setScale(k);
-    for (const b of [this.attackBtn, this.talkBtn, this.potionBtn, this.skillBtn, this.dodgeBtn, this.autoBtn]) b.setScale((b.baseScale = k));
+    for (const b of [this.attackBtn, this.talkBtn, this.potionBtn, this.skillBtn, this.dodgeBtn, this.autoBtn, this.rainBtn]) b.setScale((b.baseScale = k));
+    // RAIN above AUTO (clear of the mini-map).
+    this.rainBtn.setPosition(width - 252 * k, height - 222 * k);
     // AUTO sits left of SKILL, above TALK.
     this.autoBtn.setPosition(width - 252 * k, height - 140 * k);
     this.potionCount.setScale(k);
