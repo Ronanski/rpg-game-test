@@ -9,6 +9,7 @@ import { InventoryMenu, ShopMenu, PauseMenu, type ShopDef } from './ItemMenus';
 import { saveGame } from '../core/SaveGame';
 import { BuildMenu, BuildingPanel, PlacementBar } from './BuildMenus';
 import { BigMap, MinimapView, type MapData } from './MinimapView';
+import { Tutorial } from './Tutorial';
 import type { PlacedBuilding } from '../core/GameState';
 import { BUILDINGS } from '../systems/town/Buildings';
 import { JOBS } from '../systems/combat/ClassSystem';
@@ -71,6 +72,7 @@ export class UIScene extends Phaser.Scene {
   private questIcon!: Phaser.GameObjects.Image;
   private questText!: Phaser.GameObjects.Text;
   private quests!: QuestTracker;
+  private tutorial!: Tutorial;
   private statusBox!: Phaser.GameObjects.Container;
   private questBox!: Phaser.GameObjects.Container;
   /** HUD scale: smaller on short (phone) screens so the world stays visible. */
@@ -88,6 +90,7 @@ export class UIScene extends Phaser.Scene {
 
   create(data: { quests: QuestTracker }) {
     this.quests = data.quests;
+    this.tutorial = new Tutorial(this, this.quests);
     this.input.addPointer(2);
 
     // Status panel (top-left): portrait, name, level, HP / MP / EXP.
@@ -301,6 +304,7 @@ export class UIScene extends Phaser.Scene {
 
   update() {
     this.dialogue.layout();
+    this.tutorial.update(this.scale.width, this.scale.height, this.k);
     const now = this.time.now, cd = state.cooldowns;
     this.skillBtn.setCooldown((cd.skillReady - now) / cd.skillTotal);
     this.rainBtn.setCooldown((cd.rainReady - now) / cd.rainTotal);
