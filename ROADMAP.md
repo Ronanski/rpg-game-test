@@ -79,7 +79,9 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 - [x] Shops: Serena (potions) and Gus (weapons, armor; buys loot)
 - [x] Gear drops from goblins; mana potions from blue slimes; everyone starts with a Rusty Sword
 - [ ] Sub-classes (Knight, Assassin, …) and job levels
-- [ ] Bow and ranged weapons
+- [x] Bow (Hunter Bow from Gus): arrows fly at the first enemy in front; Rogues and Adventurers can use it
+- [x] Hit and skill effects: sword arcs, sparks, shockwave rings, whirlwind, flame burst, firebolt embers, dash afterimages, screen shake on big hits
+- [x] Walking feels like walking: a hop per step, lean and sway, footstep dust
 
 **Checkpoint**
 - [ ] Defeat 15 monsters, open JOBS, change to Warrior, and see stronger, wider hits

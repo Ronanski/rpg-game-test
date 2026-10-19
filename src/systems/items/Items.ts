@@ -6,7 +6,7 @@ import { computeStats, JOBS } from '../combat/ClassSystem';
 // (jobs.allowed_weapons). Equipment adds its stats on top of race x job x level.
 
 export type Slot = 'weapon' | 'armor' | 'accessory';
-export type WeaponType = 'sword' | 'dagger' | 'staff' | 'hammer';
+export type WeaponType = 'sword' | 'dagger' | 'staff' | 'hammer' | 'bow';
 type StatKey = 'hp' | 'mp' | 'atk' | 'def' | 'spd';
 
 export interface ItemDef {
@@ -28,6 +28,7 @@ export const ITEMS: Record<string, ItemDef> = {
   iron_sword: { id: 'iron_sword', name: 'Iron Sword', type: 'weapon', weapon: 'sword', stats: { atk: 9 }, buy: 120, sell: 30, icon: 'item_sword', desc: 'A solid blade from Grom\'s forge.' },
   hunter_dagger: { id: 'hunter_dagger', name: 'Hunter Dagger', type: 'weapon', weapon: 'dagger', stats: { atk: 6, spd: 2 }, buy: 80, sell: 15, icon: 'item_dagger', desc: 'Light and quick.' },
   oak_staff: { id: 'oak_staff', name: 'Oak Staff', type: 'weapon', weapon: 'staff', stats: { atk: 3, mp: 15 }, buy: 60, sell: 10, icon: 'item_staff', desc: 'Channels magic. Mages need a staff.' },
+  hunter_bow: { id: 'hunter_bow', name: 'Hunter Bow', type: 'weapon', weapon: 'bow', stats: { atk: 5 }, buy: 90, sell: 20, icon: 'item_bow', desc: 'Shoots arrows from afar.' },
   leather_armor: { id: 'leather_armor', name: 'Leather Armor', type: 'armor', stats: { def: 5 }, buy: 70, sell: 15, icon: 'item_shield', desc: 'Light protection.' },
   core_shard: { id: 'core_shard', name: 'Core Shard', type: 'accessory', stats: { mp: 20 }, sell: 100, icon: 'item_core_shard', desc: 'It hums faintly. Warm to the touch.' },
   health_potion: { id: 'health_potion', name: 'Health Potion', type: 'consumable', heal: { hp: 50 }, buy: 25, sell: 5, icon: 'item_health_potion', desc: 'Restores 50 HP.' },
@@ -38,9 +39,9 @@ export const ITEMS: Record<string, ItemDef> = {
 
 /** Weapon types each job can use. Adventurers can use anything; Mages need a staff to cast. */
 export const ALLOWED: Record<string, WeaponType[]> = {
-  adventurer: ['sword', 'dagger', 'staff', 'hammer'],
+  adventurer: ['sword', 'dagger', 'staff', 'hammer', 'bow'],
   warrior: ['sword'],
-  rogue: ['dagger'],
+  rogue: ['dagger', 'bow'],
   mage: ['staff'],
   builder: ['hammer', 'sword'],
 };

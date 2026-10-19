@@ -10,6 +10,8 @@ import { expToNext } from './ClassSystem';
 import { recalcStats, weaponType, ITEMS } from '../items/Items';
 import type { QuestTracker } from '../quest/QuestTracker';
 import { countJobAction } from './JobSystem';
+import * as fx from './Fx';
+import { FONT } from '../../ui/theme';
 
 /** How each job attacks. `arc` is the minimum facing alignment (lower = wider swing). */
 interface AttackStyle {
@@ -27,6 +29,7 @@ const STYLES: Record<string, AttackStyle> = {
   mage: { cooldown: 380, range: 60, arc: 0.2, crit: 0.05, power: 0.6 }, // staff bonk when out of MP
 };
 const FIREBOLT = { mp: 5, range: 300, speed: 520, power: 1.7, cooldown: 480 };
+const ARROW = { range: 340, speed: 760, power: 1.05, cooldown: 520 };
 
 /** One special move per job (SKILL button / F key): MP cost, cooldown, and what it does. */
 interface SkillDef {
@@ -112,17 +115,23 @@ export class CombatSystem {
       return this.firebolt();
     }
     const style = { ...(STYLES[ps.jobId] ?? STYLES.adventurer) };
-    // The weapon in hand changes the swing: daggers are quick, bare hands are weak.
+    // The weapon in hand changes the swing: daggers are quick, bare hands are weak, bows shoot.
     const wt = weaponType();
+    if (wt === 'bow') {
+      if (now - this.lastAttack < ARROW.cooldown) return;
+      this.lastAttack = now;
+      return this.shoot('arrow', ARROW.range, ARROW.speed, style.power * ARROW.power, style.crit);
+    }
     if (wt === 'dagger') style.cooldown *= 0.8;
     if (!wt) style.power *= 0.6;
     if (now - this.lastAttack < style.cooldown) return;
     this.lastAttack = now;
     const f = this.player.facing;
-    const fx = this.player.x + f.x * 28, fy = this.player.y - 20 + f.y * 18;
-    const slash = this.scene.add.image(fx, fy, 'slash').setDepth(this.player.y + 1).setRotation(Math.atan2(f.y, f.x));
-    if (style.power > 1.1) slash.setScale(1.3).setTint(0xffc070);
-    this.scene.tweens.add({ targets: slash, alpha: 0, scale: slash.scale * 1.4, duration: 160, onComplete: () => slash.destroy() });
+    const sx = this.player.x + f.x * 28, fy = this.player.y - 20 + f.y * 18;
+    const heavy = style.power > 1.1;
+    fx.slash(this.scene, sx, fy, Math.atan2(f.y, f.x), heavy ? 1.35 : wt === 'dagger' ? 0.8 : 1, heavy ? 0xffc070 : 0xe8f4ff);
+    // A quick forward lunge sells the swing.
+    this.scene.tweens.add({ targets: this.player.sprite, x: this.player.sprite.x + f.x * 6, duration: 60, yoyo: true });
 
     for (const m of this.monsters) {
       if (m.dead) continue;
@@ -154,7 +163,10 @@ export class CombatSystem {
     switch (ps.jobId) {
       case 'warrior': {
         // Whirlwind: hits everything around you.
-        this.ring(p.x, p.y - 20, 95, 0xffc070);
+        fx.ring(this.scene, p.x, p.y - 6, 95, 0xffc070, 6);
+        for (let i = 0; i < 4; i++) this.scene.time.delayedCall(i * 60, () => fx.slash(this.scene, p.x, p.y - 22, (i * Math.PI) / 2, 1.6, 0xffc070));
+        this.scene.tweens.add({ targets: p.sprite, angle: 360, duration: 260, onComplete: () => p.sprite.setAngle(0) });
+        this.scene.cameras.main.shake(140, 0.006);
         for (const m of inRadius(95)) this.damage(m, 1.5, crit);
         break;
       }
@@ -163,6 +175,7 @@ export class CombatSystem {
         const sx = p.x, sy = p.y;
         p.roll(f.x, f.y, now - 10000);
         p.nextRollAt = now + 400;
+        for (let i = 1; i <= 5; i++) this.scene.time.delayedCall(i * 40, () => fx.afterimage(this.scene, p.sprite, 0xb08aff));
         this.scene.time.delayedCall(240, () => {
           for (const m of this.monsters) {
             if (m.dead) continue;
@@ -176,12 +189,19 @@ export class CombatSystem {
         // Flame Nova: a burst of fire around you.
         const nova = this.scene.add.image(p.x, p.y - 20, 'glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(p.y + 3).setScale(0.3);
         this.scene.tweens.add({ targets: nova, scale: 2.4, alpha: 0, duration: 380, onComplete: () => nova.destroy() });
+        fx.ring(this.scene, p.x, p.y - 4, 110, 0xff8a3a, 7);
+        fx.flames(this.scene, p.x, p.y - 10, 100);
+        this.scene.cameras.main.shake(160, 0.007);
         for (const m of inRadius(110)) this.damage(m, 1.6, 0.05);
         break;
       }
       default: {
         // Power Strike / Hammer Slam: one heavy hit in front.
-        this.ring(p.x + f.x * 34, p.y - 20 + f.y * 18, 40, 0xffe08a);
+        const hx = p.x + f.x * 36, hy = p.y - 20 + f.y * 18;
+        fx.slash(this.scene, hx - f.x * 10, hy, Math.atan2(f.y, f.x), 1.8, 0xffe08a);
+        fx.ring(this.scene, hx, hy + 18, 60, 0xffe08a, 6);
+        fx.sparks(this.scene, hx, hy, 0xffe08a, 16, 220);
+        this.scene.cameras.main.shake(120, 0.006);
         for (const m of inRadius(85)) {
           const d = Math.max(1, m.distanceTo(p));
           if (((m.x - p.x) * f.x + (m.y - p.y) * f.y) / d > 0.1) this.damage(m, ps.jobId === 'builder' ? 1.7 : 1.9, crit);
@@ -192,27 +212,28 @@ export class CombatSystem {
     return true;
   }
 
-  private ring(x: number, y: number, r: number, color: number) {
-    const g = this.scene.add.graphics().setDepth(y + 200);
-    g.lineStyle(4, color, 0.9).strokeCircle(0, 0, r).setPosition(x, y).setScale(0.3, 0.15);
-    this.scene.tweens.add({ targets: g, scaleX: 1, scaleY: 0.5, alpha: 0, duration: 260, onComplete: () => g.destroy() });
-  }
-
   private damage(m: Monster, power: number, critChance: number) {
     const ps = state.player!;
     const crit = Math.random() < critChance;
     const dmg = Math.max(1, Math.round((ps.atk * power + Phaser.Math.Between(0, 3) - m.def.def) * (crit ? 1.8 : 1)));
     m.hit(dmg, this.player);
-    this.floatText(m.x, m.y - 40, crit ? `${dmg}!` : `${dmg}`, crit ? '#ffd75e' : '#ffffff');
+    fx.sparks(this.scene, m.x, m.y - m.sprite.displayHeight / 2, crit ? 0xffd75e : 0xffffff, crit ? 16 : 8, crit ? 220 : 150);
+    if (crit) (fx.hitStop(this.scene), this.scene.cameras.main.shake(80, 0.005));
+    this.floatText(m.x, m.y - 40, crit ? `${dmg}!` : `${dmg}`, crit ? '#ffd75e' : '#ffffff', crit ? 24 : 18);
     if (crit) countJobAction('crits');
     if (m.hp === 0) this.kill(m);
   }
 
   /** Mage spell: a fireball flies in the facing direction and burns the first monster in its path. */
   private firebolt() {
+    this.shoot('firebolt', FIREBOLT.range, FIREBOLT.speed, FIREBOLT.power, 0.05);
+  }
+
+  /** Fires a projectile (firebolt or arrow) at the first monster in the facing direction. */
+  private shoot(kind: 'firebolt' | 'arrow', range: number, speed: number, power: number, crit: number) {
     const f = this.player.facing.clone().normalize();
-    const sx = this.player.x, sy = this.player.y - 24;
-    let target: Monster | null = null, best = FIREBOLT.range;
+    const sx = this.player.x + f.x * 10, sy = this.player.y - 24;
+    let target: Monster | null = null, best = range;
     for (const m of this.monsters) {
       if (m.dead) continue;
       const dx = m.x - this.player.x, dy = m.y - this.player.y;
@@ -220,16 +241,28 @@ export class CombatSystem {
       const off = Math.abs(dx * f.y - dy * f.x);
       if (along > 0 && along < best && off < 34) (best = along), (target = m);
     }
-    const ex = target ? target.x : sx + f.x * FIREBOLT.range, ey = target ? target.y - 24 : sy + f.y * FIREBOLT.range;
-    const bolt = this.scene.add.image(sx, sy, 'firebolt').setDepth(this.player.y + 2).setBlendMode(Phaser.BlendModes.ADD);
+    const ex = target ? target.x : sx + f.x * range, ey = target ? target.y - 24 : sy + f.y * range;
+    const fire = kind === 'firebolt';
+    const shot = this.scene.add.image(sx, sy, kind).setDepth(190000).setRotation(Math.atan2(ey - sy, ex - sx));
+    if (fire) shot.setBlendMode(Phaser.BlendModes.ADD);
+    // Trail: fire leaves embers, arrows a faint streak.
+    const trail = this.scene.add.particles(0, 0, 'spark', {
+      follow: shot, lifespan: fire ? 260 : 140, frequency: fire ? 18 : 30,
+      scale: { start: fire ? 1.4 : 0.6, end: 0 }, alpha: { start: 0.8, end: 0 },
+      tint: fire ? [0xffe08a, 0xff7a2a] : 0xe8f4ff, blendMode: Phaser.BlendModes.ADD,
+    }).setDepth(189999);
     this.scene.tweens.add({
-      targets: bolt, x: ex, y: ey,
-      duration: (Math.hypot(ex - sx, ey - sy) / FIREBOLT.speed) * 1000,
+      targets: shot, x: ex, y: ey,
+      duration: (Math.hypot(ex - sx, ey - sy) / speed) * 1000,
       onComplete: () => {
-        bolt.destroy();
-        if (target && !target.dead) this.damage(target, FIREBOLT.power, 0.05);
-        const burst = this.scene.add.image(ex, ey, 'glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(ey + 100).setScale(0.6);
-        this.scene.tweens.add({ targets: burst, scale: 1.2, alpha: 0, duration: 220, onComplete: () => burst.destroy() });
+        shot.destroy();
+        trail.stop();
+        this.scene.time.delayedCall(300, () => trail.destroy());
+        if (target && !target.dead) this.damage(target, power, crit);
+        if (fire) {
+          fx.flames(this.scene, ex, ey + 10, 24);
+          fx.ring(this.scene, ex, ey + 20, 30, 0xff8a3a, 4);
+        } else if (!target) fx.dust(this.scene, ex, ey + 24);
       },
     });
   }
@@ -309,7 +342,7 @@ export class CombatSystem {
 
   floatText(x: number, y: number, text: string, color: string, size = 18) {
     const t = this.scene.add
-      .text(x, y, text, { fontFamily: 'monospace', fontSize: `${size}px`, fontStyle: 'bold', color, stroke: '#000', strokeThickness: 4 })
+      .text(x, y, text, { fontFamily: FONT, fontSize: `${size}px`, color, stroke: '#07080e', strokeThickness: 4 })
       .setOrigin(0.5)
       .setDepth(200000);
     this.scene.tweens.add({ targets: t, y: y - 30, alpha: 0, duration: 800, ease: 'Cubic.easeOut', onComplete: () => t.destroy() });

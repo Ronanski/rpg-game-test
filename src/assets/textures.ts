@@ -17,6 +17,28 @@ export function createTextures(scene: Phaser.Scene) {
   s.generateTexture('slash', 48, 48);
   s.destroy();
 
+  // Small soft dot for sparks and fire particles (tinted per effect).
+  const sp = scene.add.graphics();
+  sp.fillStyle(0xffffff, 0.35).fillCircle(5, 5, 5);
+  sp.fillStyle(0xffffff, 1).fillCircle(5, 5, 2.5);
+  sp.generateTexture('spark', 10, 10);
+  sp.destroy();
+
+  // Dust puff kicked up by footsteps and rolls.
+  const du = scene.add.graphics();
+  du.fillStyle(0xd8c8a8, 0.5).fillEllipse(8, 5, 16, 10);
+  du.fillStyle(0xeee0c4, 0.5).fillEllipse(7, 4, 9, 6);
+  du.generateTexture('dust', 16, 10);
+  du.destroy();
+
+  // Arrow (points right; rotated to its flight direction).
+  const ar = scene.add.graphics();
+  ar.fillStyle(0x8a5a2b).fillRect(2, 3, 18, 2);
+  ar.fillStyle(0xd8dce6).fillTriangle(20, 0, 26, 4, 20, 8);
+  ar.fillStyle(0xf4f1e8).fillTriangle(0, 1, 5, 4, 0, 7);
+  ar.generateTexture('arrow', 26, 8);
+  ar.destroy();
+
   // Firebolt: a hot core inside a soft orange flame.
   const fb = scene.add.graphics();
   for (let r = 12; r > 0; r -= 2) fb.fillStyle(r > 6 ? 0xff6a1a : 0xffe08a, r > 6 ? 0.25 : 0.9).fillCircle(12, 12, r);

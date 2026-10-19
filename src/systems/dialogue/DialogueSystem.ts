@@ -76,8 +76,8 @@ export class DialogueSystem {
         return { lines: say('Fresh bread at the stall! Well... fresh yesterday.') };
       case 'merchant':
         return {
-          lines: say('Swords, daggers, staves and armor! Take a look, friend.', 'I buy pelts and gel too.'),
-          onEnd: () => bus.emit('open-shop', { name: 'Gus\'s Goods', sells: ['iron_sword', 'hunter_dagger', 'oak_staff', 'leather_armor', 'rusty_sword'] }),
+          lines: say('Swords, bows, daggers, staves and armor! Take a look, friend.', 'I buy pelts and gel too.'),
+          onEnd: () => bus.emit('open-shop', { name: 'Gus\'s Goods', sells: ['iron_sword', 'hunter_dagger', 'hunter_bow', 'oak_staff', 'leather_armor', 'rusty_sword'] }),
         };
       case 'healer':
         return {

@@ -303,6 +303,12 @@
   "imported": true
  },
  {
+  "key": "item_bow",
+  "w": 13,
+  "h": 13,
+  "scale": 2
+ },
+ {
   "key": "item_coin",
   "w": 19,
   "h": 20,
