@@ -43,11 +43,12 @@ export class StarterScene extends Phaser.Scene {
     const add = <T extends Phaser.GameObjects.GameObject>(o: T) => (this.root.add(o), o);
 
     const compact = height < 420;
-    add(this.add.text(width / 2, compact ? 12 : 26, 'CHOOSE YOUR HERO', text(compact ? 22 : 30, COLORS.gold)).setOrigin(0.5, 0));
+    add(this.add.text(width / 2, compact ? 6 : 14, 'AETHELGARD: CHRONOS OF FATE', text(compact ? 20 : 30, COLORS.gold)).setOrigin(0.5, 0));
+    add(this.add.text(width / 2, compact ? 30 : 52, 'Choose your hero', text(compact ? 13 : 16, COLORS.dim)).setOrigin(0.5, 0));
 
     const gap = 16;
     const cardW = Math.min(240, (width - 40 - gap * 2) / 3);
-    const top = compact ? 48 : 76;
+    const top = compact ? 50 : 84;
     const cardH = Math.min(300, height - top - (compact ? 64 : 90));
     const left = (width - (cardW * 3 + gap * 2)) / 2;
     STARTERS.forEach((s, i) => this.card(s, i, left + i * (cardW + gap), top, cardW, cardH, add));

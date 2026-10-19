@@ -1,4 +1,4 @@
-# Roadmap: Echoes of the Core
+# Roadmap: Aethelgard: Chronos of Fate
 
 Each milestone ends with a **checkpoint**: a short list of things the owner can check in the web browser. A milestone counts as done only when every checkpoint item passes and the owner approves.
 
@@ -13,7 +13,7 @@ Database schema, isometric free-roam village, NPC dialogue, real-time combat, an
 
 **Checkpoint**
 - [x] The game opens at https://ronanski.github.io/rpg-game-test/
-- [x] You can walk around, talk to Elder Maren, and fight slimes
+- [x] You can walk around, talk to Martha, and fight slimes
 
 ## M1: Playable prototype 🔄
 - [x] Pick the starting hero: Kael, Lyra or Rook (PR #6)

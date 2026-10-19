@@ -57,7 +57,7 @@ export class WorldScene extends Phaser.Scene {
 
     this.scene.launch('UI', { quests });
     emitStats();
-    bus.emit('toast', 'Explore the village. Talk to Elder Maren.');
+    bus.emit('toast', 'Welcome to Oakhaven. Talk to Martha.');
   }
 
   update(time: number, delta: number) {

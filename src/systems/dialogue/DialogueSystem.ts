@@ -22,7 +22,7 @@ export class DialogueSystem {
       case 'elder':
         return this.questTalk('main_01_slimes', {
           offer: say(
-            'Ah, a new face. Welcome to Lumen Hollow.',
+            'Ah, a new face. Welcome to Oakhaven. I am Martha.',
             'For a hundred years the Ancient Core beneath the mountain has kept us safe.',
             'But lately, slimes crawl out of the ground near the fields. Please, defeat 5 of them.',
           ),
@@ -36,7 +36,7 @@ export class DialogueSystem {
       case 'smith':
         return this.questTalk('guild_wolves', {
           offer: say(
-            'Name\'s Toma. I forge for the guild.',
+            'Name\'s Grom. I keep Oakhaven\'s forge burning.',
             'Wolves prowl across the river to the east. Bring me 5 wolf pelts and I\'ll make you a dagger.',
           ),
           busy: (n, max) => say(`${n} of ${max} pelts. Cross the bridge east of the village.`),
@@ -65,7 +65,7 @@ export class DialogueSystem {
       case 'merchant':
         return { lines: say('Potions, rope, lantern oil! Shop opens soon, friend.', 'Bring me pelts and gel and I\'ll make it worth your while.') };
       case 'healer':
-        return { lines: say('The Light of the Core heals all wounds.', 'That is what the Order taught me. Lately I have my doubts.') };
+        return { lines: say('Serena\'s remedies! Potions for cuts, bites and slime burns.', 'My shop opens soon. Until then, stay out of the ruins.') };
       case 'child':
         return { lines: say('Are you an adventurer? I saw a purple slime once!', 'Mom says the cave up north eats people.') };
       case 'bard':

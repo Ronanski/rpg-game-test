@@ -1,4 +1,4 @@
-# System Architecture: Echoes of the Core
+# System Architecture: Aethelgard: Chronos of Fate
 
 Everything here runs on free tiers: GitHub Pages, GitHub Actions, and the Supabase Free plan.
 
