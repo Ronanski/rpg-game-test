@@ -1,4 +1,4 @@
-import { state, newTown, type PlayerStats } from './GameState';
+import { state, newTown, newCycle, type PlayerStats } from './GameState';
 import type { QuestState } from '../systems/quest/QuestTracker';
 
 // Saves progress in this browser (localStorage), so a refresh or a closed tab doesn't lose it.
@@ -15,6 +15,7 @@ export interface SaveData {
   jobs?: typeof state.jobs; // missing in saves made before jobs existed
   equipment?: typeof state.equipment;
   town?: typeof state.town;
+  cycle?: typeof state.cycle;
   quests: QuestState;
   pos: { x: number; y: number };
 }
@@ -37,6 +38,8 @@ export function saveGame(): boolean {
     jobs: { ...state.jobs, unlocked: [...state.jobs.unlocked] },
     equipment: { ...state.equipment },
     town: { ...state.town, buildings: state.town.buildings.map((b) => ({ ...b })) },
+    // A night in progress restarts as the end of that day (raiders aren't saved).
+    cycle: state.cycle.phase === 'night' ? { ...state.cycle, phase: 'day', left: 15_000 } : { ...state.cycle },
     ...snapshot(),
   };
   try {
@@ -76,6 +79,7 @@ export function applySave(data: SaveData) {
   state.jobs = data.jobs ?? { unlocked: ['adventurer'], kills: 0, crits: 0, built: 0 };
   state.equipment = data.equipment ?? { weapon: null, armor: null, accessory: null };
   state.town = data.town ?? newTown();
+  state.cycle = data.cycle ?? newCycle();
   // Older saves started with a job the player never earned; keep it usable.
   if (!state.jobs.unlocked.includes(state.player.jobId)) state.jobs.unlocked.push(state.player.jobId);
 }

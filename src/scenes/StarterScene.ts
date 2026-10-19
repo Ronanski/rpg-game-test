@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { state, resetJobs, resetEquipment, newTown } from '../core/GameState';
+import { state, resetJobs, resetEquipment, newTown, newCycle } from '../core/GameState';
 import { recalcStats } from '../systems/items/Items';
 import { computeStats, expToNext, RACES } from '../systems/combat/ClassSystem';
 import { RACES_INFO, START_JOB, type Gender, type RaceDef } from '../systems/combat/Origins';
@@ -256,6 +256,7 @@ export class StarterScene extends Phaser.Scene {
     resetJobs();
     resetEquipment();
     state.town = newTown();
+    state.cycle = newCycle();
     // Start with the weapon the character's art is holding.
     state.equipment.weapon = r.weapon[g] ?? 'rusty_sword';
     recalcStats(true);

@@ -141,7 +141,17 @@ export class TownSystem {
     const busy = v.b.status !== 'idle';
     v.scaffold.setVisible(busy);
     v.img.setAlpha(v.b.status === 'building' ? 0.45 : 1);
-    if (!busy) return v.label.setText('');
+    if (!busy) {
+      v.label.setText('');
+      // Health bar once damaged.
+      const max = this.maxHp(v.b), hp = v.b.hp ?? max;
+      if (hp < max) {
+        const w = v.b.type === 'ancient_core' ? 70 : 36, x = v.img.x - w / 2, y = v.img.y - v.img.displayHeight - 8;
+        g.fillStyle(0x07080e, 0.8).fillRect(x - 1, y - 1, w + 2, 7);
+        g.fillStyle(v.b.type === 'ancient_core' ? 0x5ad1ff : 0x8fd18a).fillRect(x, y, (w * hp) / max, 5);
+      }
+      return;
+    }
     const def = BUILDINGS[v.b.type];
     const total = (v.b.status === 'building' ? def.levels[0].seconds : def.levels[v.b.level].seconds) * 1000 || 1;
     const left = Math.max(0, v.b.endsAt - t);
@@ -180,6 +190,56 @@ export class TownSystem {
       this.combat.structureHit(target, atk.dmg);
       this.scene.tweens.add({ targets: v.img, y: v.img.y - 3, duration: 60, yoyo: true });
     } else this.combat.towerShot(ax, ay - v.img.displayHeight * 0.8, target, atk.dmg);
+  }
+
+  // ---------------------------------------------------------------- damage (night raids)
+
+  maxHp(b: PlacedBuilding) {
+    return BUILDINGS[b.type].levels[b.level - 1].hp;
+  }
+
+  get core(): PlacedBuilding {
+    return state.town.buildings.find((b) => b.type === 'ancient_core')!;
+  }
+
+  /** Screen position of the Core (where raiders march to). */
+  corePoint() {
+    const a = this.anchor(TOWN.coreX, TOWN.coreY, 2);
+    return { x: a.x, y: a.y - 10 };
+  }
+
+  /** The solid building on a tile, if any (finished or not). */
+  buildingOnTile(tx: number, ty: number): PlacedBuilding | null {
+    return state.town.buildings.find((b) => {
+      const s = BUILDINGS[b.type].size;
+      return BUILDINGS[b.type].solid && tx >= b.x && tx < b.x + s && ty >= b.y && ty < b.y + s;
+    }) ?? null;
+  }
+
+  /** Hurts a building. Regular buildings are destroyed at 0 HP; the Core reports 'core-fallen'. */
+  damage(b: PlacedBuilding, dmg: number) {
+    const v = this.views.find((w) => w.b === b);
+    if (!v) return;
+    b.hp = Math.max(0, (b.hp ?? this.maxHp(b)) - dmg);
+    v.img.setTint(0xff8080);
+    this.scene.time.delayedCall(90, () => v.img.clearTint());
+    fx.sparks(this.scene, v.img.x, v.img.y - v.img.displayHeight / 2, 0xffc080, 5, 110);
+    if (b.hp > 0) return;
+    if (b.type === 'ancient_core') return bus.emit('core-fallen');
+    // Destroyed: rubble puff, free the tiles, forget the building.
+    fx.dust(this.scene, v.img.x, v.img.y, 2.5);
+    fx.sparks(this.scene, v.img.x, v.img.y - 20, 0xc9a46a, 16, 180);
+    this.setFootprint(b, BUILDINGS[b.type], false);
+    [v.img, v.scaffold, v.bar, v.label, v.stored].forEach((o) => o.destroy());
+    this.views.splice(this.views.indexOf(v), 1);
+    state.town.buildings.splice(state.town.buildings.indexOf(b), 1);
+    bus.emit('toast', `${BUILDINGS[b.type].name} was destroyed!`);
+    bus.emit('town-changed');
+  }
+
+  /** Morning: everything is repaired. */
+  repairAll() {
+    for (const b of state.town.buildings) delete b.hp;
   }
 
   // ---------------------------------------------------------------- gathering

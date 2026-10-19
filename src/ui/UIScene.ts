@@ -34,6 +34,11 @@ export class UIScene extends Phaser.Scene {
   private buildingPanel!: BuildingPanel;
   private placementBar!: PlacementBar;
   private resTexts: Phaser.GameObjects.Text[] = [];
+  private cycleBox!: Phaser.GameObjects.Container;
+  private cyclePanel!: Phaser.GameObjects.NineSlice;
+  private cycleText!: Phaser.GameObjects.Text;
+  private cycleBar!: Phaser.GameObjects.Graphics;
+  private nightBtn!: Phaser.GameObjects.Container;
   private dodgeBtn!: ActionButton;
   private skillBtn!: ActionButton;
   private jobText!: Phaser.GameObjects.Text;
@@ -98,6 +103,17 @@ export class UIScene extends Phaser.Scene {
     this.questTitle = this.add.text(0, 0, 'QUESTS', text(15, COLORS.gold));
     this.questText = this.add.text(0, 0, '', { ...text(13), lineSpacing: 4 });
     this.questBox = this.add.container(0, 0, [this.questPanel, this.questIcon, this.questTitle, this.questText]);
+
+    // Day / night clock (top centre): time to nightfall and START NIGHT, or raiders left and Core HP.
+    this.cyclePanel = panel(this, -120, 0, 240, 40);
+    this.cycleText = this.add.text(0, 20, '', text(14)).setOrigin(0.5);
+    this.cycleBar = this.add.graphics();
+    const nbBg = panel(this, -60, 44, 120, 30, true);
+    const nbTx = this.add.text(0, 59, 'START NIGHT', text(13, COLORS.gold)).setOrigin(0.5);
+    nbBg.setInteractive({ useHandCursor: true }).on('pointerdown', () => bus.emit('start-night'));
+    this.nightBtn = this.add.container(0, 0, [nbBg, nbTx]);
+    this.cycleBox = this.add.container(0, 10, [this.cyclePanel, this.cycleText, this.cycleBar, this.nightBtn]);
+    bus.on('cycle-tick', (c: { raiders: number; coreHp: number; coreMax: number }) => this.drawCycle(c));
 
     // Touch controls (bottom). They also show on desktop, where keys work too.
     this.stick = new VirtualJoystick(this);
@@ -223,6 +239,7 @@ export class UIScene extends Phaser.Scene {
     const { width, height } = this.scale;
     const k = (this.k = height < 450 ? 0.72 : 1);
     this.statusBox.setScale(k);
+    this.cycleBox.setScale(k).setPosition(width / 2, 10);
     this.questBox.setScale(k);
     for (const b of [this.attackBtn, this.talkBtn, this.potionBtn, this.skillBtn, this.dodgeBtn]) b.setScale((b.baseScale = k));
     this.potionCount.setScale(k);
@@ -261,6 +278,22 @@ export class UIScene extends Phaser.Scene {
     bar(y + 81, s.exp, s.expToNext, COLORS.exp);
     this.goldText.setText(`${s.gold}`);
     this.jobText.setText(`JOB  ${JOBS[s.jobId].name.toUpperCase()}  ▸`);
+  }
+
+  private drawCycle(c: { raiders: number; coreHp: number; coreMax: number }) {
+    const cy = state.cycle;
+    const g = this.cycleBar.clear();
+    if (cy.phase === 'day') {
+      const s = Math.max(0, Math.ceil(cy.left / 1000));
+      this.cycleText.setText(`☀ DAY ${cy.day}   night in ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`).setColor(COLORS.text).setY(20);
+      this.nightBtn.setVisible(!state.inMenu && !state.inDialogue);
+      return;
+    }
+    this.nightBtn.setVisible(false);
+    this.cycleText.setText(`☾ NIGHT ${cy.day}   ${c.raiders} raiders left`).setColor('#b8c4ff').setY(14);
+    // Core health under the text.
+    g.fillStyle(0x07080e).fillRect(-90, 28, 180, 7);
+    g.fillStyle(c.coreHp / c.coreMax > 0.3 ? 0x5ad1ff : 0xff6a5a).fillRect(-89, 29, (178 * c.coreHp) / c.coreMax, 5);
   }
 
   private drawResources() {

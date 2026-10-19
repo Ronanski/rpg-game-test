@@ -9,8 +9,9 @@ import { QuestTracker } from '../systems/quest/QuestTracker';
 import { DialogueSystem } from '../systems/dialogue/DialogueSystem';
 import { state, emitStats } from '../core/GameState';
 import { bus } from '../core/EventBus';
-import { LightingSystem, AMBIENT } from '../systems/LightingSystem';
+import { LightingSystem } from '../systems/LightingSystem';
 import { TownSystem } from '../systems/town/TownSystem';
+import { WaveSystem } from '../systems/town/WaveSystem';
 import type { PlacedBuilding } from '../core/GameState';
 import { saveGame, setSnapshotSource, type SaveData } from '../core/SaveGame';
 
@@ -28,6 +29,8 @@ export class WorldScene extends Phaser.Scene {
   private nearNpc: Npc | null = null;
   private nearBuilding: PlacedBuilding | null = null;
   private town!: TownSystem;
+  private waves!: WaveSystem;
+  private lighting!: LightingSystem;
 
   constructor() {
     super('World');
@@ -37,8 +40,7 @@ export class WorldScene extends Phaser.Scene {
     const world = buildWorld();
     this.map = new IsoMap(this, world);
     this.map.render();
-    // Golden-hour dusk for now; M5 adds the full day/night cycle.
-    new LightingSystem(this).setAmbient(AMBIENT.dusk);
+    this.lighting = new LightingSystem(this);
 
     const start = gridToScreen(world.playerStart.x, world.playerStart.y);
     this.player = new Player(this, start.x, start.y, state.player!.texture);
@@ -55,6 +57,7 @@ export class WorldScene extends Phaser.Scene {
 
     this.town = new TownSystem(this, this.map, this.player, this.combat);
     this.wireTown();
+    this.waves = new WaveSystem(this, this.combat, this.town, this.lighting);
 
     // Continue a saved game: quests and the spot where the hero stood.
     if (data.save) {
@@ -124,6 +127,7 @@ export class WorldScene extends Phaser.Scene {
 
     if (!state.inMenu) this.combat.update(time, delta);
     this.town.update(time);
+    this.waves.update(time, delta);
     this.updateNearbyNpc();
   }
 

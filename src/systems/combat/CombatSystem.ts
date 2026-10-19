@@ -80,6 +80,21 @@ export class CombatSystem {
     }
   }
 
+  walkable(x: number, y: number) {
+    return this.map.walkable(x, y);
+  }
+
+  /** A night raider: marches on `goal`, never respawns. */
+  spawnRaider(id: keyof typeof MONSTERS, x: number, y: number, goal: { x: number; y: number }, boost = 1) {
+    const def = { ...MONSTERS[id], hp: Math.round(MONSTERS[id].hp * boost), atk: Math.round(MONSTERS[id].atk * boost) };
+    const m = new Monster(this.scene, x, y, def, { x, y });
+    m.goal = goal;
+    m.sprite.setAlpha(0);
+    this.scene.tweens.add({ targets: m.sprite, alpha: 1, duration: 400 });
+    this.monsters.push(m);
+    return m;
+  }
+
   update(now: number, dtMs: number) {
     const ps = state.player!;
     // Slow MP regen (Elves recover faster).
@@ -362,9 +377,10 @@ export class CombatSystem {
     this.quests.onKill(m.def.id);
     countJobAction('kills');
 
-    const zone = this.zoneOf.get(m)!;
+    const zone = this.zoneOf.get(m);
     this.zoneOf.delete(m);
-    this.scene.time.delayedCall(RESPAWN_MS, () => this.spawn(zone));
+    if (zone) this.scene.time.delayedCall(RESPAWN_MS, () => this.spawn(zone));
+    else bus.emit('raider-down', m);
   }
 
   gainExp(amount: number) {

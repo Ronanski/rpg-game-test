@@ -38,8 +38,15 @@ export interface PlacedBuilding {
   x: number; // grid tile (top corner of the footprint)
   y: number;
   status: 'building' | 'upgrading' | 'idle';
+  /** Damage taken (missing = full health). */
+  hp?: number;
   endsAt: number;
   lastCollected: number;
+}
+
+/** Day/night cycle: which day, the phase, and ms left in it (game time; paused while away). */
+export function newCycle() {
+  return { day: 1, phase: 'day' as 'day' | 'night', left: 150_000 };
 }
 
 export function newTown() {
@@ -60,6 +67,7 @@ export const state = {
   equipment: { weapon: null, armor: null, accessory: null } as Record<'weapon' | 'armor' | 'accessory', string | null>,
   /** Town resources (gold is on the player) and placed buildings. */
   town: newTown(),
+  cycle: newCycle(),
   /** Recharge timers the HUD draws on the SKILL and DODGE buttons (game time, ms). */
   cooldowns: { skillReady: 0, skillTotal: 1, dodgeReady: 0, dodgeTotal: 1 },
   /** True while a full-screen menu (e.g. JOBS) is open; the world pauses input like dialogue. */

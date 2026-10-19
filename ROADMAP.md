@@ -66,13 +66,18 @@ Target look: detailed 16-bit isometric pixel art with warm torch light, matching
 - [ ] Chop trees for wood, build a farm and an arrow tower, wait for the timer, and refresh: they are still there
 - [ ] Leave the farm for a while, walk past it, and collect gold
 
-## M5: Night waves (tower defense) ⏳ (next)
-- [ ] Day/night cycle
-- [ ] Monster waves attack the Ancient Core at night; towers shoot and walls block
-- [ ] Rewards for surviving a wave, losses for failing
+## M5: Night waves (tower defense) ✅
+- [x] Day/night cycle: 2.5-minute days that fade to dusk, then a dark night (torches and the Core glow); the clock pauses in menus and while the game is closed
+- [x] HUD clock: day number, time to nightfall, START NIGHT button; at night, raiders left and the Core's health
+- [x] Night raids: a wave walks in from the northern wilds toward the Ancient Core; later nights bring more and stronger monsters (slimes, wolves, goblins, skeletons, orcs)
+- [x] Towers and traps hit raiders; walls block them, and raiders break walls they are stuck on; raiders hit the Core when they reach it
+- [x] Survive: +gold, wood and stone (more each night), and buildings are repaired at dawn
+- [x] Core falls: raiders steal 25% of gold, wood and stone, and morning comes
+- [x] Day number saved; a night in progress resumes as the end of that day
 
 **Checkpoint**
-- [ ] Survive one night with the towers you built, and see the rewards
+- [ ] Build two towers and a wall north of the Core, press START NIGHT, and survive night 1
+- [ ] On a later night, watch raiders break a wall
 
 ## M6: Jobs, skills and gear 🔄 (core done)
 Jobs are earned by what you do in the game (start classless), and can be changed anytime.
