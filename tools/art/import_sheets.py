@@ -36,10 +36,28 @@ SPRITES = {
     'tavern': ('sheet_b.jpg', (1142, 9, 1975, 772), 150),
     'fountain': ('sheet_b.jpg', (1157, 712, 1609, 1147), 62),
     'chest': ('sheet_b.jpg', (1650, 806, 1945, 1093), 30),
+    'crystal': ('sheet_c.png', (384, 566, 556, 723), 32),
+    'gate': ('sheet_c.png', (1305, 534, 1522, 719), 38),
+    'barrel': ('sheet_c.png', (206, 796, 318, 943), 28),
+    'crate': ('sheet_c.png', (333, 815, 454, 948), 26),
+    'barrels': ('sheet_c.png', (465, 765, 635, 958), 40),
+    'signpost': ('sheet_c.png', (656, 771, 772, 950), 40),
+    'campfire': ('sheet_c.png', (1385, 777, 1526, 970), 34),
+    'cave': ('sheet_c.png', (1100, 702, 1379, 999), 104),
 }
 # Animated: list of boxes become frames of one sheet (same canvas size).
 ANIMS = {
     'slime': ('sheet_b.jpg', [(37, 1311, 299, 1517), (357, 1272, 611, 1517), (678, 1279, 939, 1517)], 30),
+    # Nature and village props (sheet_c). Variants are frames; the game picks one per spot.
+    'tree': ('sheet_c.png', [(27, 25, 355, 399), (359, 15, 684, 399), (692, 12, 1011, 416)], 112),
+    'pine': ('sheet_c.png', [(1023, 29, 1275, 415), (1282, 37, 1524, 426)], 120),
+    'bush': ('sheet_c.png', [(26, 408, 186, 545), (198, 406, 377, 550), (387, 404, 567, 552)], 32),
+    'flowers': ('sheet_c.png', [(583, 431, 711, 537), (723, 435, 831, 541), (846, 437, 972, 539), (985, 411, 1123, 538)], 24),
+    'rock': ('sheet_c.png', [(17, 573, 178, 710), (190, 566, 372, 726)], 30),
+    'mushroom': ('sheet_c.png', [(569, 582, 689, 710), (704, 582, 847, 712)], 24),
+    'fence': ('sheet_c.png', [(867, 557, 1082, 714), (1085, 557, 1307, 714)], 32),
+    # The two torches differ slightly, so alternating them makes the flame flicker.
+    'torch': ('sheet_c.png', [(15, 739, 105, 961), (115, 730, 195, 960)], 50),
 }
 TILES = {
     'tile_grass_deco': ('sheet_b.jpg', (27, 22, 713, 424)),
@@ -73,7 +91,7 @@ def cut(name: str, box, pad: int = 6) -> tuple[np.ndarray, np.ndarray]:
     bg = np.isin(lab, list(edge))
     # Enclosed white gaps (between legs, inside a bow) are background too; small ones are highlights.
     sizes = ndi.sum(white, lab, index=np.arange(lab.max() + 1))
-    bg |= white & (sizes[lab] > 900)
+    bg |= white & (sizes[lab] > 250)
     # Drop the anti-aliased white fringe around the sprite.
     fringe = ndi.binary_dilation(bg, iterations=2) & (rgb.min(axis=2) > 200)
     alpha = (~(bg | fringe)).astype(np.float32)
@@ -164,7 +182,8 @@ def all_sprites() -> dict:
         out[key] = sprite(name, box, height)
     out['hero'] = frames_same_canvas([out.pop('hero_front'), out.pop('hero_back')])
     for key, (name, boxes, height) in ANIMS.items():
-        out[key] = frames_same_canvas([sprite(name, b, height) for b in boxes])
+        frames = [sprite(name, b, height) for b in boxes]
+        out[key] = frames_same_canvas(frames)
     for key, (name, box) in TILES.items():
         t = tile(name, box)
         # Mirrored copies break up the repeat (a mirrored diamond is still a diamond).

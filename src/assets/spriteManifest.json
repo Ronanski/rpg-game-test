@@ -1,16 +1,39 @@
 [
  {
   "key": "barrel",
-  "w": 14,
-  "h": 17,
-  "scale": 2
+  "w": 21,
+  "h": 28,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "barrels",
+  "w": 35,
+  "h": 40,
+  "scale": 1,
+  "imported": true
  },
  {
   "key": "bush",
-  "w": 48,
-  "h": 18,
-  "scale": 2,
-  "frameWidth": 24
+  "w": 120,
+  "h": 32,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 40
+ },
+ {
+  "key": "campfire",
+  "w": 26,
+  "h": 34,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "cave",
+  "w": 100,
+  "h": 104,
+  "scale": 1,
+  "imported": true
  },
  {
   "key": "chest",
@@ -21,9 +44,25 @@
  },
  {
   "key": "crate",
-  "w": 26,
+  "w": 24,
+  "h": 26,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "crystal",
+  "w": 35,
   "h": 32,
-  "scale": 2
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "fence",
+  "w": 104,
+  "h": 32,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 52
  },
  {
   "key": "flowerbed",
@@ -32,9 +71,24 @@
   "scale": 2
  },
  {
+  "key": "flowers",
+  "w": 120,
+  "h": 24,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 30
+ },
+ {
   "key": "fountain",
   "w": 64,
   "h": 62,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "gate",
+  "w": 45,
+  "h": 38,
   "scale": 1,
   "imported": true
  },
@@ -130,6 +184,14 @@
   "scale": 2
  },
  {
+  "key": "mushroom",
+  "w": 54,
+  "h": 24,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 27
+ },
+ {
   "key": "npc_elder",
   "w": 34,
   "h": 60,
@@ -180,10 +242,11 @@
  },
  {
   "key": "pine",
-  "w": 64,
-  "h": 58,
-  "scale": 2,
-  "frameWidth": 32
+  "w": 156,
+  "h": 120,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 78
  },
  {
   "key": "portrait_hero",
@@ -194,9 +257,18 @@
  },
  {
   "key": "rock",
-  "w": 22,
-  "h": 16,
-  "scale": 2
+  "w": 72,
+  "h": 30,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 36
+ },
+ {
+  "key": "signpost",
+  "w": 26,
+  "h": 40,
+  "scale": 1,
+  "imported": true
  },
  {
   "key": "skeleton",
@@ -285,17 +357,19 @@
  },
  {
   "key": "torch",
-  "w": 30,
-  "h": 28,
-  "scale": 2,
-  "frameWidth": 10
+  "w": 40,
+  "h": 50,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 20
  },
  {
   "key": "tree",
-  "w": 84,
-  "h": 54,
-  "scale": 2,
-  "frameWidth": 42
+  "w": 294,
+  "h": 112,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 98
  },
  {
   "key": "ui_button",

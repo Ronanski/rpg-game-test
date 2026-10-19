@@ -38,11 +38,10 @@ export class IsoMap {
         continue;
       }
       const p = gridToScreen(prop.x, prop.y);
-      if (prop.kind === 'tree') this.scene.add.image(p.x, p.y + 4, 'shadow').setDepth(-99999).setScale(1.6, 1.3);
       const img = this.scene.add.sprite(p.x, p.y + 6, prop.texture, prop.frame ?? 0).setOrigin(0.5, 1).setDepth(p.y).setScale(s);
       if (prop.light) {
         // Flickering flame + warm light pool on the ground around it.
-        img.play({ key: 'torch_burn', startFrame: (prop.x + prop.y) % 3 });
+        if (prop.texture === 'torch') img.play({ key: 'torch_burn', startFrame: (prop.x + prop.y) % frameCount('torch') });
         const glow = this.scene.add.image(p.x, p.y - 30, 'glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(p.y + 1).setScale(1.6);
         this.scene.tweens.add({ targets: glow, alpha: 0.75, scale: 1.5, duration: 180 + (prop.x % 3) * 40, yoyo: true, repeat: -1 });
       }

@@ -13,7 +13,7 @@ font
   .finally(startGame);
 
 function startGame() {
-  new Phaser.Game({
+  const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: 'game',
     backgroundColor: '#0d0b14',
@@ -22,4 +22,6 @@ function startGame() {
     input: { activePointers: 3 },
     scene: [BootScene, StarterScene, WorldScene, UIScene],
   });
+  // Dev server only: lets automated browser tests inspect and drive the game.
+  if (import.meta.env.DEV) (window as unknown as { game: Phaser.Game }).game = game;
 }

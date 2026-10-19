@@ -126,10 +126,30 @@ export function buildWorld(): WorldData {
   deco('chest', 21, 21);
   deco('stall_red', 20, 23);
   deco('stall_yellow', 27, 23);
-  deco('barrel', 25, 19);
+  deco('barrels', 25, 19);
   deco('crate', 29, 25);
   deco('barrel', 18, 24);
+  deco('crate', 21, 19);
   for (const [tx, ty] of [[18, 18], [29, 18], [18, 29], [29, 29], [22, 18], [18, 22]]) deco('torch', tx, ty, true, { light: true });
+  // Signposts where the roads leave the village.
+  deco('signpost', 31, 22);
+  deco('signpost', 25, 31);
+  deco('signpost', 22, 16);
+  // A little fenced pen west of the village.
+  for (const [fx, fy, f] of [[12, 28, 0], [13, 27, 1], [15, 25, 0], [16, 24, 1]]) deco('fence', fx, fy, true, { frame: f });
+  deco('gate', 14, 26);
+
+  // The cave at the end of the north road (the way to the dungeon, later).
+  props.push({ kind: 'building', texture: 'cave', x: 22, y: 1 });
+  for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) blocked[1 + dy][22 + dx] = true;
+  deco('crystal', 20, 3);
+  deco('crystal', 26, 4);
+  deco('mushroom', 21, 5, false, { frame: 1 });
+  deco('mushroom', 25, 3, false);
+  deco('signpost', 25, 6);
+
+  // The stranger's camp across the river.
+  deco('campfire', 44, 22, true, { light: true });
 
   // Forest border, then scattered trees outside the village.
   for (let y = 0; y < MAP_H; y++) {
@@ -138,11 +158,23 @@ export function buildWorld(): WorldData {
       const scatter = !inVillage(x, y) && rnd.frac() < 0.07;
       if ((edge || scatter) && free(x, y)) {
         const pine = rnd.frac() < 0.45;
-        props.push({ kind: 'tree', texture: pine ? 'pine' : 'tree', frame: rnd.between(0, 1), x, y });
+        props.push({ kind: 'tree', texture: pine ? 'pine' : 'tree', frame: rnd.between(0, pine ? 1 : 2), x, y });
         blocked[y][x] = true;
       }
     }
   }
+  // Small nature details on open grass: flowers and mushrooms can be walked over; bushes and rocks block.
+  for (let y = 2; y < MAP_H - 2; y++) {
+    for (let x = 2; x < MAP_W - 2; x++) {
+      if (inVillage(x, y) || !free(x, y)) continue;
+      const r = rnd.frac();
+      if (r < 0.035) props.push({ kind: 'deco', texture: 'flowers', frame: rnd.between(0, 3), x, y });
+      else if (r < 0.05) props.push({ kind: 'deco', texture: 'mushroom', frame: rnd.between(0, 1), x, y });
+      else if (r < 0.07) (props.push({ kind: 'deco', texture: 'bush', frame: rnd.between(0, 2), x, y }), (blocked[y][x] = true));
+      else if (r < 0.08) (props.push({ kind: 'deco', texture: 'rock', frame: rnd.between(0, 1), x, y }), (blocked[y][x] = true));
+    }
+  }
+
   // Keep the map edge solid even where roads run out.
   for (let i = 0; i < MAP_W; i++) blocked[0][i] = blocked[MAP_H - 1][i] = blocked[i][0] = blocked[i][MAP_W - 1] = true;
 
@@ -158,9 +190,11 @@ export function buildWorld(): WorldData {
   const playerStart = { x: 24, y: 25 };
 
   // Clear any tree that landed on (or next to) an NPC or the start point.
-  const keepClear = [...npcs, playerStart];
+  // Also keep the cave mouth visible.
+  const caveArea = [[21, 1], [22, 0], [23, 0], [24, 1], [24, 2], [21, 2], [21, 3], [24, 3]].map(([x, y]) => ({ x, y }));
+  const keepClear = [...npcs, playerStart, ...caveArea];
   const near = (p: Prop) => keepClear.some((c) => Math.abs(c.x - p.x) <= 1 && Math.abs(c.y - p.y) <= 1);
-  const kept = props.filter((p) => p.kind !== 'tree' || !near(p));
+  const kept = props.filter((p) => !['tree', 'bush', 'rock'].includes(p.texture) || !near(p));
   for (const p of props) if (!kept.includes(p)) blocked[p.y][p.x] = false;
 
   return {

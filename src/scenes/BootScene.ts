@@ -20,7 +20,7 @@ export class BootScene extends Phaser.Scene {
 
   async create() {
     createTextures(this);
-    this.anims.create({ key: 'torch_burn', frames: this.anims.generateFrameNumbers('torch', {}), frameRate: 8, repeat: -1 });
+    this.anims.create({ key: 'torch_burn', frames: this.anims.generateFrameNumbers('torch', {}), frameRate: 5, repeat: -1 });
 
     try {
       state.online = (await ensureSession()) !== null;
