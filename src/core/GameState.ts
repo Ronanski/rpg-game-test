@@ -36,7 +36,15 @@ export const state = {
   inDialogue: false,
   inventory: new Map<string, number>(),
   storyFlags: new Set<string>(),
+  /** Earned jobs and the counters that earn them (see systems/combat/JobSystem). */
+  jobs: { unlocked: ['adventurer'] as string[], kills: 0, crits: 0, built: 0 },
+  /** True while a full-screen menu (e.g. JOBS) is open; the world pauses input like dialogue. */
+  inMenu: false,
 };
+
+export function resetJobs() {
+  state.jobs = { unlocked: ['adventurer'], kills: 0, crits: 0, built: 0 };
+}
 
 export function emitStats() {
   if (state.player) bus.emit('player-stats', state.player);

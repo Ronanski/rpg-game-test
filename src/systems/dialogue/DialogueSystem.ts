@@ -1,4 +1,5 @@
 import { state } from '../../core/GameState';
+import { isUnlocked, unlockJob } from '../combat/JobSystem';
 import type { QuestTracker } from '../quest/QuestTracker';
 
 export interface DialogueLine {
@@ -59,8 +60,17 @@ export class DialogueSystem {
       }
       case 'guard':
         return { lines: say('Stay on the roads after dark.', 'Wolves east of the river. Slimes in the fields. And worse things, they say.') };
-      case 'wizard':
-        return { lines: say('The Core\'s light is beautiful, isn\'t it?', 'Beautiful things are often hungry.') };
+      case 'wizard': {
+        // Old Ezra teaches the Mage job once the player has some experience.
+        if (isUnlocked('mage')) return { lines: say('Keep your flame small and your mind sharp.', 'The Core\'s light is beautiful. Beautiful things are often hungry.') };
+        if (state.player!.level < 3) {
+          return { lines: say('I am Ezra. Once, I taught magic to the Order.', 'Come back when you have seen a little more of the world. Level 3, perhaps.') };
+        }
+        return {
+          lines: say('You have grown. I can feel it.', 'Hold out your hand. Picture a spark... now let it burn.', 'There. You can now become a Mage. Open JOBS when you are ready.'),
+          onEnd: () => unlockJob('mage'),
+        };
+      }
       case 'villager':
         return { lines: say('Fresh bread at the stall! Well... fresh yesterday.') };
       case 'merchant':

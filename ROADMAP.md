@@ -49,7 +49,7 @@ Target look: detailed 16-bit isometric pixel art with warm torch light, matching
 **Checkpoint**
 - [ ] Level up, refresh the page, press CONTINUE, and you are still that level with the same gold
 
-## M4: Base building (day) ⏳
+## M4: Base building (day) ⏳ (next)
 - [ ] Build mode: place walls, towers, farms and mines on the town grid
 - [ ] Wood, stone, gold and mana; buildings take real time to finish
 - [ ] Upgrade buildings
@@ -65,14 +65,20 @@ Target look: detailed 16-bit isometric pixel art with warm torch light, matching
 **Checkpoint**
 - [ ] Survive one night with the towers you built, and see the rewards
 
-## M6: Jobs, skills and gear ⏳
+## M6: Jobs, skills and gear 🔄
 Jobs are earned by what you do in the game (start classless), and can be changed anytime.
-- [ ] Each job attacks differently (Mage: firebolt, Rogue: backstab)
-- [ ] Job change menu and sub-classes (Knight, Assassin, …)
-- [ ] Inventory and equipment screen; race bonuses apply
+- [x] Everyone starts as a classless Adventurer
+- [x] Earn jobs by playing: Warrior (defeat 15 monsters), Rogue (8 critical hits), Mage (reach level 3 and learn from Old Ezra), Builder (build 5 structures, arrives with M4)
+- [x] JOBS menu (JOB button under the gold, or J key): see every job, its skill and unlock progress; change job anytime
+- [x] Each job attacks differently: Warrior heavy wide swing, Rogue fast strikes and more crits, Mage Firebolt (ranged, 5 MP)
+- [x] MP slowly refills; race bonuses apply (Human +10% EXP, Elf +20% MP regen)
+- [x] Jobs and unlock progress are saved
+- [ ] Sub-classes (Knight, Assassin, …) and job levels
+- [ ] Inventory and equipment screen
 
 **Checkpoint**
-- [ ] Change Kael to Mage, equip a staff, and cast firebolt
+- [ ] Defeat 15 monsters, open JOBS, change to Warrior, and see stronger, wider hits
+- [ ] Reach level 3, talk to Old Ezra, change to Mage, and cast Firebolt
 
 ## M7: Story chapter 1 and new places ⏳
 - [ ] Building interiors (tavern, smithy) and a cave dungeon, like the reference images

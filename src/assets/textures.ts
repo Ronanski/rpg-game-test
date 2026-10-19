@@ -17,6 +17,12 @@ export function createTextures(scene: Phaser.Scene) {
   s.generateTexture('slash', 48, 48);
   s.destroy();
 
+  // Firebolt: a hot core inside a soft orange flame.
+  const fb = scene.add.graphics();
+  for (let r = 12; r > 0; r -= 2) fb.fillStyle(r > 6 ? 0xff6a1a : 0xffe08a, r > 6 ? 0.25 : 0.9).fillCircle(12, 12, r);
+  fb.generateTexture('firebolt', 24, 24);
+  fb.destroy();
+
   // Warm light pool for torches and windows (drawn additively).
   const g = scene.add.graphics();
   for (let r = 64; r > 0; r -= 4) g.fillStyle(0xffa040, 0.025).fillCircle(64, 64, r);

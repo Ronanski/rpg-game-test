@@ -17,13 +17,13 @@ export interface RaceDef {
 export const RACES_INFO: RaceDef[] = [
   {
     id: 'human', name: 'Human', passive: '+10% EXP', blurb: 'Adaptable and ambitious.',
-    sprite: { male: 'hero', female: 'npc_villager2' },
+    sprite: { male: 'hero', female: 'npc_healer' },
     names: { male: ['Kael', 'Aren', 'Dain', 'Rowan', 'Cale'], female: ['Mira', 'Tessa', 'Elin', 'Rhea', 'Nora'] },
   },
   {
     id: 'elf', name: 'Elf', passive: '+20% MP regen', blurb: 'Long-lived forest folk.',
     sprite: { male: 'hero_rook', female: 'hero_lyra' },
-    names: { male: ['Elric', 'Faen', 'Sylas', 'Thal', 'Ivo'], female: ['Aelin', 'Nyla', 'Siri', 'Lira', 'Wren'] },
+    names: { male: ['Elric', 'Faen', 'Sylas', 'Thal', 'Ivo'], female: ['Aelin', 'Nyla', 'Siri', 'Lira', 'Lyse'] },
   },
   {
     id: 'beastkin', name: 'Beastkin', passive: '+8% critical hits', blurb: 'Fierce hunters of the wilds.',

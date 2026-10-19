@@ -47,7 +47,25 @@ The owner's cast and regions. Each region (set) is one area of the game with its
 | Harek | Trap builder |
 | Zephyr | Assassin |
 
-## Open questions for the owner
+## Oakhaven extras (named by Claude, approved by the owner)
 
-- Lyra is a starting hero in the current build, but here she is Sylvan's herbalist. Rook is not in this list.
-- Oakhaven also has extra villagers that aren't in this list (guard, wizard, merchant, bard, ranger, child, and others). Keep, rename or remove?
+Short, easy names that don't clash with the main cast.
+
+| Name | Role |
+|---|---|
+| Old Ezra | Old wizard; teaches the Mage job at level 3 |
+| Guard Cole | Village guard |
+| Lena | Villager |
+| Hana | Archer villager |
+| Ned | Villager (the windmill rumor) |
+| Pip | Child |
+| Finn the Bard | Bard |
+| Ranger Wren | Ranger (goblin and blue slime tips) |
+| Gus the Merchant | Merchant (shop comes later) |
+| Hooded Stranger | Mystery figure across the river |
+
+## The player character
+
+The player isn't one of the named cast. At the start they pick a race (Human, Elf; more races once
+they have art), a gender, and a name from a short list of easy names per race. Everyone starts as a
+classless Adventurer and earns jobs in play (see ROADMAP.md, M6).

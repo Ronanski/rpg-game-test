@@ -29,6 +29,7 @@ export const JOBS: Record<string, JobDef> = {
   warrior: { name: 'Warrior', mods: { hp: 1.2, atk: 1.1 } },
   mage: { name: 'Mage', mods: { mp: 1.4, def: 0.9 } },
   rogue: { name: 'Rogue', mods: { spd: 1.25, atk: 1.05 } },
+  builder: { name: 'Builder', mods: { def: 1.1 } },
   warrior_knight: { name: 'Knight', parent: 'warrior', mods: { def: 1.3, hp: 1.2 } },
   warrior_paladin: { name: 'Paladin', parent: 'warrior', mods: { def: 1.2, mp: 1.3 } },
   warrior_berserker: { name: 'Berserker', parent: 'warrior', mods: { atk: 1.4, def: 0.8 } },

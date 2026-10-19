@@ -82,7 +82,7 @@ export class WorldScene extends Phaser.Scene {
 
   update(time: number, delta: number) {
     const c = state.controls;
-    if (!state.inDialogue) {
+    if (!state.inDialogue && !state.inMenu) {
       const k = this.keys;
       let kx = (k.right.isDown || k.d.isDown ? 1 : 0) - (k.left.isDown || k.a.isDown ? 1 : 0);
       let ky = (k.down.isDown || k.s.isDown ? 1 : 0) - (k.up.isDown || k.w.isDown ? 1 : 0);
@@ -102,7 +102,7 @@ export class WorldScene extends Phaser.Scene {
     }
     c.attack = c.talk = c.potion = false;
 
-    this.combat.update(time, delta);
+    if (!state.inMenu) this.combat.update(time, delta);
     this.updateNearbyNpc();
   }
 

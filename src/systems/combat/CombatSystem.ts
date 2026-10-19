@@ -8,9 +8,26 @@ import { state, emitStats, addItem } from '../../core/GameState';
 import { bus } from '../../core/EventBus';
 import { computeStats, expToNext } from './ClassSystem';
 import type { QuestTracker } from '../quest/QuestTracker';
+import { countJobAction } from './JobSystem';
 
-const ATTACK_COOLDOWN = 380;
-const ATTACK_RANGE = 70;
+/** How each job attacks. `arc` is the minimum facing alignment (lower = wider swing). */
+interface AttackStyle {
+  cooldown: number;
+  range: number;
+  arc: number;
+  crit: number;
+  power: number;
+}
+const STYLES: Record<string, AttackStyle> = {
+  adventurer: { cooldown: 380, range: 70, arc: 0.2, crit: 0.1, power: 1 },
+  warrior: { cooldown: 420, range: 82, arc: -0.15, crit: 0.1, power: 1.25 },
+  rogue: { cooldown: 250, range: 66, arc: 0.3, crit: 0.25, power: 0.9 },
+  builder: { cooldown: 420, range: 70, arc: 0.2, crit: 0.08, power: 1 },
+  mage: { cooldown: 380, range: 60, arc: 0.2, crit: 0.05, power: 0.6 }, // staff bonk when out of MP
+};
+const FIREBOLT = { mp: 5, range: 300, speed: 520, power: 1.7, cooldown: 480 };
+const MP_REGEN_MS = 1200; // 1 MP per tick
+const RACE_BONUS = { humanExp: 1.1, elfMpRegen: 1.2 };
 const RESPAWN_MS = 9000;
 const POTION_HEAL = 50; // health_potion effect.heal_hp in seed.sql
 
@@ -19,6 +36,7 @@ export class CombatSystem {
   readonly monsters: Monster[] = [];
   private zoneOf = new Map<Monster, SpawnZone>();
   private lastAttack = 0;
+  private mpTimer = 0;
 
   constructor(
     private scene: Phaser.Scene,
@@ -45,10 +63,16 @@ export class CombatSystem {
 
   update(now: number, dtMs: number) {
     const ps = state.player!;
+    // Slow MP regen (Elves recover faster).
+    this.mpTimer += dtMs * (ps.raceId === 'elf' ? RACE_BONUS.elfMpRegen : 1);
+    if (this.mpTimer >= MP_REGEN_MS) {
+      this.mpTimer -= MP_REGEN_MS;
+      if (ps.mp < ps.maxMp) (ps.mp++, emitStats());
+    }
     for (const m of this.monsters) {
       m.update(now, dtMs, this.player, this.map);
       // Contact damage.
-      if (!m.dead && m.distanceTo(this.player) < 30 && now > this.player.invulnerableUntil && !state.inDialogue) {
+      if (!m.dead && m.distanceTo(this.player) < 30 && now > this.player.invulnerableUntil && !state.inDialogue && !state.inMenu) {
         const dmg = Math.max(1, m.def.atk - Math.floor(ps.def / 2) + Phaser.Math.Between(-1, 2));
         ps.hp = Math.max(0, ps.hp - dmg);
         this.player.flashHurt(now);
@@ -60,28 +84,69 @@ export class CombatSystem {
     }
   }
 
-  /** Swing in the facing direction; hits every monster in a forward arc. */
+  /** Attacks the way the current job does: a melee swing, or a Firebolt for Mages with MP. */
   playerAttack(now: number) {
-    if (now - this.lastAttack < ATTACK_COOLDOWN) return;
+    const ps = state.player!;
+    if (ps.jobId === 'mage' && ps.mp >= FIREBOLT.mp) {
+      if (now - this.lastAttack < FIREBOLT.cooldown) return;
+      this.lastAttack = now;
+      ps.mp -= FIREBOLT.mp;
+      emitStats();
+      return this.firebolt();
+    }
+    const style = STYLES[ps.jobId] ?? STYLES.adventurer;
+    if (now - this.lastAttack < style.cooldown) return;
     this.lastAttack = now;
     const f = this.player.facing;
     const fx = this.player.x + f.x * 28, fy = this.player.y - 20 + f.y * 18;
     const slash = this.scene.add.image(fx, fy, 'slash').setDepth(this.player.y + 1).setRotation(Math.atan2(f.y, f.x));
-    this.scene.tweens.add({ targets: slash, alpha: 0, scale: 1.4, duration: 160, onComplete: () => slash.destroy() });
+    if (style.power > 1.1) slash.setScale(1.3).setTint(0xffc070);
+    this.scene.tweens.add({ targets: slash, alpha: 0, scale: slash.scale * 1.4, duration: 160, onComplete: () => slash.destroy() });
 
-    const ps = state.player!;
     for (const m of this.monsters) {
       if (m.dead) continue;
       const dx = m.x - this.player.x, dy = m.y - this.player.y;
       const dist = Math.hypot(dx, dy);
-      const inFront = dist < 1 || (dx * f.x + dy * f.y) / dist > 0.2;
-      if (dist > ATTACK_RANGE || !(inFront || dist < 30)) continue;
-      const crit = Math.random() < 0.1;
-      const dmg = Math.max(1, Math.round((ps.atk + Phaser.Math.Between(0, 3) - m.def.def) * (crit ? 1.8 : 1)));
-      m.hit(dmg, this.player);
-      this.floatText(m.x, m.y - 40, crit ? `${dmg}!` : `${dmg}`, crit ? '#ffd75e' : '#ffffff');
-      if (m.hp === 0) this.kill(m);
+      const inFront = dist < 1 || (dx * f.x + dy * f.y) / dist > style.arc;
+      if (dist > style.range || !(inFront || dist < 30)) continue;
+      this.damage(m, style.power, style.crit);
     }
+  }
+
+  private damage(m: Monster, power: number, critChance: number) {
+    const ps = state.player!;
+    const crit = Math.random() < critChance;
+    const dmg = Math.max(1, Math.round((ps.atk * power + Phaser.Math.Between(0, 3) - m.def.def) * (crit ? 1.8 : 1)));
+    m.hit(dmg, this.player);
+    this.floatText(m.x, m.y - 40, crit ? `${dmg}!` : `${dmg}`, crit ? '#ffd75e' : '#ffffff');
+    if (crit) countJobAction('crits');
+    if (m.hp === 0) this.kill(m);
+  }
+
+  /** Mage spell: a fireball flies in the facing direction and burns the first monster in its path. */
+  private firebolt() {
+    const f = this.player.facing.clone().normalize();
+    const sx = this.player.x, sy = this.player.y - 24;
+    let target: Monster | null = null, best = FIREBOLT.range;
+    for (const m of this.monsters) {
+      if (m.dead) continue;
+      const dx = m.x - this.player.x, dy = m.y - this.player.y;
+      const along = dx * f.x + dy * f.y;
+      const off = Math.abs(dx * f.y - dy * f.x);
+      if (along > 0 && along < best && off < 34) (best = along), (target = m);
+    }
+    const ex = target ? target.x : sx + f.x * FIREBOLT.range, ey = target ? target.y - 24 : sy + f.y * FIREBOLT.range;
+    const bolt = this.scene.add.image(sx, sy, 'firebolt').setDepth(this.player.y + 2).setBlendMode(Phaser.BlendModes.ADD);
+    this.scene.tweens.add({
+      targets: bolt, x: ex, y: ey,
+      duration: (Math.hypot(ex - sx, ey - sy) / FIREBOLT.speed) * 1000,
+      onComplete: () => {
+        bolt.destroy();
+        if (target && !target.dead) this.damage(target, FIREBOLT.power, 0.05);
+        const burst = this.scene.add.image(ex, ey, 'glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(ey + 100).setScale(0.6);
+        this.scene.tweens.add({ targets: burst, scale: 1.2, alpha: 0, duration: 220, onComplete: () => burst.destroy() });
+      },
+    });
   }
 
   /** Drinks a health potion. Does nothing at full HP or with none left. */
@@ -120,6 +185,7 @@ export class CombatSystem {
     }
     this.gainExp(m.def.exp);
     this.quests.onKill(m.def.id);
+    countJobAction('kills');
 
     const zone = this.zoneOf.get(m)!;
     this.zoneOf.delete(m);
@@ -128,7 +194,7 @@ export class CombatSystem {
 
   gainExp(amount: number) {
     const ps = state.player!;
-    ps.exp += amount;
+    ps.exp += Math.round(amount * (ps.raceId === 'human' ? RACE_BONUS.humanExp : 1));
     while (ps.exp >= ps.expToNext) {
       ps.exp -= ps.expToNext;
       ps.level++;

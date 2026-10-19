@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { state } from '../core/GameState';
+import { state, resetJobs } from '../core/GameState';
 import { computeStats, expToNext, RACES } from '../systems/combat/ClassSystem';
 import { RACES_INFO, START_JOB, type Gender, type RaceDef } from '../systems/combat/Origins';
 import { panel, text, COLORS } from '../ui/theme';
@@ -141,7 +141,8 @@ export class StarterScene extends Phaser.Scene {
   /** Draws a sprite as big as fits in `fit` px tall, keeping square pixels. Returns its bottom y. */
   private figure(key: string, cx: number, y: number, fit: number, add: Add) {
     const info = spriteInfo(key);
-    const scale = Math.max(1, Math.floor(fit / info.h)) * info.scale;
+    // info.scale is the sprite's base size (2 for half-size art); grow in whole steps of it.
+    const scale = Math.max(1, Math.floor(fit / (info.h * info.scale))) * info.scale;
     add(this.add.image(cx, y + info.h * scale, key, 0).setOrigin(0.5, 1).setScale(scale));
     return y + info.h * scale;
   }
@@ -251,6 +252,7 @@ export class StarterScene extends Phaser.Scene {
     state.inventory.clear();
     state.inventory.set('health_potion', 3);
     state.storyFlags.clear();
+    resetJobs();
     this.cameras.main.fadeOut(250);
     this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('World'));
   }

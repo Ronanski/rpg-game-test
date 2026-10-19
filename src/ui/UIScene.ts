@@ -4,6 +4,8 @@ import { state, type PlayerStats } from '../core/GameState';
 import { VirtualJoystick } from './VirtualJoystick';
 import { ActionButton } from './ActionButton';
 import { DialogueBox } from './DialogueBox';
+import { JobMenu } from './JobMenu';
+import { JOBS } from '../systems/combat/ClassSystem';
 import { panel, resizePanel, text, applyPortrait, COLORS } from './theme';
 import type { Conversation } from '../systems/dialogue/DialogueSystem';
 import type { QuestTracker } from '../systems/quest/QuestTracker';
@@ -21,6 +23,8 @@ export class UIScene extends Phaser.Scene {
   private potionBtn!: ActionButton;
   private potionCount!: Phaser.GameObjects.Text;
   private dialogue!: DialogueBox;
+  private jobMenu!: JobMenu;
+  private jobText!: Phaser.GameObjects.Text;
   private bars!: Phaser.GameObjects.Graphics;
   private nameText!: Phaser.GameObjects.Text;
   private levelText!: Phaser.GameObjects.Text;
@@ -57,7 +61,11 @@ export class UIScene extends Phaser.Scene {
     this.bars = this.add.graphics();
     const coin = this.add.image(x + 16, y + STATUS_H + 18, 'icon_coin').setScale(2);
     this.goldText = this.add.text(x + 32, y + STATUS_H + 9, '', text(16, COLORS.gold));
-    this.statusBox = this.add.container(0, 0, [statusPanel, portraitPanel, portrait, this.nameText, this.levelText, this.barLabels, this.bars, coin, this.goldText]);
+    // JOB button under the gold: shows the current job, opens the JOBS menu (J key too).
+    const jobPanel = panel(this, x, y + STATUS_H + 32, 170, 32);
+    this.jobText = this.add.text(x + 12, y + STATUS_H + 48, '', text(14)).setOrigin(0, 0.5);
+    jobPanel.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.toggleJobs());
+    this.statusBox = this.add.container(0, 0, [statusPanel, portraitPanel, portrait, this.nameText, this.levelText, this.barLabels, this.bars, coin, this.goldText, jobPanel, this.jobText]);
 
     // Quest tracker (top-right).
     this.questPanel = panel(this, 0, 10, 200, 60);
@@ -73,6 +81,7 @@ export class UIScene extends Phaser.Scene {
     this.potionBtn = new ActionButton(this, 'POTION', 'icon_potion', 64, () => (state.controls.potion = true));
     this.potionCount = this.add.text(0, 0, '', text(15, COLORS.gold)).setOrigin(1, 0).setDepth(12);
     this.dialogue = new DialogueBox(this);
+    this.jobMenu = new JobMenu(this, () => this.setControlsVisible(true));
 
     this.layout();
     this.scale.on('resize', this.layout, this);
@@ -88,6 +97,9 @@ export class UIScene extends Phaser.Scene {
     const kb = this.input.keyboard;
     kb?.on('keydown-SPACE', () => this.dialogue.advance());
     kb?.on('keydown-E', () => this.dialogue.advance());
+    kb?.on('keydown-J', () => this.toggleJobs());
+    kb?.on('keydown-ESC', () => this.jobMenu.isOpen && this.jobMenu.close());
+    bus.on('jobs-changed', () => this.jobMenu.draw());
 
     if (state.player) this.drawStatus(state.player);
     this.drawQuests();
@@ -96,10 +108,17 @@ export class UIScene extends Phaser.Scene {
 
   update() {
     this.dialogue.layout();
-    if (!state.inDialogue) {
+    if (!state.inDialogue && !state.inMenu) {
       state.controls.moveX = this.stick.value.x;
       state.controls.moveY = this.stick.value.y;
     }
+  }
+
+  private toggleJobs() {
+    if (state.inDialogue) return;
+    if (this.jobMenu.isOpen) return this.jobMenu.close();
+    this.setControlsVisible(false);
+    this.jobMenu.open();
   }
 
   private openDialogue(c: Conversation) {
@@ -138,6 +157,7 @@ export class UIScene extends Phaser.Scene {
     this.potionCount.setPosition(width - 34 * k, height - 194 * k);
     this.stick.resetPosition();
     this.dialogue.layout();
+    this.jobMenu.draw();
     this.drawQuests();
   }
 
@@ -160,6 +180,7 @@ export class UIScene extends Phaser.Scene {
     bar(y + 61, s.mp, s.maxMp, COLORS.mp);
     bar(y + 81, s.exp, s.expToNext, COLORS.exp);
     this.goldText.setText(`${s.gold}`);
+    this.jobText.setText(`JOB  ${JOBS[s.jobId].name.toUpperCase()}  ▸`);
   }
 
   private drawPotions() {
