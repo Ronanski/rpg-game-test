@@ -33,6 +33,9 @@ export class UIScene extends Phaser.Scene {
   private shopMenu!: ShopMenu;
   private pauseMenu!: PauseMenu;
   private menuBtn!: Phaser.GameObjects.Container;
+  private zoomBox!: Phaser.GameObjects.Container;
+  private objArrow!: Phaser.GameObjects.Container;
+  private objText!: Phaser.GameObjects.Text;
   private buildMenu!: BuildMenu;
   private buildingPanel!: BuildingPanel;
   private placementBar!: PlacementBar;
@@ -121,6 +124,20 @@ export class UIScene extends Phaser.Scene {
     const mText = this.add.text(-22, 32, '☰', text(22)).setOrigin(0.5);
     mPanel.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.openPause());
     this.menuBtn = this.add.container(0, 0, [mPanel, mText]);
+    // Zoom in / out (pinch with two fingers, or the mouse wheel, works too).
+    const zBtn = (y: number, label: string, f: number) => {
+      const p = panel(this, -44, y, 44, 40);
+      p.setInteractive({ useHandCursor: true }).on('pointerdown', () => bus.emit('zoom-by', f));
+      return [p, this.add.text(-22, y + 20, label, text(22)).setOrigin(0.5)];
+    };
+    this.zoomBox = this.add.container(0, 0, [...zBtn(0, '+', 1.25), ...zBtn(44, '−', 0.8)]);
+    // Arrow at the screen edge pointing to what to do next (quest giver, monsters, the Core at night).
+    const g = this.add.graphics();
+    g.fillStyle(0xffd75e).fillTriangle(16, 0, -10, -11, -10, 11).lineStyle(2, 0x07080e).strokeTriangle(16, 0, -10, -11, -10, 11);
+    this.objText = this.add.text(0, 22, '', text(13, COLORS.gold)).setOrigin(0.5, 0);
+    this.objArrow = this.add.container(0, 0, [g, this.objText]).setVisible(false).setDepth(40);
+    this.tweens.add({ targets: g, scale: 1.2, duration: 450, yoyo: true, repeat: -1 });
+    this.listen('objective', (o: { sx: number; sy: number; label: string; onScreen: boolean } | null) => this.drawObjective(o));
 
     // Day / night clock (top centre): time to nightfall and START NIGHT, or raiders left and Core HP.
     this.cyclePanel = panel(this, -120, 0, 240, 40);
@@ -187,10 +204,25 @@ export class UIScene extends Phaser.Scene {
     });
     // In build mode, drag on the world to move the building (or pan); tap to select.
     let down: { x: number; y: number; lx: number; ly: number; drag: boolean } | null = null;
+    // Outside build mode, a quick tap on the world (an NPC) is sent to the world scene.
+    let tap: { x: number; y: number; t: number } | null = null;
+    let pinch = 0;
     this.input.on('pointerdown', (p: Phaser.Input.Pointer, over: unknown[]) => {
       if (state.buildMode && !state.inMenu && over.length === 0) down = { x: p.x, y: p.y, lx: p.x, ly: p.y, drag: false };
+      tap = !state.buildMode && !state.inMenu && !state.inDialogue && over.length === 0 ? { x: p.x, y: p.y, t: this.time.now } : null;
+      pinch = 0;
     });
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      // Two fingers: pinch to zoom.
+      const a = this.input.pointer1, b = this.input.pointer2;
+      if (a.isDown && b.isDown && !state.inMenu) {
+        const d = Phaser.Math.Distance.Between(a.x, a.y, b.x, b.y);
+        if (pinch > 0 && Math.abs(d - pinch) > 2) bus.emit('zoom-by', d / pinch);
+        pinch = d;
+        tap = null;
+        return;
+      }
+      if (tap && Math.hypot(p.x - tap.x, p.y - tap.y) > 12) tap = null;
       if (!down || !p.isDown) return;
       if (!down.drag && Math.hypot(p.x - down.x, p.y - down.y) > 8) down.drag = true;
       if (down.drag) bus.emit('build-drag', p.x, p.y, p.x - down.lx, p.y - down.ly);
@@ -200,6 +232,9 @@ export class UIScene extends Phaser.Scene {
     this.input.on('pointerup', (p: Phaser.Input.Pointer) => {
       if (down && !down.drag) bus.emit('build-tap', p.x, p.y);
       down = null;
+      if (tap && this.time.now - tap.t < 350) bus.emit('world-tap', p.x, p.y);
+      tap = null;
+      pinch = 0;
     });
     this.listen('resources-changed', () => this.drawResources());
     this.listen('town-changed', () => (this.drawResources(), this.buildingPanel.draw(), this.buildMenu.draw(), this.buildBar.visible && this.showBuildBar()));
@@ -319,13 +354,36 @@ export class UIScene extends Phaser.Scene {
     if (!on) this.talkBtn.setVisible(false);
   }
 
+  /** Points the guide arrow at the next goal (hidden when it's already on screen). */
+  private drawObjective(o: { sx: number; sy: number; label: string; onScreen: boolean } | null) {
+    if (!o || state.inMenu || state.buildMode) return void this.objArrow.setVisible(false);
+    const { width, height } = this.scale;
+    const cx = width / 2, cy = height / 2;
+    if (o.onScreen) {
+      // Bob just above the goal itself.
+      this.objArrow.setVisible(true).setPosition(o.sx, Math.max(60, o.sy - 70));
+      (this.objArrow.list[0] as Phaser.GameObjects.Graphics).setRotation(Math.PI / 2);
+      // The goal is in view (and has its own name tag): just the arrow over it.
+      this.objText.setText('');
+      return;
+    }
+    const ang = Math.atan2(o.sy - cy, o.sx - cx);
+    const mx = width / 2 - 70, my = height / 2 - 70;
+    const t = Math.min(mx / Math.abs(Math.cos(ang) || 1e-6), my / Math.abs(Math.sin(ang) || 1e-6));
+    this.objArrow.setVisible(true).setPosition(cx + Math.cos(ang) * t, cy + Math.sin(ang) * t);
+    (this.objArrow.list[0] as Phaser.GameObjects.Graphics).setRotation(ang);
+    this.objText.setText(o.label).setY(18);
+  }
+
   private layout() {
     const { width, height } = this.scale;
-    const k = (this.k = height < 450 ? 0.72 : 1);
+    // Short phone screens get a slightly smaller HUD, but not so small the text can't be read.
+    const k = (this.k = height < 450 ? 0.88 : 1);
     this.statusBox.setScale(k);
     this.cycleBox.setScale(k).setPosition(width / 2, 10);
     this.questBox.setScale(k);
     this.menuBtn.setScale(k).setPosition(width - 10, 0);
+    this.zoomBox.setScale(k).setPosition(width - 10, 56 * k);
     for (const b of [this.attackBtn, this.talkBtn, this.potionBtn, this.skillBtn, this.dodgeBtn]) b.setScale((b.baseScale = k));
     this.potionCount.setScale(k);
     this.attackBtn.setPosition(width - 62 * k, height - 62 * k);

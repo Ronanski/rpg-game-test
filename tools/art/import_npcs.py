@@ -20,7 +20,7 @@ ROWS = {
     'npcanim_villager_m': (76, 174), 'npcanim_villager_f': (175, 281),
     'npcanim_guard': (387, 503), 'npcanim_farmer': (736, 856), 'npcanim_innkeeper': (856, 974),
 }
-HEIGHT = 52  # standing height in game pixels
+HEIGHT = 56  # standing height in game pixels (same as the heroes)
 WANT = {'idle': 1, 'walk': 3, 'talk': 1}
 
 

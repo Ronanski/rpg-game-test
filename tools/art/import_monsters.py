@@ -25,7 +25,7 @@ ROWS = {
 }
 # Height in game pixels of the idle pose (close to the old single-picture monsters).
 HEIGHT = {
-    'slime': 26, 'slime_blue': 28, 'slime_red': 28, 'goblin': 46, 'orc': 56, 'skeleton': 54,
+    'slime': 26, 'slime_blue': 28, 'slime_red': 28, 'goblin': 46, 'orc': 66, 'skeleton': 54,
     'zombie': 50, 'bat': 30, 'spider': 30,
 }
 

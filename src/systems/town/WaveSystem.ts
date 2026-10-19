@@ -16,7 +16,9 @@ import { give } from './Economy';
 
 const DAY_MS = 150_000;
 const DUSK_MS = 25_000; // last part of the day, getting darker (warning)
-const CORE_REACH = 46; // px from the Core's centre where raiders can hit it
+const CORE_REACH = 46;
+/** A night never lasts longer than this: the raiders still out there flee at dawn. */
+const NIGHT_MAX_MS = 150_000; // px from the Core's centre where raiders can hit it
 // Grid tiles at the wild edges around the town grounds (east of the river, which raiders can't cross).
 const SPAWNS = [[61, 42], [62, 51], [61, 61], [52, 62], [44, 62]];
 
@@ -81,6 +83,8 @@ export class WaveSystem {
     } else {
       this.spawnDue(now);
       this.raid(now);
+      c.left += dtMs; // time spent in the night so far
+      if (c.left >= NIGHT_MAX_MS && state.cycle.phase === 'night') this.retreat();
     }
     this.applyLight();
     const core = this.town.core;
@@ -103,6 +107,19 @@ export class WaveSystem {
     this.toSpawn.push({ id: boss.id, at: t + 800 + ids.length * 900 + 1500, boost, boss });
     bus.emit('toast', `Night ${c.day}: the ${boss.title} leads the monsters to the Ancient Core!`);
     this.scene.cameras.main.flash(500, 40, 20, 80);
+  }
+
+  /** The night ran out: the raiders still around run off, and morning comes. */
+  private retreat() {
+    this.toSpawn = [];
+    for (const m of this.raiders) {
+      m.dead = true;
+      m.hpBar.clear();
+      this.scene.tweens.add({ targets: [m.sprite, m.shadow], alpha: 0, duration: 500, onComplete: () => this.combat.remove(m) });
+    }
+    this.raiders = [];
+    bus.emit('toast', 'Dawn breaks. The last raiders flee.');
+    this.dawn(true);
   }
 
   private dawn(won: boolean) {

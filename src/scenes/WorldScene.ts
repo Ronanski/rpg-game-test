@@ -48,6 +48,11 @@ export class WorldScene extends Phaser.Scene {
   private leaving = false;
   /** Hana travels with the hero once she has joined (story flag hana_joined). */
   private ally: Companion | null = null;
+  /** Tapped NPC the hero is walking to (talks on arrival). */
+  private walkTo: Npc | null = null;
+  /** Red ring under the monster an attack would go for. */
+  private targetRing!: Phaser.GameObjects.Graphics;
+  private nextObjective = 0;
   private lighting!: LightingSystem;
 
   constructor() {
@@ -138,6 +143,26 @@ export class WorldScene extends Phaser.Scene {
     this.zoom = Phaser.Math.Clamp(Math.round((this.scale.height / 460) * 4) / 4, 1, 2.5);
     cam.setZoom(this.zoom);
     cam.setRoundPixels(true);
+    // Zoom: + / − buttons and pinch (UI scene), mouse wheel here.
+    const zoomBy = (f: number) => {
+      if (state.buildMode) return;
+      this.zoom = Phaser.Math.Clamp(this.zoom * f, 0.75, 3);
+      cam.setZoom(this.zoom);
+    };
+    this.input.on('wheel', (_p: unknown, _o: unknown, _dx: number, dy: number) => zoomBy(dy > 0 ? 0.9 : 1.1));
+    // Tap an NPC: walk over and talk.
+    const onTap = (sx: number, sy: number) => {
+      const p = cam.getWorldPoint(sx, sy);
+      const npc = this.npcs.find((n) => Math.abs(p.x - n.x) < 24 && p.y > n.y - n.sprite.displayHeight - 8 && p.y < n.y + 10);
+      if (!npc) return;
+      if (npc.distanceTo(this.player) < TALK_RANGE) this.startTalk(npc);
+      else this.walkTo = npc;
+    };
+    bus.on('zoom-by', zoomBy);
+    bus.on('world-tap', onTap);
+    this.events.once('shutdown', () => (bus.off('zoom-by', zoomBy), bus.off('world-tap', onTap)));
+    this.targetRing = this.add.graphics().setDepth(-99990);
+    this.walkTo = null;
 
     const kb = this.input.keyboard!;
     this.keys = kb.addKeys('up,down,left,right,w,a,s,d,space,e,q,shift,f,enter') as typeof this.keys;
@@ -196,7 +221,17 @@ export class WorldScene extends Phaser.Scene {
       let ky = (k.down.isDown || k.s.isDown ? 1 : 0) - (k.up.isDown || k.w.isDown ? 1 : 0);
       // Keyboard moves along the iso axes visually: half vertical speed reads as "diagonal".
       if (kx && ky) { kx *= 0.894; ky *= 0.447; }
-      const mx = kx || c.moveX, my = ky || c.moveY;
+      let mx = kx || c.moveX, my = ky || c.moveY;
+      // Walking to a tapped NPC (any stick or key input takes over again).
+      if (mx || my) this.walkTo = null;
+      else if (this.walkTo) {
+        const dx = this.walkTo.x - this.player.x, dy = this.walkTo.y - this.player.y, d = Math.hypot(dx, dy);
+        if (d < TALK_RANGE - 12) {
+          const n = this.walkTo;
+          this.walkTo = null;
+          this.startTalk(n);
+        } else (mx = dx / d), (my = dy / d);
+      }
       this.player.move(mx, my, state.player!.spd, delta, this.map);
 
       if (Phaser.Input.Keyboard.JustDown(this.keys.space)) c.attack = true;
@@ -227,6 +262,69 @@ export class WorldScene extends Phaser.Scene {
       if (target) this.combat.allyShot(this.ally.x, this.ally.y, target, 8 + state.player!.level * 2);
     }
     this.updateNearbyNpc();
+    this.drawTarget(time);
+    if (time > this.nextObjective) {
+      this.nextObjective = time + 200;
+      this.emitObjective();
+    }
+  }
+
+  /** A pulsing red ring under the monster the next attack goes for. */
+  private drawTarget(time: number) {
+    const g = this.targetRing.clear();
+    const m = state.inMenu || state.buildMode ? null : this.combat.nearestTarget();
+    if (!m) return;
+    const pulse = 1 + Math.sin(time / 120) * 0.08;
+    const w = Math.max(28, m.sprite.displayWidth * 0.8) * pulse;
+    g.lineStyle(3, 0xff4a3a, 0.9).strokeEllipse(m.x, m.y, w, w * 0.45);
+  }
+
+  /** Works out the next goal (quest, giver, monsters, the Core at night) and tells the UI where it is. */
+  private emitObjective() {
+    const goal = this.objective();
+    if (!goal) return void bus.emit('objective', null);
+    const cam = this.cameras.main, v = cam.worldView;
+    const sx = (goal.x - v.x) * cam.zoom, sy = (goal.y - v.y) * cam.zoom;
+    const onScreen = sx > 30 && sy > 30 && sx < this.scale.width - 30 && sy < this.scale.height - 30;
+    bus.emit('objective', { sx, sy, label: goal.label, onScreen });
+  }
+
+  private objective(): { x: number; y: number; label: string } | null {
+    const at = (id: string) => this.npcs.find((n) => n.def.id === id);
+    const exit = this.doors.find((d) => d.to === 'overworld');
+    const exitGoal = (label: string) => (exit ? { ...gridToScreen(exit.x, exit.y), label } : null);
+    if (this.area === 'overworld' && state.cycle.phase === 'night' && this.town) return { ...this.town.corePoint(), label: 'Defend the Core!' };
+    const q = this.quests;
+    const active = [...q.active()].sort((a, b) => Number(b.id.startsWith('main')) - Number(a.id.startsWith('main')));
+    for (const quest of active) {
+      const o = quest.objective;
+      if (o.type === 'talk') {
+        const n = at(o.target);
+        return n ? { x: n.x, y: n.y - 30, label: `Talk to ${n.def.name}` } : exitGoal('Leave');
+      }
+      if (q.isDone(quest.id)) {
+        const n = at(quest.giver);
+        return n ? { x: n.x, y: n.y - 30, label: `Report to ${n.def.name}` } : exitGoal('Leave');
+      }
+      if (o.target === 'gravemaw') {
+        const boss = this.combat.liveMonsters.find((m) => m.def.tag === 'gravemaw' && !m.dead);
+        if (boss) return { x: boss.x, y: boss.y - 30, label: 'Gravemaw' };
+        const cave = this.doors.find((d) => d.to === 'cave');
+        if (cave) return { ...gridToScreen(cave.x, cave.y), label: 'Old Cave' };
+        continue;
+      }
+      const want = o.type === 'collect' && o.target === 'wolf_pelt' ? 'wolf' : o.target;
+      let best: { x: number; y: number } | null = null, bd = Infinity;
+      for (const m of this.combat.liveMonsters) {
+        if (m.dead || m.def.id !== want || m.goal) continue;
+        const d = m.distanceTo(this.player);
+        if (d < bd) (bd = d), (best = m);
+      }
+      if (best) return { x: best.x, y: best.y - 20, label: o.label.split('(')[0].trim() };
+    }
+    const offer = this.npcs.find((n) => q.markerFor(n.def.id) === '!');
+    if (offer) return { x: offer.x, y: offer.y - 30, label: `New quest: ${offer.def.name}` };
+    return null;
   }
 
   /** NPC life (wandering, names up close) and their markers: ! quest, ? hand in, $ shop, ✦ teacher. */
