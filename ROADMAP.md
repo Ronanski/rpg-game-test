@@ -142,7 +142,7 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 
 ## Playtest 4 fixes (archer focus) ✅
 - [x] One hero for now: New Game makes an Elf archer, you only pick the name
-- [x] Readable fonts: Alegreya Sans for text, Cinzel for titles (SIL OFL); black-and-gold panels like the owner's UI kit
+- [x] Readable text: the phone's own standard font, only 5 text sizes in the whole game, nothing overlapping (quest panel, mini-map, guide arrow, build bar, build shop checked at phone size); black-and-gold panels like the owner's UI kit
 - [x] Trees, rocks and props only block their middle, so you can walk close past them; bushes can be walked through
 - [x] More builders: Builder's Huts are cheaper (150 gold + 50 wood, then 500 gold, then 1200) and you can have up to 4
 - [x] New towers: Mage Tower (frost bolts that slow) and Cannon Tower (blast that hits everything nearby)

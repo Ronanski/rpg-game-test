@@ -11,7 +11,7 @@ import { LIGHT_DEPTH } from '../LightingSystem';
 import { countJobAction } from '../combat/JobSystem';
 import { BUILDINGS, builders, placeCost, timeText, type BuildingDef, type LevelDef, type Resource } from './Buildings';
 import { canAfford, give, pay } from './Economy';
-import { FONT } from '../../ui/theme';
+import { worldText } from '../../ui/theme';
 import * as fx from '../combat/Fx';
 
 const GATHER_COOLDOWN = 4000; // ms before the same tree / rock gives more
@@ -108,7 +108,7 @@ export class TownSystem {
     if (def.tint) img.setTint(def.tint);
     const scaffold = this.scene.add.image(a.x, a.y, 'b_scaffold').setOrigin(0.5, 1).setScale(2).setDepth(a.y + 1).setVisible(false);
     const bar = this.scene.add.graphics().setDepth(100000);
-    const label = this.scene.add.text(a.x, a.y - img.displayHeight - 22, '', { fontFamily: FONT, fontStyle: 'bold', resolution: 2, fontSize: '11px', color: '#f4ead0', stroke: '#07080e', strokeThickness: 3 }).setOrigin(0.5).setDepth(100001);
+    const label = this.scene.add.text(a.x, a.y - img.displayHeight - 22, '', worldText('small', '#f4ead0')).setOrigin(0.5).setDepth(100001);
     const res = def.levels[0].produces ? Object.keys(def.levels[0].produces)[0] : 'gold';
     const stored = this.scene.add.image(a.x, a.y - img.displayHeight - 8, res === 'gold' ? 'item_coin' : `res_${res}`).setScale(res === 'gold' ? 1 : 2).setDepth(100001).setVisible(false);
     this.scene.tweens.add({ targets: stored, y: stored.y - 4, duration: 600, yoyo: true, repeat: -1 });
@@ -504,7 +504,7 @@ export class TownSystem {
   }
 
   private float(x: number, y: number, msg: string, color: string) {
-    const t = this.scene.add.text(x, y, msg, { fontFamily: FONT, fontStyle: 'bold', resolution: 2, fontSize: '15px', color, stroke: '#07080e', strokeThickness: 4 }).setOrigin(0.5).setDepth(200000);
+    const t = this.scene.add.text(x, y, msg, worldText('body', color)).setOrigin(0.5).setDepth(200000);
     this.scene.tweens.add({ targets: t, y: y - 30, alpha: 0, duration: 900, onComplete: () => t.destroy() });
   }
 }

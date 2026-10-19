@@ -3,7 +3,7 @@ import { Actor } from './Actor';
 import type { IsoMap } from '../iso/IsoMap';
 import { screenToTile } from '../iso/iso';
 import { inTown, isSafeTile } from '../world/worldData';
-import { FONT } from '../ui/theme';
+import { worldText } from '../ui/theme';
 import { isMonsterAnim } from '../assets/sprites';
 
 const LEASH = 280; // wild monsters give up a chase this far from home
@@ -104,7 +104,7 @@ export class Monster extends Actor {
     this.hpBar = scene.add.graphics().setDepth(100000);
     if (def.boss) {
       this.title = scene.add
-        .text(x, y, def.boss, { fontFamily: FONT, fontStyle: 'bold', resolution: 2, fontSize: '13px', color: '#ffb347', stroke: '#07080e', strokeThickness: 4 })
+        .text(x, y, def.boss, worldText('small', '#ffb347'))
         .setOrigin(0.5, 1)
         .setDepth(100000);
       // A dark-red glow under the boss's feet.

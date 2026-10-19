@@ -11,7 +11,7 @@ import { recalcStats, weaponType, ITEMS } from '../items/Items';
 import type { QuestTracker } from '../quest/QuestTracker';
 import { countJobAction } from './JobSystem';
 import * as fx from './Fx';
-import { FONT } from '../../ui/theme';
+import { text as textStyle } from '../../ui/theme';
 
 /** How each job attacks. `arc` is the minimum facing alignment (lower = wider swing). */
 interface AttackStyle {
@@ -586,7 +586,7 @@ export class CombatSystem {
 
   floatText(x: number, y: number, text: string, color: string, size = 18) {
     const t = this.scene.add
-      .text(x, y, text, { fontFamily: FONT, fontStyle: 'bold', resolution: 2, fontSize: `${size}px`, color, stroke: '#07080e', strokeThickness: 4 })
+      .text(x, y, text, textStyle(size, color))
       .setOrigin(0.5)
       .setDepth(200000);
     this.scene.tweens.add({ targets: t, y: y - 30, alpha: 0, duration: 800, ease: 'Cubic.easeOut', onComplete: () => t.destroy() });

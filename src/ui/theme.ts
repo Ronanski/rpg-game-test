@@ -1,9 +1,8 @@
 import Phaser from 'phaser';
 import { spriteInfo } from '../assets/sprites';
 
-/** Text font (Alegreya Sans Bold) and title font (Cinzel), both SIL OFL, loaded in main.ts. */
-export const FONT = '"Alegreya Sans", sans-serif';
-export const TITLE_FONT = '"Cinzel", serif';
+/** The device's own UI font (Roboto on Android, San Francisco on iPhone, Segoe UI on Windows). */
+export const FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", Arial, sans-serif';
 
 export const COLORS = {
   text: '#f4ead0',
@@ -14,17 +13,31 @@ export const COLORS = {
   exp: 0xd9b43d,
 };
 
-/** Phones in landscape are short: text is drawn a bit bigger there so it stays readable. */
-export const TEXT_BOOST = typeof window !== 'undefined' && window.innerHeight < 500 ? 1.15 : 1;
+/**
+ * The only text sizes in the game (px). Every caller's size snaps to the nearest step, so the
+ * same kind of text is always the same size: small (labels, hints), body, heading, title, logo.
+ */
+export const SIZES = { small: 14, body: 16, heading: 20, title: 26, logo: 44 };
+
+function snap(size: number) {
+  if (size <= 14) return SIZES.small;
+  if (size <= 17) return SIZES.body;
+  if (size <= 22) return SIZES.heading;
+  if (size <= 32) return SIZES.title;
+  return SIZES.logo;
+}
 
 export const text = (size: number, color = COLORS.text): Phaser.Types.GameObjects.Text.TextStyle => {
-  const px = Math.max(11, Math.round(size * TEXT_BOOST));
-  return { fontFamily: FONT, fontStyle: 'bold', fontSize: `${px}px`, color, stroke: '#07080e', strokeThickness: Math.max(3, Math.round(px / 6)), resolution: 2 };
+  const px = snap(size);
+  return { fontFamily: FONT, fontStyle: 'bold', fontSize: `${px}px`, color, stroke: '#07080e', strokeThickness: px >= 26 ? 5 : 3, resolution: 2 };
 };
 
-/** Title text (Cinzel): screen titles, menu headers. */
-export const title = (size: number, color = COLORS.gold): Phaser.Types.GameObjects.Text.TextStyle => ({
-  ...text(size, color), fontFamily: TITLE_FONT, fontStyle: 'bold',
+/** Titles and menu headers: same font, gold by default. */
+export const title = (size: number, color = COLORS.gold): Phaser.Types.GameObjects.Text.TextStyle => text(size, color);
+
+/** Labels over people and things in the world (names, damage numbers): small or body size. */
+export const worldText = (size: 'small' | 'body', color: string): Phaser.Types.GameObjects.Text.TextStyle => ({
+  ...text(SIZES[size], color),
 });
 
 /**
