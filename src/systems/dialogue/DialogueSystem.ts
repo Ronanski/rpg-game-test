@@ -62,6 +62,8 @@ export class DialogueSystem {
         return { lines: say('The Core\'s light is beautiful, isn\'t it?', 'Beautiful things are often hungry.') };
       case 'villager':
         return { lines: say('Fresh bread at the stall! Well... fresh yesterday.') };
+      case 'villager3':
+        return { lines: say('The windmill west of here has been creaking all night.', 'Nobody has been inside it for years.') };
       case 'villager2':
         return { lines: say('My brother went to the mountain ruins last spring.', 'He never wrote back.') };
       default:

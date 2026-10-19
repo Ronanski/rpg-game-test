@@ -22,10 +22,13 @@ SPRITES = {
     'hero_back': ('sheet_b.jpg', (1306, 1555, 1616, 1960), 58),
     'hero_lyra': ('sheet_a.jpg', (1304, 1154, 1482, 1463), 58),
     'hero_rook': ('sheet_a.jpg', (1034, 835, 1266, 1119), 56),
-    'npc_elder': ('sheet_a.jpg', (1539, 785, 1726, 1113), 60),
-    'npc_smith': ('sheet_a.jpg', (1514, 1180, 1712, 1463), 56),
-    'npc_villager': ('sheet_a.jpg', (1309, 813, 1506, 1118), 56),
-    'npc_villager2': ('sheet_a.jpg', (1748, 820, 1912, 1108), 54),
+    'npc_elder': ('sheet_d.webp', (562, 644, 630, 724), 56),
+    'npc_smith': ('sheet_d.webp', (651, 644, 726, 724), 56),
+    'npc_stranger': ('sheet_d.webp', (740, 644, 809, 724), 58),
+    'npc_villager_m': ('sheet_d.webp', (831, 648, 876, 724), 54),
+    'npc_villager_f': ('sheet_d.webp', (896, 648, 955, 724), 54),
+    'npc_archer': ('sheet_a.jpg', (1309, 813, 1506, 1118), 56),
+    'npc_knight': ('sheet_a.jpg', (1514, 1180, 1712, 1463), 56),
     'npc_guard': ('sheet_a.jpg', (1744, 1190, 1942, 1463), 56),
     'npc_wizard': ('sheet_a.jpg', (1059, 1160, 1247, 1468), 58),
     'wolf': ('sheet_a.jpg', (1223, 465, 1482, 678), 40),
@@ -34,6 +37,11 @@ SPRITES = {
     'house_thatch': ('sheet_a.jpg', (39, 685, 572, 1143), 118),
     'house_small': ('sheet_a.jpg', (939, 20, 1316, 383), 96),
     'tavern': ('sheet_b.jpg', (1142, 9, 1975, 772), 150),
+    'house_red': ('sheet_d.webp', (8, 834, 142, 986), 126),
+    'chapel': ('sheet_d.webp', (142, 834, 263, 986), 140),
+    'windmill': ('sheet_d.webp', (254, 832, 374, 988), 150),
+    'watchtower': ('sheet_d.webp', (376, 832, 456, 986), 140),
+    'market': ('sheet_d.webp', (456, 832, 594, 986), 96),
     'fountain': ('sheet_b.jpg', (1157, 712, 1609, 1147), 62),
     'chest': ('sheet_b.jpg', (1650, 806, 1945, 1093), 30),
     'crystal': ('sheet_c.png', (384, 566, 556, 723), 32),
@@ -78,14 +86,23 @@ def sheet(name: str) -> np.ndarray:
     return _cache[name]
 
 
-def cut(name: str, box, pad: int = 6) -> tuple[np.ndarray, np.ndarray]:
-    """Returns (rgb, alpha 0..1) with the white background removed."""
+# Sheets drawn on a grey/white checkerboard ("fake transparency") instead of plain white.
+CHECKER = {'sheet_d.webp'}
+
+
+def cut(name: str, box, pad: int | None = None) -> tuple[np.ndarray, np.ndarray]:
+    """Returns (rgb, alpha 0..1) with the white (or checkerboard) background removed."""
     a = sheet(name)
+    if pad is None:
+        pad = 1 if name in CHECKER else 6  # checker sheets are packed tight
     x0, y0, x1, y1 = box
     x0, y0 = max(0, x0 - pad), max(0, y0 - pad)
     x1, y1 = min(a.shape[1], x1 + pad), min(a.shape[0], y1 + pad)
     rgb = a[y0:y1, x0:x1]
-    white = rgb.min(axis=2) > 228
+    if name in CHECKER:
+        white = ((rgb.max(axis=2) - rgb.min(axis=2)) < 20) & (rgb.mean(axis=2) > 170)
+    else:
+        white = rgb.min(axis=2) > 228
     lab, _ = ndi.label(white)
     edge = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
     bg = np.isin(lab, list(edge))
@@ -93,7 +110,7 @@ def cut(name: str, box, pad: int = 6) -> tuple[np.ndarray, np.ndarray]:
     sizes = ndi.sum(white, lab, index=np.arange(lab.max() + 1))
     bg |= white & (sizes[lab] > 250)
     # Drop the anti-aliased white fringe around the sprite.
-    fringe = ndi.binary_dilation(bg, iterations=2) & (rgb.min(axis=2) > 200)
+    fringe = ndi.binary_dilation(bg, iterations=2) & (rgb.min(axis=2) > (165 if name in CHECKER else 200))
     alpha = (~(bg | fringe)).astype(np.float32)
     # Keep only the main object (neighbouring sprites can poke into the box).
     lab2, n2 = ndi.label(ndi.binary_dilation(alpha > 0, iterations=3))

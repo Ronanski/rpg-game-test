@@ -110,7 +110,9 @@ export function buildWorld(): WorldData {
 
   // Buildings around the plaza (2x2 footprint).
   const buildings: [number, number, string, boolean][] = [
-    [19, 19, 'tavern', false], [26, 19, 'house_thatch', false], [19, 26, 'house_small', false], [27, 27, 'house_thatch', true],
+    [19, 19, 'tavern', false], [26, 19, 'house_thatch', false], [19, 26, 'house_red', false], [27, 27, 'house_thatch', true],
+    // Outside the plaza.
+    [31, 26, 'market', false], [14, 16, 'chapel', false], [9, 20, 'windmill', false], [33, 19, 'watchtower', false], [15, 31, 'house_small', true],
   ];
   for (const [hx, hy, texture, flip] of buildings) {
     props.push({ kind: 'building', texture, x: hx, y: hy, flip });
@@ -184,15 +186,18 @@ export function buildWorld(): WorldData {
     { id: 'stranger', name: 'Hooded Stranger', texture: 'npc_stranger', x: 43, y: 21 },
     { id: 'guard', name: 'Guard Bren', texture: 'npc_guard', x: 30, y: 23 },
     { id: 'wizard', name: 'Old Fennick', texture: 'npc_wizard', x: 26, y: 26 },
-    { id: 'villager', name: 'Mira', texture: 'npc_villager', x: 21, y: 23 },
-    { id: 'villager2', name: 'Sela', texture: 'npc_villager2', x: 27, y: 24 },
+    { id: 'villager', name: 'Mira', texture: 'npc_villager_f', x: 21, y: 23 },
+    { id: 'villager2', name: 'Sela', texture: 'npc_archer', x: 27, y: 24 },
+    { id: 'villager3', name: 'Tobin', texture: 'npc_villager_m', x: 30, y: 28 },
   ];
   const playerStart = { x: 24, y: 25 };
 
   // Clear any tree that landed on (or next to) an NPC or the start point.
   // Also keep the cave mouth visible.
   const caveArea = [[21, 1], [22, 0], [23, 0], [24, 1], [24, 2], [21, 2], [21, 3], [24, 3]].map(([x, y]) => ({ x, y }));
-  const keepClear = [...npcs, playerStart, ...caveArea];
+  // And keep trees from hiding the buildings (most of all in front of them).
+  const buildingArea = buildings.flatMap(([bx, by]) => [[bx + 2, by + 2], [bx + 2, by + 1], [bx + 1, by + 2], [bx + 3, by + 3]].map(([x, y]) => ({ x, y })));
+  const keepClear = [...npcs, playerStart, ...caveArea, ...buildingArea];
   const near = (p: Prop) => keepClear.some((c) => Math.abs(c.x - p.x) <= 1 && Math.abs(c.y - p.y) <= 1);
   const kept = props.filter((p) => !['tree', 'bush', 'rock'].includes(p.texture) || !near(p));
   for (const p of props) if (!kept.includes(p)) blocked[p.y][p.x] = false;

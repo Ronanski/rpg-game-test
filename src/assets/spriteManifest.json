@@ -36,6 +36,13 @@
   "imported": true
  },
  {
+  "key": "chapel",
+  "w": 119,
+  "h": 140,
+  "scale": 1,
+  "imported": true
+ },
+ {
   "key": "chest",
   "w": 31,
   "h": 30,
@@ -134,6 +141,13 @@
   "scale": 2
  },
  {
+  "key": "house_red",
+  "w": 118,
+  "h": 126,
+  "scale": 1,
+  "imported": true
+ },
+ {
   "key": "house_small",
   "w": 100,
   "h": 96,
@@ -184,6 +198,13 @@
   "scale": 2
  },
  {
+  "key": "market",
+  "w": 87,
+  "h": 96,
+  "scale": 1,
+  "imported": true
+ },
+ {
   "key": "mushroom",
   "w": 54,
   "h": 24,
@@ -192,9 +213,16 @@
   "frameWidth": 27
  },
  {
+  "key": "npc_archer",
+  "w": 36,
+  "h": 56,
+  "scale": 1,
+  "imported": true
+ },
+ {
   "key": "npc_elder",
-  "w": 34,
-  "h": 60,
+  "w": 41,
+  "h": 56,
   "scale": 1,
   "imported": true
  },
@@ -206,29 +234,50 @@
   "imported": true
  },
  {
-  "key": "npc_smith",
+  "key": "npc_knight",
   "w": 39,
   "h": 56,
   "scale": 1,
   "imported": true
  },
  {
-  "key": "npc_stranger",
-  "w": 144,
-  "h": 25,
-  "scale": 2,
-  "frameWidth": 24
- },
- {
-  "key": "npc_villager",
-  "w": 36,
+  "key": "npc_smith",
+  "w": 46,
   "h": 56,
   "scale": 1,
   "imported": true
  },
  {
+  "key": "npc_stranger",
+  "w": 43,
+  "h": 58,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_villager",
+  "w": 144,
+  "h": 27,
+  "scale": 2,
+  "frameWidth": 24
+ },
+ {
   "key": "npc_villager2",
-  "w": 30,
+  "w": 144,
+  "h": 26,
+  "scale": 2,
+  "frameWidth": 24
+ },
+ {
+  "key": "npc_villager_f",
+  "w": 39,
+  "h": 54,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_villager_m",
+  "w": 28,
   "h": 54,
   "scale": 1,
   "imported": true
@@ -394,6 +443,20 @@
   "w": 24,
   "h": 24,
   "scale": 2
+ },
+ {
+  "key": "watchtower",
+  "w": 72,
+  "h": 140,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "windmill",
+  "w": 117,
+  "h": 150,
+  "scale": 1,
+  "imported": true
  },
  {
   "key": "wolf",
