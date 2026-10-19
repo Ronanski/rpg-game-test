@@ -44,6 +44,8 @@ def main():
             entry['imported'] = True
         if isinstance(art, list):
             entry['frameWidth'] = im.width // len(art)
+        if key.startswith('anim_'):
+            entry['anim'] = True  # frame-by-frame hero: idle, 5 walk, wind-up, strike, hurt
         manifest.append(entry)
     (ROOT / 'src' / 'assets' / 'spriteManifest.json').write_text(json.dumps(manifest, indent=1) + '\n')
     print(f'wrote {len(manifest)} sprites to {OUT.relative_to(ROOT)}')

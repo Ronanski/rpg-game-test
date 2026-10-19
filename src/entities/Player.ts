@@ -2,13 +2,15 @@ import Phaser from 'phaser';
 import { Actor } from './Actor';
 import type { IsoMap } from '../iso/IsoMap';
 import { state } from '../core/GameState';
-import { frameCount } from '../assets/sprites';
+import { frameCount, isAnimated } from '../assets/sprites';
 import * as fx from '../systems/combat/Fx';
 
 const BASE_SPEED = 150; // px/s at spd 10
 const ROLL_MS = 260;
 const ROLL_SPEED = 480;
 const ROLL_COOLDOWN = 800;
+/** Frame-by-frame heroes (see isAnimated): which frame shows what. */
+const F = { idle: 0, walk: [1, 2, 3, 4, 5], windup: 6, strike: 7, hurt: 8 };
 
 /** The player hero: free movement in screen space with per-axis collision sliding. */
 export class Player extends Actor {
@@ -25,6 +27,13 @@ export class Player extends Actor {
    */
   readonly pose = { ox: 0, oy: 0, sx: 1, sy: 1 };
   private lastPhase = -1;
+  /** Frame-by-frame heroes: an attack or hurt frame is showing until then (walk/idle wait). */
+  private actionUntil = 0;
+
+  /** True when the hero has real drawn frames for walking, attacking and getting hurt. */
+  get animated() {
+    return isAnimated(this.sprite.texture.key);
+  }
 
   constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
     super(scene, x, y, texture);
@@ -74,8 +83,12 @@ export class Player extends Actor {
         this.pose.ox = 0;
         this.pose.sy = 1 + Math.sin(this.scene.time.now / 450) * 0.025;
       }
-      const f = Number(this.sprite.frame.name);
-      if (f !== 0 && f !== 3) this.sprite.setFrame(f >= 3 ? 3 : 0);
+      if (this.animated) {
+        if (this.scene.time.now > this.actionUntil) this.sprite.setFrame(F.idle);
+      } else {
+        const f = Number(this.sprite.frame.name);
+        if (f !== 0 && f !== 3) this.sprite.setFrame(f >= 3 ? 3 : 0);
+      }
       this.sync();
       return;
     }
@@ -89,25 +102,30 @@ export class Player extends Actor {
     // Walk cycle: idle, step, idle, step (frames 0-2). Sheets with 6 frames have a back view
     // (frames 3-5) used while walking away from the camera.
     const n = frameCount(this.sprite.texture.key);
-    if (n >= 3) {
+    if (this.animated) {
+      if (this.scene.time.now > this.actionUntil) this.sprite.setFrame(F.walk[Math.floor(this.bob / 1.7) % F.walk.length]);
+    } else if (n >= 3) {
       const base = n >= 6 && ny < -0.3 ? 3 : 0;
       const phase = Math.floor(this.bob / 2.2) % 4;
       this.sprite.setFrame(base + [0, 1, 0, 2][phase]);
     }
     // Each footfall kicks up a little dust.
-    const phase = Math.floor(this.bob / 2.2) % 4;
-    if (phase !== this.lastPhase && (phase === 1 || phase === 3)) fx.dust(this.scene, this.x - nx * 6, this.y);
+    // (Drawn walks plant a foot on their 1st and 3rd walk frames.)
+    const phase = this.animated ? Math.floor(this.bob / 1.7) % 5 : Math.floor(this.bob / 2.2) % 4;
+    const footfall = this.animated ? phase === 0 || phase === 2 : phase === 1 || phase === 3;
+    if (phase !== this.lastPhase && footfall) fx.dust(this.scene, this.x - nx * 6, this.y);
     this.lastPhase = phase;
     this.walking = true;
-    // Sway side to side with each step, so it reads as walking, not gliding.
-    if (!this.scene.tweens.isTweening(this.pose)) this.pose.ox = Math.round(Math.sin((this.bob * Math.PI) / 2.2));
+    // Sway side to side with each step, so it reads as walking, not gliding (drawn walks don't need it).
+    if (!this.animated && !this.scene.tweens.isTweening(this.pose)) this.pose.ox = Math.round(Math.sin((this.bob * Math.PI) / 2.2));
     this.bob += dtMs / 70;
     this.sync();
   }
 
   /** One small hop per step while walking (instead of the generic bob). */
   protected sync() {
-    const hop = this.walking ? Math.abs(Math.sin((this.bob * Math.PI) / 2.2)) * 4 : 0;
+    // Drawn walk frames already step; they only get a tiny bob.
+    const hop = !this.walking ? 0 : this.animated ? Math.abs(Math.sin((this.bob * Math.PI) / 3.4)) * 1.5 : Math.abs(Math.sin((this.bob * Math.PI) / 2.2)) * 4;
     // The base Actor constructor calls sync() before `pose` exists.
     const pz = this.pose ?? { ox: 0, oy: 0, sx: 1, sy: 1 };
     this.sprite.setPosition(Math.round(this.x + pz.ox), Math.round(this.y + 2 - hop + pz.oy)).setScale(this.baseScale * pz.sx, this.baseScale * pz.sy);
@@ -123,6 +141,19 @@ export class Player extends Actor {
     const f = this.facing, dir = f.x < 0 ? -1 : 1, pz = this.pose;
     this.scene.tweens.killTweensOf(pz);
     Object.assign(pz, { ox: 0, oy: 0, sx: 1, sy: 1 });
+    if (this.animated) {
+      // Drawn frames: wind-up, then the strike held a moment, with a small step into it.
+      const windup = kind === 'bow' ? 100 : kind === 'cast' ? 80 : 60;
+      this.actionUntil = this.scene.time.now + windup + 170;
+      this.sprite.setFrame(F.windup);
+      this.scene.time.delayedCall(windup, () => this.animated && this.sprite.setFrame(F.strike));
+      this.scene.tweens.chain({ targets: pz, tweens: [
+        { ox: -1 * dir, duration: windup },
+        { ox: 2 * dir, duration: 60 },
+        { ox: 0, duration: 110 },
+      ] });
+      return;
+    }
     if (kind === 'bow') {
       // Draw: lean back and tense; release: snap forward; settle.
       this.scene.tweens.chain({ targets: pz, tweens: [
@@ -164,6 +195,10 @@ export class Player extends Actor {
 
   flashHurt(now: number) {
     this.invulnerableUntil = now + 600;
+    if (this.animated) {
+      this.actionUntil = now + 220;
+      this.sprite.setFrame(F.hurt);
+    }
     this.sprite.setTint(0xff6666);
     this.scene.time.delayedCall(150, () => this.sprite.clearTint());
   }

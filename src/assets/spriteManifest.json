@@ -1,5 +1,41 @@
 [
  {
+  "key": "anim_elf_f",
+  "w": 972,
+  "h": 59,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 108,
+  "anim": true
+ },
+ {
+  "key": "anim_elf_m",
+  "w": 810,
+  "h": 60,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 90,
+  "anim": true
+ },
+ {
+  "key": "anim_human_f",
+  "w": 972,
+  "h": 59,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 108,
+  "anim": true
+ },
+ {
+  "key": "anim_human_m",
+  "w": 882,
+  "h": 59,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 98,
+  "anim": true
+ },
+ {
   "key": "b_core",
   "w": 114,
   "h": 104,

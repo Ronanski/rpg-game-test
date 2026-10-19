@@ -1,5 +1,6 @@
 import { state, newTown, newCycle, type PlayerStats } from './GameState';
 import type { QuestState } from '../systems/quest/QuestTracker';
+import { ANIM_UPGRADE } from '../systems/combat/Origins';
 
 // Saves progress in this browser (localStorage), so a refresh or a closed tab doesn't lose it.
 // Cloud saves that follow the player across devices come later, through Supabase.
@@ -74,6 +75,7 @@ export function deleteSave() {
 /** Restores the global state from a save. The world scene restores quests and position itself. */
 export function applySave(data: SaveData) {
   state.player = { ...data.player };
+  state.player.texture = ANIM_UPGRADE[state.player.texture] ?? state.player.texture;
   state.inventory = new Map(data.inventory);
   state.storyFlags = new Set(data.storyFlags);
   state.jobs = data.jobs ?? { unlocked: ['adventurer'], kills: 0, crits: 0, built: 0 };

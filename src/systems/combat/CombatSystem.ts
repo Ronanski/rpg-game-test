@@ -158,10 +158,13 @@ export class CombatSystem {
       this.lastAttack = now;
       this.player.attackAnim('bow', null);
       // Nocked arrow at the bow, pulled back during the draw; it flies on release.
+      // (Drawn heroes already hold the nocked arrow in their wind-up frame.)
+      if (!this.player.animated) {
       const f0 = this.player.facing.clone().normalize();
       const nock = this.scene.add.image(this.player.x + f0.x * 18, this.player.y - 26, 'arrow').setScale(1.6)
         .setRotation(Math.atan2(f0.y, f0.x)).setDepth(this.player.y + 3);
       this.scene.tweens.add({ targets: nock, x: nock.x - f0.x * 10, duration: 100, onComplete: () => nock.destroy() });
+      }
       this.scene.time.delayedCall(110, () => this.shoot('arrow', ARROW.range, ARROW.speed, style.power * ARROW.power, style.crit));
       return;
     }

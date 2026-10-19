@@ -19,13 +19,13 @@ export interface RaceDef {
 export const RACES_INFO: RaceDef[] = [
   {
     id: 'human', name: 'Human', passive: '+10% EXP', blurb: 'Adaptable and ambitious.',
-    sprite: { male: 'hero', female: 'npc_healer' },
+    sprite: { male: 'anim_human_m', female: 'anim_human_f' },
     weapon: { male: 'rusty_sword', female: 'hunter_dagger' },
     names: { male: ['Kael', 'Aren', 'Dain', 'Rowan', 'Cale'], female: ['Mira', 'Tessa', 'Elin', 'Rhea', 'Nora'] },
   },
   {
     id: 'elf', name: 'Elf', passive: '+20% MP regen', blurb: 'Long-lived forest folk.',
-    sprite: { male: 'hero_rook', female: 'hero_lyra' },
+    sprite: { male: 'anim_elf_m', female: 'anim_elf_f' },
     weapon: { male: 'hunter_bow', female: 'oak_staff' },
     names: { male: ['Elric', 'Faen', 'Sylas', 'Thal', 'Ivo'], female: ['Aelin', 'Nyla', 'Siri', 'Lira', 'Lyse'] },
   },
@@ -57,11 +57,16 @@ export const START_JOB = 'adventurer';
  */
 export const JOB_OUTFIT: Record<string, Partial<Record<Gender, string>>> = {
   warrior: { male: 'npc_knight', female: 'npc_hilda' },
-  rogue: { male: 'hero_rook', female: 'npc_kaelah' },
-  mage: { male: 'npc_valerius', female: 'hero_lyra' },
-  builder: { male: 'npc_borgan', female: 'npc_healer' },
+  rogue: { male: 'anim_elf_m', female: 'npc_kaelah' },
+  mage: { male: 'npc_valerius', female: 'anim_elf_f' },
+  builder: { male: 'npc_borgan', female: 'anim_human_f' },
 };
 
 export function outfitFor(raceId: string, gender: Gender, jobId: string): string {
-  return JOB_OUTFIT[jobId]?.[gender] ?? RACES_INFO.find((r) => r.id === raceId)?.sprite[gender] ?? 'hero';
+  return JOB_OUTFIT[jobId]?.[gender] ?? RACES_INFO.find((r) => r.id === raceId)?.sprite[gender] ?? 'anim_human_m';
 }
+
+/** Old single-picture hero looks and their frame-by-frame replacements (for older saves). */
+export const ANIM_UPGRADE: Record<string, string> = {
+  hero: 'anim_human_m', npc_healer: 'anim_human_f', hero_rook: 'anim_elf_m', hero_lyra: 'anim_elf_f',
+};
