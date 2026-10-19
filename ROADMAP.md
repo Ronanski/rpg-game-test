@@ -137,7 +137,8 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 - [x] Mini-map in the owner's compass ring (top right): hero arrow, quest pins (! and ?), the goal star, doors, the Core, monsters (red), shops (gold); works in the cave and buildings too
 - [x] Big map: tap the mini-map, the MAP icon or press M; shows the whole area with place names
 - [x] Icons from the owner's UI kit: settings (menu), zoom + / −, map, bag, build, quests
-- [ ] Characters still have one facing (3/4 front): walking up shows their face. Needs back and side walk frames (owner's art)
+- [x] Elf archer walks in 3 directions from the owner's sheet: toward the camera, away from it (you see his back), and sideways (mirrored for left); he keeps facing that way when he stops
+- [ ] 3-direction walks for the other heroes (characters without them still have one facing, 3/4 front): walking up shows their face. Needs back and side walk frames (owner's art)
 
 ## M7: Story chapter 1 and new places ✅
 - [x] Separate places you walk into through doors (the screen fades, quests and saves come along):
