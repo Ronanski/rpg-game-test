@@ -144,11 +144,21 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 | # | Stage | What | Needs GO? |
 |---|---|---|---|
 | R1 | Archer kit ✅ | Multi Shot, Piercing (Lv3), Rain of Arrows (Lv5), Fire Arrows (Lv7) | no |
-| R2 | Balance and bug pass | long automated runs (10 nights), difficulty, prices, EXP, gold | no |
+| R2 | Balance and bug pass ✅ | long automated runs (10 nights), difficulty, prices, EXP, gold | no |
 | R3 | Tutorial | short guide on the first play: walk, AUTO, quests, build, night | no |
 | R4 | Chapter 2: Sylvan | new region, monsters, boss, story after the Core's secret | no |
 | R5 | Beta | Beta APK for other testers | GO BETA |
 | R6 | Stable | official release | GO STABLE |
+
+## R2: Balance pass ✅
+Measured with a fast automated run (the archer on AUTO by the Core, 60 + 30 gold a day from the fields):
+| Plan | Result before | Result after |
+|---|---|---|
+| Hero only | every night won, the Core never touched (towers pointless) | Core hurt from night 3, falls from night 7 |
+| Towers + upgrades | every night won easily | nights 1-8 held, night 9 lost once then won on the retry, night 10 hard |
+- [x] Bigger nights (3 + 3 per night raiders, more orcs and skeletons from night 7), stronger later (+15% per night from night 3), arriving in groups of three from different sides
+- [x] When the Core falls, raiders take 15% (was 25%) and the same night comes again instead of a harder one, so a loss can be won back
+- [x] No script errors during 50+ simulated nights
 
 ## R1: Archer kit ✅
 - [x] SKILL with a bow is **Multi Shot**: three arrows, each locked on a different nearby monster
