@@ -34,6 +34,7 @@ export const ITEMS: Record<string, ItemDef> = {
   health_potion: { id: 'health_potion', name: 'Health Potion', type: 'consumable', heal: { hp: 50 }, buy: 25, sell: 5, icon: 'item_health_potion', desc: 'Restores 50 HP.' },
   mana_potion: { id: 'mana_potion', name: 'Mana Potion', type: 'consumable', heal: { mp: 30 }, buy: 30, sell: 6, icon: 'item_mana_potion', desc: 'Restores 30 MP.' },
   slime_gel: { id: 'slime_gel', name: 'Slime Gel', type: 'material', sell: 2, icon: 'item_slime_gel', desc: 'Sticky. Merchants buy it.' },
+  old_locket: { id: 'old_locket', name: 'Old Locket', type: 'material', sell: 0, icon: 'item_core_shard', tint: 0xd9b45a, desc: 'Found inside Gravemaw. A name is scratched on the back: "Rowan, from Hana".' },
   wolf_pelt: { id: 'wolf_pelt', name: 'Wolf Pelt', type: 'material', sell: 6, icon: 'item_wolf_pelt', desc: 'Grom wants these.' },
 };
 

@@ -1,6 +1,7 @@
 import { state, newTown, newCycle, type PlayerStats } from './GameState';
 import type { QuestState } from '../systems/quest/QuestTracker';
 import { ANIM_UPGRADE } from '../systems/combat/Origins';
+import type { AreaId } from '../world/worldData';
 
 // Saves progress in this browser (localStorage), so a refresh or a closed tab doesn't lose it.
 // Cloud saves that follow the player across devices come later, through Supabase.
@@ -19,10 +20,12 @@ export interface SaveData {
   cycle?: typeof state.cycle;
   quests: QuestState;
   pos: { x: number; y: number };
+  /** Which map the hero was on (missing in older saves: the overworld). */
+  area?: AreaId;
 }
 
 /** Quests and position are owned by the world scene; it registers how to read them. */
-let snapshot: (() => { quests: QuestState; pos: { x: number; y: number } }) | null = null;
+let snapshot: (() => { quests: QuestState; pos: { x: number; y: number }; area: AreaId }) | null = null;
 
 export function setSnapshotSource(fn: typeof snapshot) {
   snapshot = fn;

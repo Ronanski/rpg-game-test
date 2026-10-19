@@ -14,7 +14,10 @@ export interface QuestDef {
   id: string; // matches quests.id in supabase/seed.sql
   title: string;
   giver: string; // npc id
-  objective: { type: 'kill' | 'collect'; target: string; count: number; label: string };
+  /** Only offered after this quest is completed (the story chain). */
+  requires?: string;
+  /** kill: monster id (or a boss tag); collect: item id; talk: npc id to go and speak to. */
+  objective: { type: 'kill' | 'collect' | 'talk'; target: string; count: number; label: string };
   rewards: { gold: number; exp: number; items: { id: string; qty: number }[] };
 }
 
@@ -25,6 +28,39 @@ export const QUESTS: QuestDef[] = [
     giver: 'elder',
     objective: { type: 'kill', target: 'slime', count: 5, label: 'Slimes defeated' },
     rewards: { gold: 100, exp: 50, items: [{ id: 'health_potion', qty: 2 }] },
+  },
+  // Chapter 1: the Hooded Stranger, the goblins and the cave, and what the slimes really are.
+  {
+    id: 'main_02_stranger',
+    title: 'The Hooded Stranger',
+    giver: 'elder',
+    requires: 'main_01_slimes',
+    objective: { type: 'talk', target: 'stranger', count: 1, label: 'Speak with the stranger east of the river' },
+    rewards: { gold: 30, exp: 40, items: [] },
+  },
+  {
+    id: 'main_03_goblins',
+    title: 'Crystal Thieves',
+    giver: 'ranger',
+    requires: 'main_02_stranger',
+    objective: { type: 'kill', target: 'goblin', count: 6, label: 'Goblins defeated at the ruins' },
+    rewards: { gold: 120, exp: 90, items: [{ id: 'health_potion', qty: 2 }] },
+  },
+  {
+    id: 'main_04_cave',
+    title: 'The Old Cave',
+    giver: 'elder',
+    requires: 'main_03_goblins',
+    objective: { type: 'kill', target: 'gravemaw', count: 1, label: 'Gravemaw defeated (Old Cave, north road)' },
+    rewards: { gold: 250, exp: 200, items: [{ id: 'core_shard', qty: 1 }] },
+  },
+  {
+    id: 'main_05_locket',
+    title: 'A Locket in the Dark',
+    giver: 'stranger',
+    requires: 'main_04_cave',
+    objective: { type: 'talk', target: 'villager2', count: 1, label: 'Show the locket to Hana' },
+    rewards: { gold: 100, exp: 150, items: [] },
   },
   {
     id: 'guild_wolves',
@@ -68,12 +104,31 @@ export class QuestTracker {
 
   progress(id: string): number {
     const q = this.get(id);
-    const n = q.objective.type === 'kill' ? this.kills.get(q.id) ?? 0 : state.inventory.get(q.objective.target) ?? 0;
+    const n = q.objective.type === 'collect' ? state.inventory.get(q.objective.target) ?? 0 : this.kills.get(q.id) ?? 0;
     return Math.min(n, q.objective.count);
   }
 
   isDone(id: string) {
     return this.progress(id) >= this.get(id).objective.count;
+  }
+
+  /** Available and its story requirement is met: the giver can offer it now. */
+  canOffer(id: string) {
+    const q = this.get(id);
+    return this.status.get(id) === 'available' && (!q.requires || this.status.get(q.requires) === 'completed');
+  }
+
+  /** The active "go and talk to" quest that speaking with this NPC finishes, if any. */
+  talkQuestFor(npcId: string): QuestDef | undefined {
+    return this.active().find((q) => q.objective.type === 'talk' && q.objective.target === npcId);
+  }
+
+  /** Quest marker over an NPC: '?' something to hand in or say, '!' a new quest, '' nothing. */
+  markerFor(npcId: string): '!' | '?' | '' {
+    if (this.talkQuestFor(npcId)) return '?';
+    const mine = QUESTS.filter((q) => q.giver === npcId);
+    if (mine.some((q) => this.status.get(q.id) === 'active' && q.objective.type !== 'talk' && this.isDone(q.id))) return '?';
+    return mine.some((q) => this.canOffer(q.id)) ? '!' : '';
   }
 
   active(): QuestDef[] {

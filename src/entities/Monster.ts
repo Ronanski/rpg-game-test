@@ -29,6 +29,8 @@ export interface MonsterDef {
   boss?: string;
   /** Size multiplier for the sprite. */
   size?: number;
+  /** Story boss tag: quests count it by this, and a "<tag>_down" story flag is set when it falls. */
+  tag?: string;
 }
 
 export const MONSTERS: Record<MonsterDef['id'], MonsterDef> = {
@@ -38,9 +40,16 @@ export const MONSTERS: Record<MonsterDef['id'], MonsterDef> = {
   orc: { id: 'orc', name: 'Orc', hp: 120, atk: 16, def: 5, speed: 60, aggroRange: 200, exp: 45, gold: 18, drop: { item: 'health_potion', chance: 0.3 }, extra: [{ item: 'iron_sword', chance: 0.06 }] },
   skeleton: { id: 'skeleton', name: 'Skeleton', hp: 70, atk: 13, def: 4, speed: 80, aggroRange: 200, exp: 32, gold: 12, drop: { item: 'mana_potion', chance: 0.2 } },
   // Night bosses only (never in the wilds).
+  // (Gravemaw, the cave boss, is a King Slime grown huge on the Core's light: see GRAVEMAW.)
   slime_king: { id: 'slime_king', name: 'King Slime', hp: 160, atk: 14, def: 4, speed: 50, aggroRange: 200, exp: 60, gold: 25, drop: { item: 'slime_gel', chance: 1 }, extra: [{ item: 'health_potion', chance: 0.6 }] },
   dragon: { id: 'dragon', name: 'Dragon', hp: 220, atk: 18, def: 8, speed: 55, aggroRange: 240, exp: 150, gold: 80, drop: { item: 'health_potion', chance: 1 }, extra: [{ item: 'iron_sword', chance: 0.3 }], size: 0.6 },
   wolf: { id: 'wolf', name: 'Wolf', hp: 60, atk: 12, def: 3, speed: 105, aggroRange: 230, exp: 28, gold: 8, drop: { item: 'wolf_pelt', chance: 0.5 } },
+};
+
+/** The boss at the bottom of the Old Cave (Chapter 1). */
+export const GRAVEMAW: MonsterDef = {
+  ...MONSTERS.slime_king, name: 'Gravemaw', boss: 'Gravemaw', tag: 'gravemaw', hp: 650, atk: 17, def: 5, speed: 45,
+  aggroRange: 260, exp: 300, gold: 120, size: 1.7, drop: { item: 'old_locket', chance: 1 }, extra: [{ item: 'health_potion', chance: 1 }],
 };
 
 /** Simple AI: wander near home, chase the player when close, give up when too far. */

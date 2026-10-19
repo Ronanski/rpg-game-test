@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
-import { buildWorld } from '../world/worldData';
+import { setActiveArea, type AreaId, type Door } from '../world/worldData';
+import { buildArea, PIT } from '../world/areas';
+import { GRAVEMAW } from '../entities/Monster';
 import { IsoMap } from '../iso/IsoMap';
 import { gridToScreen } from '../iso/iso';
 import { Player } from '../entities/Player';
@@ -16,6 +18,7 @@ import { TownSystem } from '../systems/town/TownSystem';
 import { WaveSystem } from '../systems/town/WaveSystem';
 import type { PlacedBuilding } from '../core/GameState';
 import { saveGame, setSnapshotSource, type SaveData } from '../core/SaveGame';
+import type { QuestState } from '../systems/quest/QuestTracker';
 
 const TALK_RANGE = 70;
 const AUTOSAVE_MS = 5000;
@@ -30,24 +33,37 @@ export class WorldScene extends Phaser.Scene {
   private keys!: Record<'up' | 'down' | 'left' | 'right' | 'w' | 'a' | 's' | 'd' | 'space' | 'e' | 'q' | 'shift' | 'f' | 'enter', Phaser.Input.Keyboard.Key>;
   private nearNpc: Npc | null = null;
   private nearBuilding: PlacedBuilding | null = null;
-  private town!: TownSystem;
+  /** The town and the night raids only exist in the overworld. */
+  private town: TownSystem | null = null;
   private zoom = 1;
   private quests!: QuestTracker;
-  private waves!: WaveSystem;
+  private waves: WaveSystem | null = null;
+  private area: AreaId = 'overworld';
+  private doors: Door[] = [];
+  /** Doors work once the hero has stepped away from the one they came through. */
+  private doorArmed = false;
+  private leaving = false;
   private lighting!: LightingSystem;
 
   constructor() {
     super('World');
   }
 
-  create(data: { save?: SaveData } = {}) {
+  create(data: { save?: SaveData; area?: AreaId; at?: { x: number; y: number }; quests?: QuestState } = {}) {
     state.buildMode = false;
-    const world = buildWorld();
+    this.area = data.area ?? data.save?.area ?? 'overworld';
+    setActiveArea(this.area);
+    const world = buildArea(this.area);
+    this.doors = world.doors;
+    this.doorArmed = false;
+    this.leaving = false;
     this.map = new IsoMap(this, world);
     this.map.render();
     this.lighting = new LightingSystem(this);
+    if (world.ambient) this.lighting.setAmbient(world.ambient);
+    this.cameras.main.setBackgroundColor(world.bg ?? 0x0d0b14);
 
-    const start = gridToScreen(world.playerStart.x, world.playerStart.y);
+    const start = gridToScreen((data.at ?? world.playerStart).x, (data.at ?? world.playerStart).y);
     this.player = new Player(this, start.x, start.y, state.player!.texture);
     this.npcs = world.npcs.map((d) => {
       const p = gridToScreen(d.x, d.y);
@@ -60,18 +76,31 @@ export class WorldScene extends Phaser.Scene {
     quests.setExpHandler((n) => this.combat.gainExp(n));
     this.combat.spawnAll(world.spawns);
     this.dialogue = new DialogueSystem(quests);
+    if (data.quests) quests.importState(data.quests);
+    if (data.save) quests.importState(data.save.quests);
+    // Gravemaw waits at the bottom of the cave once Martha has asked you to go there.
+    if (this.area === 'cave' && quests.statusOf('main_04_cave') === 'active' && !state.storyFlags.has('gravemaw_down')) {
+      const p = gridToScreen(PIT.x, PIT.y);
+      this.combat.spawnBoss(GRAVEMAW, p.x, p.y);
+    }
 
-    this.town = new TownSystem(this, this.map, this.player, this.combat);
-    this.wireTown();
-    this.waves = new WaveSystem(this, this.combat, this.town, this.lighting);
+    if (this.area === 'overworld') {
+      this.town = new TownSystem(this, this.map, this.player, this.combat);
+      this.wireTown();
+      this.waves = new WaveSystem(this, this.combat, this.town, this.lighting);
+    } else {
+      this.town = this.waves = null;
+      const noBuild = (on: boolean) => on && bus.emit('toast', 'You can only build in town.');
+      bus.on('build-mode', noBuild);
+      this.events.once('shutdown', () => bus.off('build-mode', noBuild));
+    }
 
-    // Continue a saved game: quests and the spot where the hero stood.
+    // Continue a saved game (or come through a door): the spot where the hero stood.
     if (data.save) {
-      quests.importState(data.save.quests);
       if (this.map.walkable(data.save.pos.x, data.save.pos.y)) this.player.teleport(data.save.pos.x, data.save.pos.y);
     }
     // Autosave every few seconds, after quest changes, and when the tab is hidden or closed.
-    setSnapshotSource(() => ({ quests: quests.exportState(), pos: { x: this.player.x, y: this.player.y } }));
+    setSnapshotSource(() => ({ quests: quests.exportState(), pos: { x: this.player.x, y: this.player.y }, area: this.area }));
     this.time.addEvent({ delay: AUTOSAVE_MS, loop: true, callback: saveGame });
     const saveNow = () => saveGame();
     bus.on('quest-updated', saveNow);
@@ -108,7 +137,37 @@ export class WorldScene extends Phaser.Scene {
     const onUse = (id: string) => this.combat.usePotion(id);
     bus.on('use-item', onUse);
     this.events.once('shutdown', () => bus.off('use-item', onUse));
-    bus.emit('toast', data.save ? `Welcome back, ${state.player!.name}.` : 'Welcome to Oakhaven. Talk to Martha.');
+    const label = world.doors[0]?.label;
+    if (data.area && !data.save) {
+      this.cameras.main.fadeIn(300);
+      bus.emit('toast', this.area === 'cave' ? 'The Old Cave' : this.area === 'tavern' ? 'The Sleeping Fox' : `Back to ${label}`);
+    } else bus.emit('toast', data.save ? `Welcome back, ${state.player!.name}.` : 'Welcome to Oakhaven. Talk to Martha.');
+  }
+
+  /** Walking onto a door takes the hero to the other area (quests and everything else come along). */
+  private checkDoors() {
+    if (this.leaving) return;
+    let nearest = Infinity, hit: Door | null = null;
+    for (const d of this.doors) {
+      const p = gridToScreen(d.x, d.y);
+      const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, p.x, p.y);
+      if (dist < nearest) nearest = dist;
+      if (dist < 24) hit = d;
+    }
+    if (!this.doorArmed) {
+      this.doorArmed = nearest > 44;
+      return;
+    }
+    if (!hit) return;
+    const door = hit;
+    this.leaving = true;
+    const quests = this.quests.exportState();
+    saveGame();
+    this.cameras.main.fadeOut(250);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.stop('UI');
+      this.scene.restart({ area: door.to, at: door.at, quests });
+    });
   }
 
   update(time: number, delta: number) {
@@ -127,7 +186,7 @@ export class WorldScene extends Phaser.Scene {
       if (Phaser.Input.Keyboard.JustDown(this.keys.q)) c.potion = true;
       if (Phaser.Input.Keyboard.JustDown(this.keys.shift)) c.dodge = true;
       if (Phaser.Input.Keyboard.JustDown(this.keys.f)) c.skill = true;
-      if (this.town.isPlacing && Phaser.Input.Keyboard.JustDown(this.keys.enter)) bus.emit('build-confirm');
+      if (this.town?.isPlacing && Phaser.Input.Keyboard.JustDown(this.keys.enter)) bus.emit('build-confirm');
       if (c.dodge) this.player.roll(mx, my, time);
       if (c.skill) this.combat.useSkill(time);
       if (c.attack) this.combat.playerAttack(time);
@@ -140,8 +199,10 @@ export class WorldScene extends Phaser.Scene {
     c.attack = c.talk = c.potion = c.dodge = c.skill = false;
 
     if (!state.inMenu) this.combat.update(time, delta);
-    this.town.update(time);
-    this.waves.update(time, delta);
+    this.town?.update(time);
+    this.waves?.update(time, delta);
+    if (!this.waves) bus.emit('cycle-tick', { raiders: 0, coreHp: 1, coreMax: 1, indoor: this.area === 'cave' ? 'OLD CAVE' : 'SLEEPING FOX' });
+    this.checkDoors();
     this.updateNpcs(time, delta);
     this.updateNearbyNpc();
   }
@@ -153,12 +214,11 @@ export class WorldScene extends Phaser.Scene {
       n.near = d < TALK_RANGE * 1.4;
       n.update(time, delta, this.map, d);
       const m = n.def.mark;
-      if (m === 'shop') n.setMarker('$');
+      const q = this.quests.markerFor(n.def.id);
+      if (q) n.setMarker(q);
+      else if (m === 'shop') n.setMarker('$');
       else if (m === 'teacher') n.setMarker(!isUnlocked('mage') && state.player!.level >= 3 ? '✦' : '');
-      else if (m === 'quest' && n.def.quest) {
-        const st = this.quests.statusOf(n.def.quest);
-        n.setMarker(st === 'available' ? '!' : st === 'active' && this.quests.isDone(n.def.quest) ? '?' : '');
-      }
+      else n.setMarker('');
     }
   }
 
@@ -169,7 +229,7 @@ export class WorldScene extends Phaser.Scene {
       if (d < bestD) (best = n), (bestD = d);
     }
     // With no one to talk to, TALK opens the nearest building's panel instead.
-    const building = best ? null : this.town.nearest();
+    const building = best || !this.town ? null : this.town.nearest();
     if (best !== this.nearNpc || building !== this.nearBuilding) {
       this.nearNpc = best;
       this.nearBuilding = building;
@@ -179,6 +239,7 @@ export class WorldScene extends Phaser.Scene {
 
   /** Build-mode events from the UI scene. */
   private wireTown() {
+    const town = this.town!;
     const cam = this.cameras.main;
     const world = (sx: number, sy: number) => cam.getWorldPoint(sx, sy);
     const handlers: [string, (...a: any[]) => void][] = [
@@ -186,45 +247,45 @@ export class WorldScene extends Phaser.Scene {
       ['build-mode', (on: boolean) => {
         if (on && state.cycle.phase === 'night') return bus.emit('toast', 'No building at night. Defend the Core!');
         state.buildMode = on;
-        this.town.showGrid(on);
+        town.showGrid(on);
         if (on) {
           cam.stopFollow();
-          const c = this.town.corePoint();
+          const c = town.corePoint();
           cam.pan(c.x, c.y, 400, 'Sine.easeInOut');
           cam.zoomTo(Math.max(0.8, this.zoom * 0.7), 400);
         } else {
-          this.town.cancelPlacing();
+          town.cancelPlacing();
           cam.startFollow(this.player.sprite, true, 0.12, 0.12, 0, 20);
           cam.zoomTo(this.zoom, 300);
         }
         bus.emit('build-mode-changed', state.buildMode);
       }],
       ['build-start', (type: string) => {
-        this.town.startPlacing(type, cam.midPoint);
-        if (this.town.isPlacing) bus.emit('placing', type);
+        town.startPlacing(type, cam.midPoint);
+        if (town.isPlacing) bus.emit('placing', type);
       }],
       ['building-move', (b: PlacedBuilding) => {
         if (!state.buildMode) bus.emit('build-mode', true);
-        this.town.startPlacing(b.type, undefined, b);
+        town.startPlacing(b.type, undefined, b);
         bus.emit('placing', b.type);
       }],
-      ['build-confirm', () => this.town.confirmPlacing() && bus.emit('placing', null)],
-      ['build-cancel', () => (this.town.cancelPlacing(), bus.emit('placing', null))],
+      ['build-confirm', () => town.confirmPlacing() && bus.emit('placing', null)],
+      ['build-cancel', () => (town.cancelPlacing(), bus.emit('placing', null))],
       // Drag: moves the building being placed, otherwise pans the view.
       ['build-drag', (sx: number, sy: number, dx: number, dy: number) => {
-        if (this.town.isPlacing) {
+        if (town.isPlacing) {
           const p = world(sx, sy);
-          this.town.setCursorFromWorld(p.x, p.y);
+          town.setCursorFromWorld(p.x, p.y);
         } else cam.setScroll(cam.scrollX - dx / cam.zoom, cam.scrollY - dy / cam.zoom);
       }],
       // Tap: drop the building there, or open the building you tapped.
       ['build-tap', (sx: number, sy: number) => {
         const p = world(sx, sy);
-        if (this.town.isPlacing) return this.town.setCursorFromWorld(p.x, p.y);
-        const b = this.town.buildingAt(p.x, p.y);
+        if (town.isPlacing) return town.setCursorFromWorld(p.x, p.y);
+        const b = town.buildingAt(p.x, p.y);
         if (b) bus.emit('open-building', b);
       }],
-      ['building-upgrade', (b: PlacedBuilding) => this.town.upgrade(b)],
+      ['building-upgrade', (b: PlacedBuilding) => town.upgrade(b)],
     ];
     for (const [ev, fn] of handlers) bus.on(ev, fn);
     this.events.once('shutdown', () => handlers.forEach(([ev, fn]) => bus.off(ev, fn)));

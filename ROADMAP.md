@@ -122,13 +122,22 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 - [x] Better walking and attack animation: the 4 starting heroes use frame-by-frame art (walk, attack, hurt) from the owner's sheet
 - [ ] Frame-by-frame art for the job outfits, NPCs and monsters
 
-## M7: Story chapter 1 and new places ⏳
-- [ ] Building interiors (tavern, smithy) and a cave dungeon, like the reference images
-- [ ] Chapter 1 main quests and the first hint of the dark twist
+## M7: Story chapter 1 and new places 🔄
+- [x] Separate places you walk into through doors (the screen fades, quests and saves come along):
+  - **Old Cave** at the end of the north road: entrance hall, slime grotto, bone hall with skeletons, and Gravemaw's pit; dark, lit by torches, crystals to mine
+  - **The Sleeping Fox** tavern: Mabel the innkeeper (rest for 10 gold: full HP and MP) and Old Tam
+- [x] Chapter 1 main quests (quest markers ! and ? show who to talk to):
+  1. Slimes at the Gate (Martha)
+  2. The Hooded Stranger (Martha: go and talk to him)
+  3. Crystal Thieves (Wren: defeat 6 goblins at the ruins)
+  4. The Old Cave (Martha: defeat Gravemaw at the bottom of the cave)
+  5. A Locket in the Dark (the Stranger: show the locket to Hana), ending on the first dark twist
+- [x] The day clock stops while you are inside a cave or building; saving inside brings you back there
+- [ ] Smithy interior
 - [ ] Recruit a second hero
 
 **Checkpoint**
-- [ ] Play chapter 1 from start to end without getting stuck
+- [ ] Play chapter 1 from start to end without getting stuck (scripted run passes; a full hand-played run is still to do)
 
 ## M8: Beta, then Stable ⏳
 - [x] In-app update: install the APK once; on launch the app downloads the newest game from the web version in the background and uses it next start (or tap UPDATE READY on the title). No internet = plays the version it has. Saves are kept.

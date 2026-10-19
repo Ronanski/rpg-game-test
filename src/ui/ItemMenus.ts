@@ -166,7 +166,7 @@ export class ShopMenu extends Menu {
 
     const rows = this.tab === 'buy'
       ? this.shop.sells.map((id) => ({ id, price: ITEMS[id].buy ?? 0, have: state.inventory.get(id) ?? 0 }))
-      : [...state.inventory.entries()].filter(([id, n]) => n > 0 && ITEMS[id]).map(([id, n]) => ({ id, price: ITEMS[id].sell, have: n }));
+      : [...state.inventory.entries()].filter(([id, n]) => n > 0 && ITEMS[id]?.sell > 0).map(([id, n]) => ({ id, price: ITEMS[id].sell, have: n }));
     const rowH = compact ? 38 : 44;
     const perCol = Math.max(1, Math.floor((h - 62) / rowH));
     const colW = rows.length > perCol ? (w - 36) / 2 : w - 28;

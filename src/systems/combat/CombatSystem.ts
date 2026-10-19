@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { Monster, MONSTERS } from '../../entities/Monster';
+import { Monster, MONSTERS, type MonsterDef } from '../../entities/Monster';
 import type { Player } from '../../entities/Player';
 import type { IsoMap } from '../../iso/IsoMap';
 import { gridToScreen } from '../../iso/iso';
@@ -126,6 +126,13 @@ export class CombatSystem {
 
   walkable(x: number, y: number) {
     return this.map.walkable(x, y);
+  }
+
+  /** A story boss that waits in its lair (no respawn). */
+  spawnBoss(def: MonsterDef, x: number, y: number) {
+    const m = new Monster(this.scene, x, y, def, { x, y });
+    this.monsters.push(m);
+    return m;
   }
 
   /** A night raider: marches on `goal`, never respawns. */
@@ -428,13 +435,17 @@ export class CombatSystem {
       bus.emit('toast', `Got ${ITEMS[d.item]?.name ?? d.item}`);
     }
     this.gainExp(m.def.exp);
-    this.quests.onKill(m.def.id);
+    this.quests.onKill(m.def.tag ?? m.def.id);
+    if (m.def.tag) {
+      state.storyFlags.add(`${m.def.tag}_down`);
+      bus.emit('toast', `${m.def.name} is defeated!`);
+    }
     countJobAction('kills');
 
     const zone = this.zoneOf.get(m);
     this.zoneOf.delete(m);
     if (zone) this.zoneNext.set(zone, Math.max(this.zoneNext.get(zone) ?? 0, this.scene.time.now + (state.cycle.phase === 'night' ? NIGHT_RESPAWN_MS : RESPAWN_MS)));
-    else bus.emit('raider-down', m);
+    else if (m.goal) bus.emit('raider-down', m);
   }
 
   gainExp(amount: number) {
