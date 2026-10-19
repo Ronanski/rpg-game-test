@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { view } from '../core/Screen';
 
 /**
  * Floating virtual stick for the left half of the screen. Touch anywhere on the left
@@ -11,24 +12,25 @@ export class VirtualJoystick {
   private pointerId: number | null = null;
   private origin = new Phaser.Math.Vector2();
   private enabled = true;
-  private readonly radius = 56;
+  private readonly radius = 48;
 
   constructor(private scene: Phaser.Scene) {
     this.base = scene.add.circle(0, 0, this.radius, 0xffffff, 0.12).setStrokeStyle(3, 0xffffff, 0.35).setDepth(10);
-    this.knob = scene.add.circle(0, 0, 26, 0xffffff, 0.35).setDepth(11);
+    this.knob = scene.add.circle(0, 0, 22, 0xffffff, 0.35).setDepth(11);
     this.resetPosition();
 
     scene.input.on('pointerdown', (p: Phaser.Input.Pointer, over: unknown[]) => {
       if (!this.enabled || this.pointerId !== null || over.length > 0) return;
-      if (p.x > scene.scale.width * 0.45) return;
+      // worldX / worldY: the touch in layout units (the HUD camera is zoomed, see core/Screen.ts).
+      if (p.worldX > view(scene).width * 0.45) return;
       this.pointerId = p.id;
-      this.origin.set(p.x, p.y);
-      this.base.setPosition(p.x, p.y).setAlpha(1);
-      this.knob.setPosition(p.x, p.y).setAlpha(1);
+      this.origin.set(p.worldX, p.worldY);
+      this.base.setPosition(p.worldX, p.worldY).setAlpha(1);
+      this.knob.setPosition(p.worldX, p.worldY).setAlpha(1);
     });
     scene.input.on('pointermove', (p: Phaser.Input.Pointer) => {
       if (p.id !== this.pointerId) return;
-      const d = new Phaser.Math.Vector2(p.x - this.origin.x, p.y - this.origin.y);
+      const d = new Phaser.Math.Vector2(p.worldX - this.origin.x, p.worldY - this.origin.y);
       if (d.length() > this.radius) d.setLength(this.radius);
       this.knob.setPosition(this.origin.x + d.x, this.origin.y + d.y);
       this.value.set(d.x / this.radius, d.y / this.radius);
@@ -44,7 +46,7 @@ export class VirtualJoystick {
   }
 
   resetPosition() {
-    const x = 110, y = this.scene.scale.height - 110;
+    const x = 96, y = view(this.scene).height - 96;
     this.origin.set(x, y);
     this.base.setPosition(x, y).setAlpha(0.6);
     this.knob.setPosition(x, y).setAlpha(0.6);

@@ -4,6 +4,7 @@ import { loadSprites } from '../assets/sprites';
 import { text } from '../ui/theme';
 import { ensureSession } from '../services/supabase';
 import { state } from '../core/GameState';
+import { fitCamera, view } from '../core/Screen';
 
 /** Loads the art, builds effect textures and signs in (if Supabase is configured), then opens hero selection. */
 export class BootScene extends Phaser.Scene {
@@ -12,7 +13,8 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload() {
-    const { width, height } = this.scale;
+    fitCamera(this);
+    const { width, height } = view(this);
     const label = this.add.text(width / 2, height / 2, 'Loading...', text(18)).setOrigin(0.5);
     this.load.on('progress', (v: number) => label.setText(`Loading... ${Math.round(v * 100)}%`));
     loadSprites(this.load);

@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { state } from '../core/GameState';
 import { toMap } from '../world/Minimap';
 import { text, COLORS } from './theme';
+import { view } from '../core/Screen';
 
 /** What the world scene sends a few times a second (see WorldScene.emitMinimap). */
 export interface MapData {
@@ -126,7 +127,7 @@ export class BigMap {
   open(d: MapData) {
     this.isOpen = true;
     state.inMenu = true;
-    const s = this.scene, { width, height } = s.scale;
+    const s = this.scene, { width, height } = view(s);
     this.root.removeAll(true).setVisible(true);
     const add = <T extends Phaser.GameObjects.GameObject>(o: T) => (this.root.add(o), o);
     add(s.add.rectangle(0, 0, width, height, 0x07060c, 0.82).setOrigin(0).setInteractive().on('pointerdown', () => this.close()));

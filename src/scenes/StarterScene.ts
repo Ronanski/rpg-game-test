@@ -6,6 +6,7 @@ import { RACES_INFO, START_JOB, type Gender, type RaceDef } from '../systems/com
 import { panel, text, title, COLORS } from '../ui/theme';
 import { spriteInfo } from '../assets/sprites';
 import { deleteSave } from '../core/SaveGame';
+import { fitCamera, view } from '../core/Screen';
 
 type Step = 'race' | 'gender' | 'name';
 const STEPS: Step[] = ['race', 'gender', 'name'];
@@ -30,6 +31,7 @@ export class StarterScene extends Phaser.Scene {
   }
 
   create() {
+    fitCamera(this);
     this.starting = false;
     // For now the game focuses on one hero: the Elf archer. Only the name is chosen.
     this.race = Math.max(0, RACES_INFO.findIndex((r) => r.id === 'elf'));
@@ -95,7 +97,7 @@ export class StarterScene extends Phaser.Scene {
 
   private layout() {
     this.root.removeAll(true);
-    const { width, height } = this.scale;
+    const { width, height } = view(this);
     const add: Add = (o) => (this.root.add(o), o);
     const compact = height < 420;
 
@@ -136,7 +138,7 @@ export class StarterScene extends Phaser.Scene {
   }
 
   private raceCards(top: number, areaH: number, add: Add) {
-    const { width } = this.scale;
+    const { width } = view(this);
     const n = RACES_INFO.length, gap = 12;
     const w = Math.min(200, (width - 32 - gap * (n - 1)) / n);
     const left = (width - (w * n + gap * (n - 1))) / 2;
@@ -170,7 +172,7 @@ export class StarterScene extends Phaser.Scene {
   }
 
   private genderCards(top: number, areaH: number, add: Add) {
-    const { width } = this.scale;
+    const { width } = view(this);
     const w = Math.min(220, (width - 60) / 2), gap = 24;
     const left = (width - (w * 2 + gap)) / 2;
     GENDERS.forEach((g, i) => {
@@ -185,7 +187,7 @@ export class StarterScene extends Phaser.Scene {
   }
 
   private nameCard(top: number, areaH: number, add: Add) {
-    const { width } = this.scale;
+    const { width } = view(this);
     const w = Math.min(560, width - 40), x = (width - w) / 2;
     add(panel(this, x, top, w, areaH, true));
     const r = this.raceDef, g = GENDERS[this.gender];

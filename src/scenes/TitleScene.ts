@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { panel, text, title, COLORS } from '../ui/theme';
 import { applySave, loadSave, type SaveData } from '../core/SaveGame';
 import { applyUpdate, BUILD_ID, checkForUpdate, isPhoneApp, onUpdateReady, readyUpdate, updateStatus } from '../core/Updater';
+import { fitCamera, view } from '../core/Screen';
 
 /**
  * Main menu shown at launch and after "Quit to title": CONTINUE the saved game (if there is one)
@@ -17,6 +18,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   create() {
+    fitCamera(this);
     this.save = loadSave();
     this.confirmNew = false;
     this.root = this.add.container();
@@ -33,7 +35,7 @@ export class TitleScene extends Phaser.Scene {
 
   private layout() {
     this.root.removeAll(true);
-    const { width, height } = this.scale;
+    const { width, height } = view(this);
     const add = <T extends Phaser.GameObjects.GameObject>(o: T) => (this.root.add(o), o);
     const compact = height < 420;
     // Backdrop: the hero art over a dark vignette.

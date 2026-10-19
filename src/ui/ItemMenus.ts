@@ -4,6 +4,7 @@ import { bus } from '../core/EventBus';
 import { ITEMS, canEquip, equip, unequip, type Slot } from '../systems/items/Items';
 import { panel, text, title as titleStyle, COLORS } from './theme';
 import { spriteScale } from '../assets/sprites';
+import { view } from '../core/Screen';
 
 export type Add = <T extends Phaser.GameObjects.GameObject>(o: T) => T;
 
@@ -42,7 +43,7 @@ export abstract class Menu {
 
   /** Draws the frame and returns the content box. */
   protected frame(title: string, subtitle: string): { x: number; y: number; w: number; h: number; add: Add; compact: boolean } {
-    const s = this.scene, { width, height } = s.scale;
+    const s = this.scene, { width, height } = view(s);
     this.shade.setSize(width, height);
     this.root.removeAll(true);
     const add: Add = (o) => (this.root.add(o), o);
@@ -215,7 +216,7 @@ export class PauseMenu extends Menu {
 
   draw() {
     if (!this.isOpen) return;
-    const s = this.scene, { width, height } = s.scale;
+    const s = this.scene, { width, height } = view(s);
     const { add } = this.frame('MENU', `Day ${state.cycle.day}`);
     const bw = 260, x = (width - bw) / 2;
     let y = height / 2 - 50;

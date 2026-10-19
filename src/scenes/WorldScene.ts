@@ -21,6 +21,7 @@ import { WaveSystem } from '../systems/town/WaveSystem';
 import type { PlacedBuilding } from '../core/GameState';
 import { saveGame, setSnapshotSource, type SaveData } from '../core/SaveGame';
 import type { QuestState } from '../systems/quest/QuestTracker';
+import { DPR, view } from '../core/Screen';
 
 const TALK_RANGE = 70;
 /** Names shown when you walk into a place, and on the clock while inside. */
@@ -146,14 +147,15 @@ export class WorldScene extends Phaser.Scene {
     cam.setBounds(b.x, b.y, b.width, b.height);
     cam.startFollow(this.player.sprite, true, 0.12, 0.12, 0, 20);
     // Bigger screens see the same amount of world, just with bigger pixels.
-    this.zoom = Phaser.Math.Clamp(Math.round((this.scale.height / 460) * 4) / 4, 1, 2.5);
-    cam.setZoom(this.zoom);
+    this.zoom = Phaser.Math.Clamp(Math.round((view(this).height / 460) * 4) / 4, 1, 2.5);
+    // The camera's real zoom also covers the sharp-graphics scale (DPR, see core/Screen.ts).
+    cam.setZoom(this.zoom * DPR);
     cam.setRoundPixels(true);
     // Zoom: + / − buttons and pinch (UI scene), mouse wheel here.
     const zoomBy = (f: number) => {
       if (state.buildMode) return;
       this.zoom = Phaser.Math.Clamp(this.zoom * f, 0.75, 3);
-      cam.setZoom(this.zoom);
+      cam.setZoom(this.zoom * DPR);
     };
     this.input.on('wheel', (_p: unknown, _o: unknown, _dx: number, dy: number) => zoomBy(dy > 0 ? 0.9 : 1.1));
     // Tap an NPC: walk over and talk.
@@ -315,8 +317,8 @@ export class WorldScene extends Phaser.Scene {
     if (!goal) return void bus.emit('objective', null);
     const cam = this.cameras.main, v = cam.worldView;
     const sx = (goal.x - v.x) * cam.zoom, sy = (goal.y - v.y) * cam.zoom;
-    const onScreen = sx > 30 && sy > 30 && sx < this.scale.width - 30 && sy < this.scale.height - 30;
-    bus.emit('objective', { sx, sy, label: goal.label, onScreen });
+    const m = 30 * DPR, onScreen = sx > m && sy > m && sx < this.scale.width - m && sy < this.scale.height - m;
+    bus.emit('objective', { sx: sx / DPR, sy: sy / DPR, label: goal.label, onScreen });
   }
 
   private objective(): { x: number; y: number; label: string } | null {
@@ -402,11 +404,11 @@ export class WorldScene extends Phaser.Scene {
           cam.stopFollow();
           const c = town.corePoint();
           cam.pan(c.x, c.y, 400, 'Sine.easeInOut');
-          cam.zoomTo(Math.max(0.8, this.zoom * 0.7), 400);
+          cam.zoomTo(Math.max(0.8, this.zoom * 0.7) * DPR, 400);
         } else {
           town.cancelPlacing();
           cam.startFollow(this.player.sprite, true, 0.12, 0.12, 0, 20);
-          cam.zoomTo(this.zoom, 300);
+          cam.zoomTo(this.zoom * DPR, 300);
         }
         bus.emit('build-mode-changed', state.buildMode);
       }],
@@ -447,7 +449,7 @@ export class WorldScene extends Phaser.Scene {
     // The speech bubble follows the NPC's head on screen.
     const anchor = () => {
       const cam = this.cameras.main;
-      return { x: (npc.x - cam.worldView.x) * cam.zoom, y: (npc.y - npc.sprite.displayHeight - cam.worldView.y) * cam.zoom };
+      return { x: ((npc.x - cam.worldView.x) * cam.zoom) / DPR, y: ((npc.y - npc.sprite.displayHeight - cam.worldView.y) * cam.zoom) / DPR };
     };
     bus.emit('dialogue-open', { ...this.dialogue.talk(npc.def.id, npc.def.name), anchor });
     bus.once('dialogue-closed', () => bus.emit('npc-nearby', this.nearNpc?.def.name ?? null));

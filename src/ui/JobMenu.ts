@@ -3,6 +3,7 @@ import { state } from '../core/GameState';
 import { JOBS } from '../systems/combat/ClassSystem';
 import { JOB_LIST, changeJob, isUnlocked, progressOf } from '../systems/combat/JobSystem';
 import { panel, text, COLORS } from './theme';
+import { view } from '../core/Screen';
 
 /** Full-screen JOBS menu: every job with its skill, how to earn it, and a CHANGE button once earned. */
 export class JobMenu {
@@ -36,7 +37,7 @@ export class JobMenu {
   /** Redraws (after a job change or a resize). */
   draw() {
     if (!this.isOpen) return;
-    const s = this.scene, { width, height } = s.scale;
+    const s = this.scene, { width, height } = view(s);
     this.shade.setSize(width, height);
     this.root.removeAll(true);
     const add = <T extends Phaser.GameObjects.GameObject>(o: T) => (this.root.add(o), o);

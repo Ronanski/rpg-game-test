@@ -150,6 +150,10 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 | R5 | Beta | Beta APK for other testers | GO BETA |
 | R6 | Stable | official release | GO STABLE |
 
+## Playtest 5: smaller, sharper HUD ✅
+- [x] Sharp on phones: the game now draws at the screen's real pixels (up to 2x) instead of a low-resolution picture the phone blows up; text and art stay crisp
+- [x] Compact HUD on phone screens: info panels 25% smaller, touch buttons 20% smaller (all still 45 px or more, easy to hit), smaller joystick
+
 ## R3: Tutorial ✅
 - [x] On a new game, one short tip at a time at the bottom centre (TIP 1/6 ... 6/6): walk, talk to Martha, defeat a slime (AUTO), finish her quest, build a tower, survive the first night
 - [x] Each tip finishes by doing it in the game (no extra buttons); the tower tip gives a little wood if you can't afford one yet
