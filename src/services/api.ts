@@ -54,4 +54,9 @@ export const api = {
   changeJob: (heroId: string, jobId: string) => rpc<void>('change_job', { p_hero: heroId, p_job: jobId }),
   acceptQuest: (questId: string) => rpc<void>('accept_quest', { p_quest: questId }),
   completeQuest: (questId: string) => rpc<Record<string, unknown>>('complete_quest', { p_quest: questId }),
+  equipItem: (heroId: string, itemId: string) => rpc<void>('equip_item', { p_hero: heroId, p_item: itemId }),
+  unequipItem: (heroId: string, slot: 'weapon' | 'armor' | 'accessory') =>
+    rpc<void>('unequip_item', { p_hero: heroId, p_slot: slot }),
+  assignHero: (heroId: string, assignment: 'party' | 'commander' | 'tower_buffer' | 'idle', buildingId?: string) =>
+    rpc<void>('assign_hero', { p_hero: heroId, p_assignment: assignment, p_building: buildingId ?? null }),
 };
