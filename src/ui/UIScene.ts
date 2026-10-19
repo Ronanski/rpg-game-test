@@ -8,6 +8,7 @@ import { JobMenu } from './JobMenu';
 import { InventoryMenu, ShopMenu, PauseMenu, type ShopDef } from './ItemMenus';
 import { saveGame } from '../core/SaveGame';
 import { BuildMenu, BuildingPanel, PlacementBar } from './BuildMenus';
+import { BigMap, MinimapView, type MapData } from './MinimapView';
 import type { PlacedBuilding } from '../core/GameState';
 import { BUILDINGS } from '../systems/town/Buildings';
 import { JOBS } from '../systems/combat/ClassSystem';
@@ -34,6 +35,8 @@ export class UIScene extends Phaser.Scene {
   private pauseMenu!: PauseMenu;
   private menuBtn!: Phaser.GameObjects.Container;
   private zoomBox!: Phaser.GameObjects.Container;
+  private minimap!: MinimapView;
+  private bigMap!: BigMap;
   private objArrow!: Phaser.GameObjects.Container;
   private objText!: Phaser.GameObjects.Text;
   private buildMenu!: BuildMenu;
@@ -98,12 +101,12 @@ export class UIScene extends Phaser.Scene {
     const jobPanel = panel(this, x, y + STATUS_H + 32, 170, 32);
     // BAG button next to it (I key too).
     const bagPanel = panel(this, x + 178, y + STATUS_H + 32, 76, 32);
-    const bagIcon = this.add.image(x + 196, y + STATUS_H + 48, 'item_bag');
+    const bagIcon = this.add.image(x + 196, y + STATUS_H + 48, 'icon_items').setScale(0.55);
     const bagText = this.add.text(x + 210, y + STATUS_H + 48, 'BAG', text(14)).setOrigin(0, 0.5);
     bagPanel.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.openMenu('bag'));
     // BUILD button (B key too).
     const buildPanel = panel(this, x + 262, y + STATUS_H + 32, 90, 32);
-    const buildIcon = this.add.image(x + 280, y + STATUS_H + 48, 'icon_build').setScale(2);
+    const buildIcon = this.add.image(x + 280, y + STATUS_H + 48, 'icon_crafting').setScale(0.55);
     const buildText = this.add.text(x + 294, y + STATUS_H + 48, 'BUILD', text(14)).setOrigin(0, 0.5);
     buildPanel.setInteractive({ useHandCursor: true }).on('pointerdown', () => bus.emit('build-mode', true));
     // Town resources next to the gold.
@@ -115,22 +118,21 @@ export class UIScene extends Phaser.Scene {
 
     // Quest tracker (top-right).
     this.questPanel = panel(this, 0, 10, 200, 60);
-    this.questIcon = this.add.image(0, 0, 'icon_scroll').setScale(2);
+    this.questIcon = this.add.image(0, 0, 'icon_quests').setScale(0.5);
     this.questTitle = this.add.text(0, 0, 'QUESTS', text(15, COLORS.gold));
     this.questText = this.add.text(0, 0, '', { ...text(13), lineSpacing: 4 });
     this.questBox = this.add.container(0, 0, [this.questPanel, this.questIcon, this.questTitle, this.questText]);
     // MENU button (top-right corner; Esc too when nothing else is open).
-    const mPanel = panel(this, -44, 10, 44, 44);
-    const mText = this.add.text(-22, 32, '☰', text(22)).setOrigin(0.5);
-    mPanel.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.openPause());
-    this.menuBtn = this.add.container(0, 0, [mPanel, mText]);
-    // Zoom in / out (pinch with two fingers, or the mouse wheel, works too).
-    const zBtn = (y: number, label: string, f: number) => {
-      const p = panel(this, -44, y, 44, 40);
-      p.setInteractive({ useHandCursor: true }).on('pointerdown', () => bus.emit('zoom-by', f));
-      return [p, this.add.text(-22, y + 20, label, text(22)).setOrigin(0.5)];
-    };
-    this.zoomBox = this.add.container(0, 0, [...zBtn(0, '+', 1.25), ...zBtn(44, '−', 0.8)]);
+    const mIcon = this.add.image(-24, 32, 'icon_settings').setScale(46 / 48).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.openPause());
+    this.menuBtn = this.add.container(0, 0, [mIcon]);
+    // Mini-map (owner's compass ring) with zoom + / − and the MAP button beside it.
+    this.minimap = new MinimapView(this, () => this.openBigMap());
+    this.bigMap = new BigMap(this, () => this.setControlsVisible(true));
+    this.listen('minimap', (d: MapData) => this.minimap.update(d));
+    const zImg = (y: number, key: string, f: number) =>
+      this.add.image(0, y, key).setScale(0.85).setInteractive({ useHandCursor: true }).on('pointerdown', () => bus.emit('zoom-by', f));
+    const mapBtn = this.add.image(0, 92, 'icon_map').setScale(0.75).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.openBigMap());
+    this.zoomBox = this.add.container(0, 0, [zImg(0, 'ui_btn_plus', 1.25), zImg(42, 'ui_btn_minus', 0.8), mapBtn]);
     // Arrow at the screen edge pointing to what to do next (quest giver, monsters, the Core at night).
     const g = this.add.graphics();
     g.fillStyle(0xffd75e).fillTriangle(16, 0, -10, -11, -10, 11).lineStyle(2, 0x07080e).strokeTriangle(16, 0, -10, -11, -10, 11);
@@ -258,7 +260,9 @@ export class UIScene extends Phaser.Scene {
     kb?.on('keydown-J', () => this.toggleJobs());
     kb?.on('keydown-I', () => (this.bagMenu.isOpen ? this.bagMenu.close() : this.openMenu('bag')));
     kb?.on('keydown-B', () => bus.emit('build-mode', !state.buildMode));
+    kb?.on('keydown-M', () => (this.bigMap.isOpen ? this.bigMap.close() : this.openBigMap()));
     kb?.on('keydown-ESC', () => {
+      if (this.bigMap.isOpen) return this.bigMap.close();
       const open = [this.jobMenu, this.bagMenu, this.shopMenu, this.buildMenu, this.buildingPanel, this.pauseMenu].filter((m) => m.isOpen);
       open.forEach((m) => m.close());
       if (this.placementBar.visible) bus.emit('build-cancel');
@@ -354,6 +358,12 @@ export class UIScene extends Phaser.Scene {
     if (!on) this.talkBtn.setVisible(false);
   }
 
+  private openBigMap() {
+    if (state.inMenu || state.inDialogue || state.buildMode || !this.minimap.data) return;
+    this.setControlsVisible(false);
+    this.bigMap.open(this.minimap.data);
+  }
+
   /** Points the guide arrow at the next goal (hidden when it's already on screen). */
   private drawObjective(o: { sx: number; sy: number; label: string; onScreen: boolean } | null) {
     if (!o || state.inMenu || state.buildMode) return void this.objArrow.setVisible(false);
@@ -383,7 +393,9 @@ export class UIScene extends Phaser.Scene {
     this.cycleBox.setScale(k).setPosition(width / 2, 10);
     this.questBox.setScale(k);
     this.menuBtn.setScale(k).setPosition(width - 10, 0);
-    this.zoomBox.setScale(k).setPosition(width - 10, 56 * k);
+    // Right column under the quest panel: mini-map, and + / − / MAP to its left.
+    this.minimap.root.setScale(k).setPosition(width - 10 - 66 * k, 76 * k + 66 * k);
+    this.zoomBox.setScale(k).setPosition(width - 10 - 132 * k - 22 * k, 92 * k);
     for (const b of [this.attackBtn, this.talkBtn, this.potionBtn, this.skillBtn, this.dodgeBtn]) b.setScale((b.baseScale = k));
     this.potionCount.setScale(k);
     this.attackBtn.setPosition(width - 62 * k, height - 62 * k);

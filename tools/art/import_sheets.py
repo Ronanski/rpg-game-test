@@ -426,6 +426,27 @@ ANIM_ROWS = ['anim_human_m', 'anim_human_f', 'anim_elf_m', 'anim_elf_f']
 ANIM_HEIGHT = 58  # standing height in game pixels
 
 
+def walk_dirs(path: Path, height: int) -> list[Image.Image]:
+    """12 walk frames (4 front, 4 back, 4 side) from a transparent 4x3 sheet, scaled so the first
+    front frame is `height` px tall (the same size as the hero's other frames)."""
+    a = np.asarray(Image.open(path).convert('RGBA')).astype(np.float32)
+    alpha = a[..., 3] / 255
+    solid = alpha > 0.15
+    lab, n = ndi.label(ndi.binary_dilation(solid, iterations=4))
+    objs = ndi.find_objects(lab)
+    sizes = ndi.sum(solid, lab, index=np.arange(1, n + 1))
+    big = [o for o, z in zip(objs, sizes) if z > 3000]
+    rows = sorted(big, key=lambda o: o[0].start)
+    big = sorted(big, key=lambda o: (round(o[0].start / (a.shape[0] / 3)), o[1].start))
+    scale = height / (big[0][0].stop - big[0][0].start)
+    out = []
+    for o in big[:12]:
+        al = alpha[o].copy()
+        al[al < 0.15] = 0
+        out.append(shrink(a[o][..., :3], al, max(8, round((o[0].stop - o[0].start) * scale)), colors=48))
+    return out
+
+
 def anim_heroes() -> dict:
     """Cuts the hero animation sheet into one spritesheet per hero, every frame on the same canvas
     with the feet at the same spot, so switching frames never makes the hero jump."""
@@ -471,6 +492,15 @@ def anim_heroes() -> dict:
             feet = fa[int(fa.shape[0] * 0.85):]
             anchors.append(int(round(np.nonzero(feet)[1].mean())) if feet.any() else im.width // 2)
             frames.append(im)
+        # Heroes with a 3-direction walk sheet get its 12 frames after the 9 action frames:
+        # 9-12 walking toward the camera, 13-16 away from it, 17-20 to the right (mirrored for left).
+        walk = RAW / f'sheet_walk_{key[5:]}.webp'
+        if walk.exists():
+            for im in walk_dirs(walk, frames[0].height):
+                fa = np.asarray(im)[..., 3] > 0
+                feet = fa[int(fa.shape[0] * 0.85):]
+                anchors.append(int(round(np.nonzero(feet)[1].mean())) if feet.any() else im.width // 2)
+                frames.append(im)
         half = max(max(ax, f.width - ax) for f, ax in zip(frames, anchors)) + 1
         hgt = max(f.height for f in frames)
         canvas = []

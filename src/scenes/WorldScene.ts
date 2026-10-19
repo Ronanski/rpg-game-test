@@ -3,6 +3,7 @@ import { setActiveArea, type AreaId, type Door } from '../world/worldData';
 import { buildArea, PIT } from '../world/areas';
 import { GRAVEMAW } from '../entities/Monster';
 import { Companion } from '../entities/Companion';
+import { buildMapTexture } from '../world/Minimap';
 import { IsoMap } from '../iso/IsoMap';
 import { gridToScreen } from '../iso/iso';
 import { Player } from '../entities/Player';
@@ -53,6 +54,9 @@ export class WorldScene extends Phaser.Scene {
   /** Red ring under the monster an attack would go for. */
   private targetRing!: Phaser.GameObjects.Graphics;
   private nextObjective = 0;
+  /** The area's map picture (see Minimap.ts) and its height in tiles. */
+  private mapKey = '';
+  private mapH = 64;
   private lighting!: LightingSystem;
 
   constructor() {
@@ -69,6 +73,8 @@ export class WorldScene extends Phaser.Scene {
     this.leaving = false;
     this.map = new IsoMap(this, world);
     this.map.render();
+    this.mapKey = buildMapTexture(this, world);
+    this.mapH = world.h;
     this.lighting = new LightingSystem(this);
     if (world.ambient) this.lighting.setAmbient(world.ambient);
     this.cameras.main.setBackgroundColor(world.bg ?? 0x0d0b14);
@@ -266,6 +272,7 @@ export class WorldScene extends Phaser.Scene {
     if (time > this.nextObjective) {
       this.nextObjective = time + 200;
       this.emitObjective();
+      this.emitMinimap();
     }
   }
 
@@ -277,6 +284,25 @@ export class WorldScene extends Phaser.Scene {
     const pulse = 1 + Math.sin(time / 120) * 0.08;
     const w = Math.max(28, m.sprite.displayWidth * 0.8) * pulse;
     g.lineStyle(3, 0xff4a3a, 0.9).strokeEllipse(m.x, m.y, w, w * 0.45);
+  }
+
+  /** Where everything is, for the mini-map and the big map (UI scene). */
+  private emitMinimap() {
+    const marks: { x: number; y: number; kind: string; label?: string }[] = [];
+    for (const n of this.npcs) {
+      const q = this.quests.markerFor(n.def.id);
+      marks.push({ x: n.x, y: n.y, kind: q === '!' ? 'quest' : q === '?' ? 'turnin' : n.def.mark === 'shop' ? 'shop' : 'npc', label: n.def.role ? n.def.name : undefined });
+    }
+    for (const m of this.combat.liveMonsters) if (!m.dead) marks.push({ x: m.x, y: m.y, kind: m.def.boss ? 'boss' : 'monster' });
+    for (const d of this.doors) marks.push({ ...gridToScreen(d.x, d.y), kind: 'door', label: d.label });
+    if (this.town) marks.push({ ...this.town.corePoint(), kind: 'core', label: 'Ancient Core' });
+    if (this.ally) marks.push({ x: this.ally.x, y: this.ally.y, kind: 'ally' });
+    const goal = this.objective();
+    if (goal) marks.push({ x: goal.x, y: goal.y, kind: 'goal' });
+    bus.emit('minimap', {
+      key: this.mapKey, h: this.mapH, area: this.area,
+      px: this.player.x, py: this.player.y, fx: this.player.facing.x, fy: this.player.facing.y, marks,
+    });
   }
 
   /** Works out the next goal (quest, giver, monsters, the Core at night) and tells the UI where it is. */

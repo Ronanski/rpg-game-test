@@ -10,7 +10,7 @@ const ROLL_MS = 260;
 const ROLL_SPEED = 480;
 const ROLL_COOLDOWN = 800;
 /** Frame-by-frame heroes (see isAnimated): which frame shows what. */
-const F = { idle: 0, walk: [1, 2, 3, 4, 5], windup: 6, strike: 7, hurt: 8 };
+const F = { idle: 0, walk: [1, 2, 3, 4, 5], windup: 6, strike: 7, hurt: 8, front: [9, 10, 11, 12], back: [13, 14, 15, 16], side: [17, 18, 19, 20] };
 
 /** The player hero: free movement in screen space with per-axis collision sliding. */
 export class Player extends Actor {
@@ -29,6 +29,13 @@ export class Player extends Actor {
   private lastPhase = -1;
   /** Frame-by-frame heroes: an attack or hurt frame is showing until then (walk/idle wait). */
   private actionUntil = 0;
+  /** Last walking direction, for heroes with front/back/side walks (idle keeps facing that way). */
+  private dir: 'front' | 'back' | 'side' = 'front';
+
+  /** Heroes whose sheet also has 3-direction walk frames (21 frames: 9 actions + 12 walks). */
+  get directional() {
+    return this.animated && frameCount(this.sprite.texture.key) >= 21;
+  }
 
   /** True when the hero has real drawn frames for walking, attacking and getting hurt. */
   get animated() {
@@ -84,7 +91,9 @@ export class Player extends Actor {
         this.pose.sy = 1 + Math.sin(this.scene.time.now / 450) * 0.025;
       }
       if (this.animated) {
-        if (this.scene.time.now > this.actionUntil) this.sprite.setFrame(F.idle);
+        // Standing still: face the way the hero last walked.
+        const idle = this.directional && this.dir === 'back' ? F.back[0] : this.directional && this.dir === 'side' ? F.side[0] : F.idle;
+        if (this.scene.time.now > this.actionUntil) this.sprite.setFrame(idle);
       } else {
         const f = Number(this.sprite.frame.name);
         if (f !== 0 && f !== 3) this.sprite.setFrame(f >= 3 ? 3 : 0);
@@ -102,7 +111,11 @@ export class Player extends Actor {
     // Walk cycle: idle, step, idle, step (frames 0-2). Sheets with 6 frames have a back view
     // (frames 3-5) used while walking away from the camera.
     const n = frameCount(this.sprite.texture.key);
-    if (this.animated) {
+    if (this.directional) {
+      // Front, back or side walk by the way the hero moves on screen (side frames face right).
+      this.dir = Math.abs(nx) > Math.abs(ny) * 1.3 ? 'side' : ny < 0 ? 'back' : 'front';
+      if (this.scene.time.now > this.actionUntil) this.sprite.setFrame(F[this.dir][Math.floor(this.bob / 2) % 4]);
+    } else if (this.animated) {
       if (this.scene.time.now > this.actionUntil) this.sprite.setFrame(F.walk[Math.floor(this.bob / 1.7) % F.walk.length]);
     } else if (n >= 3) {
       const base = n >= 6 && ny < -0.3 ? 3 : 0;
