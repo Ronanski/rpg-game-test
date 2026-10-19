@@ -9,5 +9,6 @@ import Phaser from 'phaser';
  *   'dialogue-open'  (lines: DialogueLine[])      show dialogue box
  *   'dialogue-closed'()
  *   'toast'          (msg: string)
+ *   'inventory-changed' ()                        item counts changed
  */
 export const bus = new Phaser.Events.EventEmitter();

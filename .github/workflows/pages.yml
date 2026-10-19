@@ -26,6 +26,13 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          BUILD_ID: ${{ github.sha }}
+      # In-app update for the phone app: the game zipped up, plus which version it is.
+      - name: Package in-app update
+        run: |
+          cd dist && zip -qr ../bundle.zip . && cd ..
+          mv bundle.zip dist/bundle.zip
+          echo '{"version":"${{ github.sha }}"}' > dist/version.json
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with: { path: dist }

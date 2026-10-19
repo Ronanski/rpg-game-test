@@ -115,7 +115,7 @@ on conflict (id) do update set name = excluded.name, category = excluded.categor
 
 insert into quests (id, type, chapter, sort_order, title, description, prerequisites, objectives, rewards, recruit_hero_id, repeat_interval) values
   ('main_01_slimes', 'main', 1, 1, 'Slimes at the Gate',
-   'Elder Maren asks you to clear the slimes near the village.', '{}',
+   'Martha asks you to clear the slimes near the village.', '{}',
    '[{"type":"kill","target":"slime","count":5}]',
    '{"gold":100,"exp":50,"items":[{"id":"health_potion","qty":2}]}', null, null),
   ('main_02_core', 'main', 1, 2, 'Light of the Core',

@@ -1,4 +1,6 @@
 import { state } from '../../core/GameState';
+import { isUnlocked, unlockJob } from '../combat/JobSystem';
+import { bus } from '../../core/EventBus';
 import type { QuestTracker } from '../quest/QuestTracker';
 
 export interface DialogueLine {
@@ -8,6 +10,8 @@ export interface DialogueLine {
 
 export interface Conversation {
   lines: DialogueLine[];
+  /** Screen position of the speaker's head, for the speech bubble. */
+  anchor?: () => { x: number; y: number } | null;
   onEnd?: () => void;
 }
 
@@ -21,7 +25,7 @@ export class DialogueSystem {
       case 'elder':
         return this.questTalk('main_01_slimes', {
           offer: say(
-            'Ah, a new face. Welcome to Lumen Hollow.',
+            'Ah, a new face. Welcome to Oakhaven. I am Martha.',
             'For a hundred years the Ancient Core beneath the mountain has kept us safe.',
             'But lately, slimes crawl out of the ground near the fields. Please, defeat 5 of them.',
           ),
@@ -35,7 +39,7 @@ export class DialogueSystem {
       case 'smith':
         return this.questTalk('guild_wolves', {
           offer: say(
-            'Name\'s Toma. I forge for the guild.',
+            'Name\'s Grom. I keep Oakhaven\'s forge burning.',
             'Wolves prowl across the river to the east. Bring me 5 wolf pelts and I\'ll make you a dagger.',
           ),
           busy: (n, max) => say(`${n} of ${max} pelts. Cross the bridge east of the village.`),
@@ -55,6 +59,41 @@ export class DialogueSystem {
           onEnd: () => state.storyFlags.add('met_stranger'),
         };
       }
+      case 'guard':
+        return { lines: say('Stay on the roads after dark.', 'Wolves east of the river. Slimes in the fields. And worse things, they say.') };
+      case 'wizard': {
+        // Old Ezra teaches the Mage job once the player has some experience.
+        if (isUnlocked('mage')) return { lines: say('Keep your flame small and your mind sharp.', 'The Core\'s light is beautiful. Beautiful things are often hungry.') };
+        if (state.player!.level < 3) {
+          return { lines: say('I am Ezra. Once, I taught magic to the Order.', 'Come back when you have seen a little more of the world. Level 3, perhaps.') };
+        }
+        return {
+          lines: say('You have grown. I can feel it.', 'Hold out your hand. Picture a spark... now let it burn.', 'There. You can now become a Mage. Open JOBS when you are ready.'),
+          onEnd: () => unlockJob('mage'),
+        };
+      }
+      case 'villager':
+        return { lines: say('Fresh bread at the stall! Well... fresh yesterday.') };
+      case 'merchant':
+        return {
+          lines: say('Swords, bows, daggers, staves and armor! Take a look, friend.', 'I buy pelts and gel too.'),
+          onEnd: () => bus.emit('open-shop', { name: 'Gus\'s Goods', sells: ['iron_sword', 'hunter_dagger', 'hunter_bow', 'oak_staff', 'leather_armor', 'rusty_sword'] }),
+        };
+      case 'healer':
+        return {
+          lines: say('Serena\'s remedies! Potions for cuts, bites and slime burns.'),
+          onEnd: () => bus.emit('open-shop', { name: 'Serena\'s Remedies', sells: ['health_potion', 'mana_potion'] }),
+        };
+      case 'child':
+        return { lines: say('Are you an adventurer? I saw a purple slime once!', 'Mom says the cave up north eats people.') };
+      case 'bard':
+        return { lines: say('♪ Oh the Core it glows, and the river flows... ♪', 'Need a song? I take tips. And gossip.') };
+      case 'ranger':
+        return { lines: say('Goblins have taken the old ruins to the north-west.', 'And blue slimes in the southern woods. They hit harder than the green ones.') };
+      case 'villager3':
+        return { lines: say('The windmill west of here has been creaking all night.', 'Nobody has been inside it for years.') };
+      case 'villager2':
+        return { lines: say('My brother went to the mountain ruins last spring.', 'He never wrote back.') };
       default:
         return { lines: say('...') };
     }

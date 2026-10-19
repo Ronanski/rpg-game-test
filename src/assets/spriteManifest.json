@@ -1,0 +1,979 @@
+[
+ {
+  "key": "b_core",
+  "w": 114,
+  "h": 104,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "b_extractor",
+  "w": 40,
+  "h": 36,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "b_farm",
+  "w": 74,
+  "h": 52,
+  "scale": 2
+ },
+ {
+  "key": "b_mine",
+  "w": 61,
+  "h": 62,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "b_scaffold",
+  "w": 36,
+  "h": 42,
+  "scale": 2
+ },
+ {
+  "key": "b_spikes",
+  "w": 38,
+  "h": 28,
+  "scale": 2
+ },
+ {
+  "key": "b_stone_wall",
+  "w": 26,
+  "h": 40,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "b_tower",
+  "w": 48,
+  "h": 92,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "barrel",
+  "w": 21,
+  "h": 28,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "barrels",
+  "w": 35,
+  "h": 40,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "blacksmith",
+  "w": 120,
+  "h": 120,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "boar",
+  "w": 35,
+  "h": 34,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bone_pile",
+  "w": 19,
+  "h": 26,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "bush",
+  "w": 120,
+  "h": 32,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 40
+ },
+ {
+  "key": "campfire",
+  "w": 26,
+  "h": 34,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "cart",
+  "w": 60,
+  "h": 46,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "cave",
+  "w": 100,
+  "h": 104,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "chapel",
+  "w": 119,
+  "h": 140,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "chest",
+  "w": 31,
+  "h": 30,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "chicken",
+  "w": 20,
+  "h": 20,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "cow",
+  "w": 37,
+  "h": 36,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "crate",
+  "w": 24,
+  "h": 26,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "crystal",
+  "w": 35,
+  "h": 32,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "deer",
+  "w": 32,
+  "h": 40,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "dragon",
+  "w": 257,
+  "h": 130,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "fence",
+  "w": 104,
+  "h": 32,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 52
+ },
+ {
+  "key": "flowerbed",
+  "w": 16,
+  "h": 12,
+  "scale": 2
+ },
+ {
+  "key": "flowers",
+  "w": 120,
+  "h": 24,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 30
+ },
+ {
+  "key": "fountain",
+  "w": 64,
+  "h": 62,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "gate",
+  "w": 45,
+  "h": 38,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "goblin",
+  "w": 41,
+  "h": 46,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "grave",
+  "w": 21,
+  "h": 34,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "hay_cart",
+  "w": 39,
+  "h": 44,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "hero",
+  "w": 282,
+  "h": 61,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 47
+ },
+ {
+  "key": "hero_lyra",
+  "w": 105,
+  "h": 61,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 35
+ },
+ {
+  "key": "hero_rook",
+  "w": 144,
+  "h": 59,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 48
+ },
+ {
+  "key": "horse",
+  "w": 45,
+  "h": 42,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "house",
+  "w": 74,
+  "h": 104,
+  "scale": 2
+ },
+ {
+  "key": "house_blue",
+  "w": 74,
+  "h": 104,
+  "scale": 2
+ },
+ {
+  "key": "house_red",
+  "w": 118,
+  "h": 126,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "house_small",
+  "w": 100,
+  "h": 96,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "house_thatch",
+  "w": 137,
+  "h": 118,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "icon_bag",
+  "w": 12,
+  "h": 10,
+  "scale": 2
+ },
+ {
+  "key": "icon_build",
+  "w": 13,
+  "h": 11,
+  "scale": 2
+ },
+ {
+  "key": "icon_coin",
+  "w": 10,
+  "h": 10,
+  "scale": 2
+ },
+ {
+  "key": "icon_dodge",
+  "w": 13,
+  "h": 11,
+  "scale": 2
+ },
+ {
+  "key": "icon_potion",
+  "w": 11,
+  "h": 12,
+  "scale": 2
+ },
+ {
+  "key": "icon_scroll",
+  "w": 12,
+  "h": 11,
+  "scale": 2
+ },
+ {
+  "key": "icon_skill",
+  "w": 13,
+  "h": 11,
+  "scale": 2
+ },
+ {
+  "key": "icon_sword",
+  "w": 13,
+  "h": 13,
+  "scale": 2
+ },
+ {
+  "key": "icon_talk",
+  "w": 13,
+  "h": 9,
+  "scale": 2
+ },
+ {
+  "key": "inn",
+  "w": 113,
+  "h": 128,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "item_bag",
+  "w": 19,
+  "h": 22,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "item_bow",
+  "w": 13,
+  "h": 13,
+  "scale": 2
+ },
+ {
+  "key": "item_coin",
+  "w": 19,
+  "h": 20,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "item_core_shard",
+  "w": 17,
+  "h": 22,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "item_dagger",
+  "w": 12,
+  "h": 11,
+  "scale": 2
+ },
+ {
+  "key": "item_health_potion",
+  "w": 16,
+  "h": 24,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "item_mana_potion",
+  "w": 17,
+  "h": 22,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "item_shield",
+  "w": 20,
+  "h": 24,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "item_slime_gel",
+  "w": 17,
+  "h": 22,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "item_staff",
+  "w": 14,
+  "h": 13,
+  "scale": 2
+ },
+ {
+  "key": "item_sword",
+  "w": 21,
+  "h": 24,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "item_wolf_pelt",
+  "w": 17,
+  "h": 22,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "lamp",
+  "w": 22,
+  "h": 56,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "market",
+  "w": 87,
+  "h": 96,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "mushroom",
+  "w": 54,
+  "h": 24,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 27
+ },
+ {
+  "key": "npc_archer",
+  "w": 36,
+  "h": 56,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_bard",
+  "w": 35,
+  "h": 54,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_borgan",
+  "w": 126,
+  "h": 57,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 42
+ },
+ {
+  "key": "npc_bran",
+  "w": 36,
+  "h": 54,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_child",
+  "w": 19,
+  "h": 42,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_elder",
+  "w": 41,
+  "h": 56,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_grom",
+  "w": 47,
+  "h": 56,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_guard",
+  "w": 41,
+  "h": 56,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_harek",
+  "w": 35,
+  "h": 54,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_healer",
+  "w": 87,
+  "h": 59,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 29
+ },
+ {
+  "key": "npc_hilda",
+  "w": 108,
+  "h": 59,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 36
+ },
+ {
+  "key": "npc_ignis",
+  "w": 33,
+  "h": 54,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_kaelah",
+  "w": 171,
+  "h": 57,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 57
+ },
+ {
+  "key": "npc_knight",
+  "w": 123,
+  "h": 59,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 41
+ },
+ {
+  "key": "npc_lyra",
+  "w": 43,
+  "h": 54,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_martha",
+  "w": 39,
+  "h": 56,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_merchant",
+  "w": 36,
+  "h": 56,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_nixie",
+  "w": 30,
+  "h": 54,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_ranger",
+  "w": 35,
+  "h": 56,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_serena",
+  "w": 36,
+  "h": 54,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_smith",
+  "w": 46,
+  "h": 56,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_stranger",
+  "w": 43,
+  "h": 58,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_thief",
+  "w": 33,
+  "h": 54,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_torbin",
+  "w": 42,
+  "h": 52,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_vaelen",
+  "w": 59,
+  "h": 62,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_valerius",
+  "w": 111,
+  "h": 57,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 37
+ },
+ {
+  "key": "npc_villager",
+  "w": 144,
+  "h": 27,
+  "scale": 2,
+  "frameWidth": 24
+ },
+ {
+  "key": "npc_villager2",
+  "w": 144,
+  "h": 26,
+  "scale": 2,
+  "frameWidth": 24
+ },
+ {
+  "key": "npc_villager_f",
+  "w": 39,
+  "h": 54,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_villager_m",
+  "w": 28,
+  "h": 54,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_wizard",
+  "w": 35,
+  "h": 58,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_zephyr",
+  "w": 41,
+  "h": 56,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "orc",
+  "w": 71,
+  "h": 56,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "pine",
+  "w": 156,
+  "h": 120,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 78
+ },
+ {
+  "key": "portrait_hero",
+  "w": 61,
+  "h": 64,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "rabbit",
+  "w": 16,
+  "h": 20,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "res_mana",
+  "w": 11,
+  "h": 9,
+  "scale": 2
+ },
+ {
+  "key": "res_stone",
+  "w": 12,
+  "h": 9,
+  "scale": 2
+ },
+ {
+  "key": "res_wood",
+  "w": 12,
+  "h": 9,
+  "scale": 2
+ },
+ {
+  "key": "rock",
+  "w": 72,
+  "h": 30,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 36
+ },
+ {
+  "key": "ruins",
+  "w": 108,
+  "h": 100,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "signpost",
+  "w": 26,
+  "h": 40,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "skeleton",
+  "w": 43,
+  "h": 54,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "slime",
+  "w": 114,
+  "h": 30,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 38
+ },
+ {
+  "key": "slime_blue",
+  "w": 38,
+  "h": 30,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "slime_king",
+  "w": 48,
+  "h": 46,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "slime_purple",
+  "w": 38,
+  "h": 30,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "stable",
+  "w": 100,
+  "h": 90,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "stall_blue",
+  "w": 43,
+  "h": 60,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "stall_green",
+  "w": 57,
+  "h": 64,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "stall_red",
+  "w": 51,
+  "h": 66,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "stall_yellow",
+  "w": 47,
+  "h": 64,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "stump",
+  "w": 24,
+  "h": 26,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "tavern",
+  "w": 164,
+  "h": 150,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "tent",
+  "w": 91,
+  "h": 84,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "tile_bridge",
+  "w": 64,
+  "h": 32,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "tile_flowers",
+  "w": 64,
+  "h": 16,
+  "scale": 2,
+  "frameWidth": 32
+ },
+ {
+  "key": "tile_grass",
+  "w": 96,
+  "h": 16,
+  "scale": 2,
+  "frameWidth": 32
+ },
+ {
+  "key": "tile_grass_deco",
+  "w": 256,
+  "h": 32,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 64
+ },
+ {
+  "key": "tile_path",
+  "w": 256,
+  "h": 32,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 64
+ },
+ {
+  "key": "tile_stone",
+  "w": 256,
+  "h": 32,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 64
+ },
+ {
+  "key": "tile_water",
+  "w": 256,
+  "h": 32,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 64
+ },
+ {
+  "key": "torch",
+  "w": 40,
+  "h": 50,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 20
+ },
+ {
+  "key": "tree",
+  "w": 294,
+  "h": 112,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 98
+ },
+ {
+  "key": "ui_button",
+  "w": 16,
+  "h": 16,
+  "scale": 2
+ },
+ {
+  "key": "ui_button_down",
+  "w": 16,
+  "h": 16,
+  "scale": 2
+ },
+ {
+  "key": "ui_panel",
+  "w": 24,
+  "h": 24,
+  "scale": 2
+ },
+ {
+  "key": "ui_panel_gold",
+  "w": 24,
+  "h": 24,
+  "scale": 2
+ },
+ {
+  "key": "warehouse",
+  "w": 106,
+  "h": 100,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "watchtower",
+  "w": 72,
+  "h": 140,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "well",
+  "w": 43,
+  "h": 70,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "windmill",
+  "w": 117,
+  "h": 150,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "wolf",
+  "w": 48,
+  "h": 40,
+  "scale": 1,
+  "imported": true
+ }
+]

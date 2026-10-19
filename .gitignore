@@ -3,3 +3,4 @@ dist/
 ios/
 .env.local
 *.log
+__pycache__/

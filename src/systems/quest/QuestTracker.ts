@@ -4,6 +4,12 @@ import { api } from '../../services/api';
 
 export type QuestStatus = 'available' | 'active' | 'completed';
 
+/** What a save file stores about quests. */
+export interface QuestState {
+  status: [string, QuestStatus][];
+  kills: [string, number][];
+}
+
 export interface QuestDef {
   id: string; // matches quests.id in supabase/seed.sql
   title: string;
@@ -41,6 +47,17 @@ export class QuestTracker {
     this.gainExp = fn;
   }
 
+  exportState(): QuestState {
+    return { status: [...this.status.entries()], kills: [...this.kills.entries()] };
+  }
+
+  /** Restores from a save; quests added to the game after the save start as available. */
+  importState(s: QuestState) {
+    for (const [id, st] of s.status) if (this.status.has(id)) this.status.set(id, st);
+    this.kills = new Map(s.kills);
+    bus.emit('quest-updated');
+  }
+
   get(id: string) {
     return QUESTS.find((q) => q.id === id)!;
   }
@@ -74,7 +91,7 @@ export class QuestTracker {
   complete(id: string) {
     const q = this.get(id);
     if (q.objective.type === 'collect') {
-      state.inventory.set(q.objective.target, (state.inventory.get(q.objective.target) ?? 0) - q.objective.count);
+      addItem(q.objective.target, -q.objective.count);
     }
     this.status.set(id, 'completed');
     state.player!.gold += q.rewards.gold;

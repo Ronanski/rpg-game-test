@@ -1,4 +1,4 @@
-# System Architecture: Echoes of the Core
+# System Architecture: Aethelgard: Chronos of Fate
 
 Everything here runs on free tiers: GitHub Pages, GitHub Actions, and the Supabase Free plan.
 
@@ -127,6 +127,7 @@ src/
   systems/
     combat/CombatSystem.ts     attacks, damage, EXP, level up, loot, respawn
     combat/ClassSystem.ts      race x job x level -> stats (mirrors seed.sql)
+    combat/Starters.ts         starter heroes (mirrors hero_templates in seed.sql)
     quest/QuestTracker.ts      quest status and progress, synced to Supabase
     dialogue/DialogueSystem.ts what each NPC says, based on quests and story flags
     building/BuildingManager   (next) grid placement, timers, upgrades
@@ -142,11 +143,12 @@ src/
   assets/
     textures.ts                procedural placeholder pixel art (swap for real sprites)
   scenes/
-    BootScene.ts               textures, sign-in, starting hero
+    BootScene.ts               textures, sign-in
+    StarterScene.ts            choose the starting hero (Kael / Lyra / Rook)
     WorldScene.ts              free-roam field: wires the map, entities and systems
 ```
 
-Controls: the virtual stick (left thumb) and the ATK/TALK buttons on touch; WASD/arrows, Space and E on keyboard. Touch controls hide during dialogue, and will hide during base-building mode.
+Controls: the virtual stick (left thumb) and ATTACK / SKILL / DODGE / TALK / POTION buttons on touch; on keyboard WASD or arrows, Space (attack), F (skill), Shift (dodge), E (talk), Q (potion), I (bag), J (jobs), Esc (close menu). Touch controls hide during dialogue, and will hide during base-building mode.
 
 ## 5. Art pipeline (rich isometric pixel art)
 
