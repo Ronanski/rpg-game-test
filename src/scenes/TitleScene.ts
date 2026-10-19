@@ -68,7 +68,7 @@ export class TitleScene extends Phaser.Scene {
     add(this.add.text(width / 2, height - 14, `Progress is saved on this device. · build ${BUILD_ID.slice(0, 7)}`, text(11, COLORS.dim)).setOrigin(0.5, 1));
     // Phone app: what the updater is doing, and a button to check again.
     if (isPhoneApp()) {
-      add(this.add.text(width / 2, height - 34, updateStatus, text(12, readyUpdate ? '#8fd18a' : COLORS.text)).setOrigin(0.5, 1));
+      add(this.add.text(width / 2, height - 34, updateStatus, { ...text(12, readyUpdate ? '#8fd18a' : COLORS.text), align: 'center', wordWrap: { width: width - 200 } }).setOrigin(0.5, 1));
       if (!readyUpdate && /date|fail|Could not/.test(updateStatus)) {
         add(this.add.text(width - 14, height - 14, 'CHECK FOR UPDATE', text(12, COLORS.gold)).setOrigin(1, 1))
           .setInteractive({ useHandCursor: true }).on('pointerdown', () => checkForUpdate());
