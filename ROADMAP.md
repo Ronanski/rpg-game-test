@@ -40,13 +40,13 @@ Target look: detailed 16-bit isometric pixel art with warm torch light, matching
 **Checkpoint**
 - [ ] A side-by-side screenshot of the village next to the reference looks like the same game
 
-## M3: Save progress ⏳
-Today, refreshing the page loses everything (level, gold, quests).
-- [ ] Progress is saved and reloaded: hero, level, gold, items, quests
-- [ ] Works in the browser and on the phone with the same account
+## M3: Save progress 🔄
+- [x] Progress is saved in the browser and reloaded: hero, level, stats, gold, items, quests, story flags, position (autosave every 5 seconds, after quest changes and when the tab closes)
+- [x] CONTINUE button on the title screen; NEW GAME asks for a second tap before replacing the save
+- [ ] Cloud save, so the same progress works in the browser and on the phone (needs Supabase keys and an account login)
 
 **Checkpoint**
-- [ ] Level up, refresh the page, and you are still that level with the same gold
+- [ ] Level up, refresh the page, press CONTINUE, and you are still that level with the same gold
 
 ## M4: Base building (day) ⏳
 - [ ] Build mode: place walls, towers, farms and mines on the town grid

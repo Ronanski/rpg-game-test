@@ -9,8 +9,10 @@ import { QuestTracker } from '../systems/quest/QuestTracker';
 import { DialogueSystem } from '../systems/dialogue/DialogueSystem';
 import { state, emitStats } from '../core/GameState';
 import { bus } from '../core/EventBus';
+import { saveGame, setSnapshotSource, type SaveData } from '../core/SaveGame';
 
 const TALK_RANGE = 70;
+const AUTOSAVE_MS = 5000;
 
 /** Free-roam field: the hero explores, talks to NPCs and fights monsters. */
 export class WorldScene extends Phaser.Scene {
@@ -26,7 +28,7 @@ export class WorldScene extends Phaser.Scene {
     super('World');
   }
 
-  create() {
+  create(data: { save?: SaveData } = {}) {
     const world = buildWorld();
     this.map = new IsoMap(this, world);
     this.map.render();
@@ -44,6 +46,24 @@ export class WorldScene extends Phaser.Scene {
     this.combat.spawnAll(world.spawns);
     this.dialogue = new DialogueSystem(quests);
 
+    // Continue a saved game: quests and the spot where the hero stood.
+    if (data.save) {
+      quests.importState(data.save.quests);
+      if (this.map.walkable(data.save.pos.x, data.save.pos.y)) this.player.teleport(data.save.pos.x, data.save.pos.y);
+    }
+    // Autosave every few seconds, after quest changes, and when the tab is hidden or closed.
+    setSnapshotSource(() => ({ quests: quests.exportState(), pos: { x: this.player.x, y: this.player.y } }));
+    this.time.addEvent({ delay: AUTOSAVE_MS, loop: true, callback: saveGame });
+    const saveNow = () => saveGame();
+    bus.on('quest-updated', saveNow);
+    document.addEventListener('visibilitychange', saveNow);
+    window.addEventListener('pagehide', saveNow);
+    this.events.once('shutdown', () => {
+      bus.off('quest-updated', saveNow);
+      document.removeEventListener('visibilitychange', saveNow);
+      window.removeEventListener('pagehide', saveNow);
+    });
+
     const cam = this.cameras.main;
     const b = this.map.bounds();
     cam.setBounds(b.x, b.y, b.width, b.height);
@@ -57,7 +77,7 @@ export class WorldScene extends Phaser.Scene {
 
     this.scene.launch('UI', { quests });
     emitStats();
-    bus.emit('toast', 'Welcome to Oakhaven. Talk to Martha.');
+    bus.emit('toast', data.save ? `Welcome back, ${state.player!.name}.` : 'Welcome to Oakhaven. Talk to Martha.');
   }
 
   update(time: number, delta: number) {

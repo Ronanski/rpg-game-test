@@ -5,12 +5,19 @@ import { computeStats, expToNext, JOBS } from '../systems/combat/ClassSystem';
 import { STARTERS, type StarterDef } from '../systems/combat/Starters';
 import { panel, text, COLORS } from '../ui/theme';
 import { spriteInfo } from '../assets/sprites';
+import { applySave, deleteSave, loadSave, type SaveData } from '../core/SaveGame';
 
-/** Pick the starting hero (race, faction, origin). Tap a card, then START. Keyboard: arrows + Enter. */
+/**
+ * Pick the starting hero (race, faction, origin). Tap a card, then START. Keyboard: arrows + Enter.
+ * With a saved game, CONTINUE (or C) picks up where the player left off.
+ */
 export class StarterScene extends Phaser.Scene {
   private selected = 0;
   private root!: Phaser.GameObjects.Container;
   private starting = false;
+  private save: SaveData | null = null;
+  /** Starting over replaces the save, so the first tap only asks to confirm. */
+  private confirmNew = false;
 
   constructor() {
     super('Starter');
@@ -18,6 +25,8 @@ export class StarterScene extends Phaser.Scene {
 
   create() {
     this.starting = false;
+    this.confirmNew = false;
+    this.save = loadSave();
     this.root = this.add.container();
     this.layout();
     this.scale.on('resize', this.layout, this);
@@ -30,10 +39,12 @@ export class StarterScene extends Phaser.Scene {
     kb?.on('keydown-D', () => this.select((this.selected + 1) % STARTERS.length));
     kb?.on('keydown-ENTER', () => this.confirm());
     kb?.on('keydown-SPACE', () => this.confirm());
+    kb?.on('keydown-C', () => this.continueGame());
   }
 
   private select(i: number) {
     this.selected = i;
+    this.confirmNew = false;
     this.layout();
   }
 
@@ -54,10 +65,21 @@ export class StarterScene extends Phaser.Scene {
     STARTERS.forEach((s, i) => this.card(s, i, left + i * (cardW + gap), top, cardW, cardH, add));
 
     const btnY = top + cardH + (compact ? 30 : 44);
-    const bw = 240, bh = compact ? 40 : 48;
-    const btn = add(panel(this, width / 2 - bw / 2, btnY - bh / 2, bw, bh, true));
-    add(this.add.text(width / 2, btnY, `START AS ${STARTERS[this.selected].name.toUpperCase()}`, text(18)).setOrigin(0.5));
+    const bw = 260, bh = compact ? 40 : 48;
+    const name = STARTERS[this.selected].name.toUpperCase();
+    // With a save: CONTINUE on the left, NEW GAME on the right. Without one: just START.
+    const bx = this.save ? width / 2 + 8 : width / 2 - bw / 2;
+    const btn = add(panel(this, bx, btnY - bh / 2, bw, bh, !this.save));
+    const label = !this.save ? `START AS ${name}` : this.confirmNew ? 'TAP AGAIN: START OVER' : `NEW GAME AS ${name}`;
+    add(this.add.text(bx + bw / 2, btnY, label, text(16, this.confirmNew ? '#ff8a7a' : COLORS.text)).setOrigin(0.5));
     btn.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.confirm());
+    if (this.save) {
+      const p = this.save.player;
+      const cx = width / 2 - 8 - bw;
+      const cont = add(panel(this, cx, btnY - bh / 2, bw, bh, true));
+      add(this.add.text(cx + bw / 2, btnY, `CONTINUE  ${p.name.toUpperCase()} LV ${p.level}`, text(16, COLORS.gold)).setOrigin(0.5));
+      cont.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.continueGame());
+    }
   }
 
   private card(
@@ -69,12 +91,12 @@ export class StarterScene extends Phaser.Scene {
     if (!on) bg.setAlpha(0.85);
     bg.setInteractive({ useHandCursor: true }).on('pointerdown', () => (on ? this.confirm() : this.select(i)));
 
-    const small = w < 190 || h < 330;
+    const small = w < 190 || h < 260;
     const cx = x + w / 2;
     let cy = y + 14;
     // Hero sprite, as big as fits while keeping square pixels.
     const info = spriteInfo(s.texture);
-    const fit = small ? 96 : 130;
+    const fit = small ? 96 : 120;
     const scale = Math.max(1, Math.floor(fit / info.h)) * info.scale;
     add(this.add.image(cx, cy + info.h * scale, s.texture, 0).setOrigin(0.5, 1).setScale(scale));
     cy += info.h * scale + 8;
@@ -96,8 +118,23 @@ export class StarterScene extends Phaser.Scene {
     }
   }
 
+  private continueGame() {
+    if (this.starting || !this.save) return;
+    this.starting = true;
+    applySave(this.save);
+    const save = this.save;
+    this.cameras.main.fadeOut(250);
+    this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('World', { save }));
+  }
+
   private async confirm() {
     if (this.starting) return;
+    if (this.save && !this.confirmNew) {
+      this.confirmNew = true;
+      this.layout();
+      return;
+    }
+    deleteSave();
     this.starting = true;
     const s = STARTERS[this.selected];
     const st = computeStats(s.raceId, s.jobId, 1);
