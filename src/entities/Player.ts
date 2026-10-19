@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { Actor } from './Actor';
 import type { IsoMap } from '../iso/IsoMap';
+import { frameCount } from '../assets/sprites';
 
 const BASE_SPEED = 150; // px/s at spd 10
 
@@ -27,6 +28,8 @@ export class Player extends Actor {
     if (map.walkable(this.x, this.y + ny * step)) this.y += ny * step;
     this.facing.set(nx, ny).normalize();
     if (Math.abs(nx) > 0.1) this.sprite.setFlipX(nx < 0);
+    // Frame 1 (when the sheet has it) is the back view, used while walking away from the camera.
+    if (frameCount(this.sprite.texture.key) > 1) this.sprite.setFrame(ny < -0.3 ? 1 : 0);
     this.bob += dtMs / 70;
     this.sync();
   }

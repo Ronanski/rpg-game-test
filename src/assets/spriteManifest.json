@@ -1,0 +1,331 @@
+[
+ {
+  "key": "barrel",
+  "w": 14,
+  "h": 17,
+  "scale": 2
+ },
+ {
+  "key": "bush",
+  "w": 48,
+  "h": 18,
+  "scale": 2,
+  "frameWidth": 24
+ },
+ {
+  "key": "chest",
+  "w": 31,
+  "h": 30,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "crate",
+  "w": 26,
+  "h": 32,
+  "scale": 2
+ },
+ {
+  "key": "flowerbed",
+  "w": 16,
+  "h": 12,
+  "scale": 2
+ },
+ {
+  "key": "fountain",
+  "w": 64,
+  "h": 62,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "goblin",
+  "w": 41,
+  "h": 46,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "hero",
+  "w": 90,
+  "h": 58,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 45
+ },
+ {
+  "key": "hero_lyra",
+  "w": 33,
+  "h": 58,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "hero_rook",
+  "w": 46,
+  "h": 56,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "house",
+  "w": 74,
+  "h": 104,
+  "scale": 2
+ },
+ {
+  "key": "house_blue",
+  "w": 74,
+  "h": 104,
+  "scale": 2
+ },
+ {
+  "key": "house_small",
+  "w": 100,
+  "h": 96,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "house_thatch",
+  "w": 137,
+  "h": 118,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "icon_bag",
+  "w": 12,
+  "h": 10,
+  "scale": 2
+ },
+ {
+  "key": "icon_coin",
+  "w": 10,
+  "h": 10,
+  "scale": 2
+ },
+ {
+  "key": "icon_potion",
+  "w": 11,
+  "h": 12,
+  "scale": 2
+ },
+ {
+  "key": "icon_scroll",
+  "w": 12,
+  "h": 11,
+  "scale": 2
+ },
+ {
+  "key": "icon_sword",
+  "w": 13,
+  "h": 13,
+  "scale": 2
+ },
+ {
+  "key": "icon_talk",
+  "w": 13,
+  "h": 9,
+  "scale": 2
+ },
+ {
+  "key": "npc_elder",
+  "w": 34,
+  "h": 60,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_guard",
+  "w": 41,
+  "h": 56,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_smith",
+  "w": 39,
+  "h": 56,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_stranger",
+  "w": 144,
+  "h": 25,
+  "scale": 2,
+  "frameWidth": 24
+ },
+ {
+  "key": "npc_villager",
+  "w": 36,
+  "h": 56,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_villager2",
+  "w": 30,
+  "h": 54,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "npc_wizard",
+  "w": 35,
+  "h": 58,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "pine",
+  "w": 64,
+  "h": 58,
+  "scale": 2,
+  "frameWidth": 32
+ },
+ {
+  "key": "portrait_hero",
+  "w": 61,
+  "h": 64,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "rock",
+  "w": 22,
+  "h": 16,
+  "scale": 2
+ },
+ {
+  "key": "skeleton",
+  "w": 43,
+  "h": 54,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "slime",
+  "w": 114,
+  "h": 30,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 38
+ },
+ {
+  "key": "stall_red",
+  "w": 46,
+  "h": 66,
+  "scale": 2
+ },
+ {
+  "key": "stall_yellow",
+  "w": 46,
+  "h": 66,
+  "scale": 2
+ },
+ {
+  "key": "tavern",
+  "w": 164,
+  "h": 150,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "tile_bridge",
+  "w": 32,
+  "h": 16,
+  "scale": 2
+ },
+ {
+  "key": "tile_flowers",
+  "w": 64,
+  "h": 16,
+  "scale": 2,
+  "frameWidth": 32
+ },
+ {
+  "key": "tile_grass",
+  "w": 96,
+  "h": 16,
+  "scale": 2,
+  "frameWidth": 32
+ },
+ {
+  "key": "tile_grass_deco",
+  "w": 256,
+  "h": 32,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 64
+ },
+ {
+  "key": "tile_path",
+  "w": 256,
+  "h": 32,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 64
+ },
+ {
+  "key": "tile_stone",
+  "w": 256,
+  "h": 32,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 64
+ },
+ {
+  "key": "tile_water",
+  "w": 128,
+  "h": 16,
+  "scale": 2,
+  "frameWidth": 32
+ },
+ {
+  "key": "torch",
+  "w": 30,
+  "h": 28,
+  "scale": 2,
+  "frameWidth": 10
+ },
+ {
+  "key": "tree",
+  "w": 84,
+  "h": 54,
+  "scale": 2,
+  "frameWidth": 42
+ },
+ {
+  "key": "ui_button",
+  "w": 16,
+  "h": 16,
+  "scale": 2
+ },
+ {
+  "key": "ui_button_down",
+  "w": 16,
+  "h": 16,
+  "scale": 2
+ },
+ {
+  "key": "ui_panel",
+  "w": 24,
+  "h": 24,
+  "scale": 2
+ },
+ {
+  "key": "ui_panel_gold",
+  "w": 24,
+  "h": 24,
+  "scale": 2
+ },
+ {
+  "key": "wolf",
+  "w": 48,
+  "h": 40,
+  "scale": 1,
+  "imported": true
+ }
+]

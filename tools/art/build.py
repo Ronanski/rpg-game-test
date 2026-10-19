@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import characters  # noqa: E402
 import environment  # noqa: E402
 import ui  # noqa: E402
+import import_sheets  # noqa: E402
 from pix import hstack  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -30,15 +31,21 @@ def main():
     sprites.update(environment.all_sprites())
     sprites.update(characters.all_sprites())
     sprites.update(ui.all_sprites())
+    # The owner's sheets in art/raw/ replace the code-drawn versions where they exist.
+    imported = import_sheets.all_sprites()
+    sprites.update(imported)
     manifest = []
     for key, art in sorted(sprites.items()):
         im = hstack(art) if isinstance(art, list) else art
         im.save(OUT / f'{key}.png')
-        entry = {'key': key, 'w': im.width, 'h': im.height}
+        # Code-drawn art is made at half size and shown at 2x; imported art is already full size.
+        entry = {'key': key, 'w': im.width, 'h': im.height, 'scale': 1 if key in imported else 2}
+        if key in imported:
+            entry['imported'] = True
         if isinstance(art, list):
             entry['frameWidth'] = im.width // len(art)
         manifest.append(entry)
-    (OUT / 'manifest.json').write_text(json.dumps(manifest, indent=1) + '\n')
+    (ROOT / 'src' / 'assets' / 'spriteManifest.json').write_text(json.dumps(manifest, indent=1) + '\n')
     print(f'wrote {len(manifest)} sprites to {OUT.relative_to(ROOT)}')
 
 

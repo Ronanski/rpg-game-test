@@ -8,6 +8,7 @@ export interface DialogueLine {
 
 export interface Conversation {
   lines: DialogueLine[];
+  portrait?: string; // sprite key of the speaker
   onEnd?: () => void;
 }
 
@@ -55,6 +56,14 @@ export class DialogueSystem {
           onEnd: () => state.storyFlags.add('met_stranger'),
         };
       }
+      case 'guard':
+        return { lines: say('Stay on the roads after dark.', 'Wolves east of the river. Slimes in the fields. And worse things, they say.') };
+      case 'wizard':
+        return { lines: say('The Core\'s light is beautiful, isn\'t it?', 'Beautiful things are often hungry.') };
+      case 'villager':
+        return { lines: say('Fresh bread at the stall! Well... fresh yesterday.') };
+      case 'villager2':
+        return { lines: say('My brother went to the mountain ruins last spring.', 'He never wrote back.') };
       default:
         return { lines: say('...') };
     }

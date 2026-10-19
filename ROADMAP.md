@@ -19,19 +19,21 @@ Database schema, isometric free-roam village, NPC dialogue, real-time combat, an
 - [x] Pick the starting hero: Kael, Lyra or Rook (PR #6)
 - [x] Health potions: POT button / Q key (PR #6)
 - [ ] A browser preview link on every pull request, so a feature can be tested before it is merged
-- [ ] This roadmap
+- [x] This roadmap
 
 **Checkpoint**
 - [ ] Open the PR preview link and choose each of the 3 heroes. Each one looks and plays a little differently.
 - [ ] Get hurt by a slime, press POT, and watch the HP go up and the potion count go down.
 
-## M2: Art overhaul (reference style) ⏳
+## M2: Art overhaul (reference style) 🔄
 Target look: detailed 16-bit isometric pixel art with warm torch light, matching the reference images in [docs/ASSETS.md](docs/ASSETS.md).
-- [ ] Art pipeline: images in `art/raw/` are cut out, resized and loaded into the game automatically
-- [ ] Batch 1 art: ground tiles, tree, house, hero, slime
-- [ ] HUD restyle: framed portrait panel and action boxes like the reference
-- [ ] Lighting: torches and a darker evening tint
-- [ ] Batch 2 and 3 art: NPCs, wolf, decorations (barrels, fountain, crates, market stalls)
+- [x] Art pipeline: sheets in `art/raw/` are cut out, resized and loaded into the game automatically (`python3 tools/art/build.py`)
+- [x] Owner's sheets imported: heroes, NPCs, slime, wolf, goblin, skeleton, houses, tavern, fountain, chest, ground tiles
+- [x] Code-drawn fill-ins: trees, torches, barrels, crates, market stalls, water, bridge, HUD frames and icons
+- [x] HUD restyle: framed portrait panel, quest panel, icon action buttons, portrait dialogue box, pixel font
+- [ ] Walking animation frames for heroes and NPCs (sheets have one pose each)
+- [ ] Lighting: darker evening tint so torch light shows
+- [ ] More art: blacksmith, cave tiles, interiors (tavern), trees in the sheet style
 
 **Checkpoint**
 - [ ] A side-by-side screenshot of the village next to the reference looks like the same game

@@ -15,8 +15,8 @@ export enum Tile {
 
 export const TILE_TEXTURE: Record<Tile, string> = {
   [Tile.Grass]: 'tile_grass',
-  [Tile.Grass2]: 'tile_grass2',
-  [Tile.Flowers]: 'tile_flowers',
+  [Tile.Grass2]: 'tile_grass',
+  [Tile.Flowers]: 'tile_grass_deco',
   [Tile.Path]: 'tile_path',
   [Tile.Stone]: 'tile_stone',
   [Tile.Water]: 'tile_water',
@@ -24,9 +24,13 @@ export const TILE_TEXTURE: Record<Tile, string> = {
 };
 
 export interface Prop {
-  kind: 'tree' | 'house';
+  kind: 'tree' | 'building' | 'deco';
+  texture: string;
   x: number;
-  y: number; // grid; houses occupy 2x2 starting here
+  y: number; // grid; buildings occupy 2x2 starting here
+  frame?: number;
+  flip?: boolean;
+  light?: boolean; // casts a warm glow (torches)
 }
 
 export interface NpcDef {
@@ -104,11 +108,28 @@ export function buildWorld(): WorldData {
     x >= 0 && y >= 0 && x < MAP_W && y < MAP_H && !blocked[y][x] &&
     tiles[y][x] !== Tile.Path && tiles[y][x] !== Tile.Bridge && tiles[y][x] !== Tile.Water;
 
-  // Houses around the plaza (2x2 footprint).
-  for (const [hx, hy] of [[19, 19], [26, 19], [19, 26], [27, 27]]) {
-    props.push({ kind: 'house', x: hx, y: hy });
+  // Buildings around the plaza (2x2 footprint).
+  const buildings: [number, number, string, boolean][] = [
+    [19, 19, 'tavern', false], [26, 19, 'house_thatch', false], [19, 26, 'house_small', false], [27, 27, 'house_thatch', true],
+  ];
+  for (const [hx, hy, texture, flip] of buildings) {
+    props.push({ kind: 'building', texture, x: hx, y: hy, flip });
     for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) blocked[hy + dy][hx + dx] = true;
   }
+
+  // Village decorations. Solid ones block movement.
+  const deco = (texture: string, x: number, y: number, solid = true, extra: Partial<Prop> = {}) => {
+    props.push({ kind: 'deco', texture, x, y, ...extra });
+    if (solid) blocked[y][x] = true;
+  };
+  deco('fountain', 25, 22);
+  deco('chest', 21, 21);
+  deco('stall_red', 20, 23);
+  deco('stall_yellow', 27, 23);
+  deco('barrel', 25, 19);
+  deco('crate', 29, 25);
+  deco('barrel', 18, 24);
+  for (const [tx, ty] of [[18, 18], [29, 18], [18, 29], [29, 29], [22, 18], [18, 22]]) deco('torch', tx, ty, true, { light: true });
 
   // Forest border, then scattered trees outside the village.
   for (let y = 0; y < MAP_H; y++) {
@@ -116,7 +137,8 @@ export function buildWorld(): WorldData {
       const edge = x < 2 || y < 2 || x >= MAP_W - 2 || y >= MAP_H - 2;
       const scatter = !inVillage(x, y) && rnd.frac() < 0.07;
       if ((edge || scatter) && free(x, y)) {
-        props.push({ kind: 'tree', x, y });
+        const pine = rnd.frac() < 0.45;
+        props.push({ kind: 'tree', texture: pine ? 'pine' : 'tree', frame: rnd.between(0, 1), x, y });
         blocked[y][x] = true;
       }
     }
@@ -128,13 +150,17 @@ export function buildWorld(): WorldData {
     { id: 'elder', name: 'Elder Maren', texture: 'npc_elder', x: 23, y: 21 },
     { id: 'smith', name: 'Toma the Smith', texture: 'npc_smith', x: 21, y: 25 },
     { id: 'stranger', name: 'Hooded Stranger', texture: 'npc_stranger', x: 43, y: 21 },
+    { id: 'guard', name: 'Guard Bren', texture: 'npc_guard', x: 30, y: 23 },
+    { id: 'wizard', name: 'Old Fennick', texture: 'npc_wizard', x: 26, y: 26 },
+    { id: 'villager', name: 'Mira', texture: 'npc_villager', x: 21, y: 23 },
+    { id: 'villager2', name: 'Sela', texture: 'npc_villager2', x: 27, y: 24 },
   ];
-  const playerStart = { x: 24, y: 24 };
+  const playerStart = { x: 24, y: 25 };
 
   // Clear any tree that landed on (or next to) an NPC or the start point.
   const keepClear = [...npcs, playerStart];
   const near = (p: Prop) => keepClear.some((c) => Math.abs(c.x - p.x) <= 1 && Math.abs(c.y - p.y) <= 1);
-  const kept = props.filter((p) => p.kind === 'house' || !near(p));
+  const kept = props.filter((p) => p.kind !== 'tree' || !near(p));
   for (const p of props) if (!kept.includes(p)) blocked[p.y][p.x] = false;
 
   return {

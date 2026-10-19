@@ -76,6 +76,8 @@ export class Monster extends Actor {
     if (map.walkable(this.x, this.y + my)) this.y += my;
     if (Math.abs(mx) > 0.01) this.sprite.setFlipX(this.def.id === 'wolf' ? mx < 0 : false);
     if (len > 1) this.bob += dtMs / (this.def.id === 'slime' ? 120 : 60);
+    // Slimes squish through their 3 frames as they hop.
+    if (this.def.id === 'slime') this.sprite.setFrame(len > 1 ? Math.floor(now / 160) % 3 : 0);
     this.sync();
     this.drawHp();
   }
@@ -92,7 +94,7 @@ export class Monster extends Actor {
   private drawHp() {
     const g = this.hpBar.clear();
     if (this.hp >= this.def.hp || this.dead) return;
-    const w = 32, x = this.x - w / 2, y = this.y - this.sprite.displayHeight - 8;
+    const w = 32, x = this.x - w / 2, y = this.y - this.sprite.displayHeight - 6;
     g.fillStyle(0x000000, 0.7).fillRect(x - 1, y - 1, w + 2, 6);
     g.fillStyle(0xd94a3d).fillRect(x, y, (w * this.hp) / this.def.hp, 4);
   }

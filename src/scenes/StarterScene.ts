@@ -3,8 +3,8 @@ import { api } from '../services/api';
 import { state } from '../core/GameState';
 import { computeStats, expToNext, JOBS } from '../systems/combat/ClassSystem';
 import { STARTERS, type StarterDef } from '../systems/combat/Starters';
-
-const FONT = { fontFamily: 'monospace', color: '#f4e9c8' };
+import { panel, text, COLORS } from '../ui/theme';
+import { spriteInfo } from '../assets/sprites';
 
 /** Pick the starting hero (race, faction, origin). Tap a card, then START. Keyboard: arrows + Enter. */
 export class StarterScene extends Phaser.Scene {
@@ -43,18 +43,19 @@ export class StarterScene extends Phaser.Scene {
     const add = <T extends Phaser.GameObjects.GameObject>(o: T) => (this.root.add(o), o);
 
     const compact = height < 420;
-    add(this.add.text(width / 2, compact ? 14 : 28, 'CHOOSE YOUR HERO', { ...FONT, fontSize: compact ? '20px' : '26px', fontStyle: 'bold', color: '#ffd75e' }).setOrigin(0.5, 0));
+    add(this.add.text(width / 2, compact ? 12 : 26, 'CHOOSE YOUR HERO', text(compact ? 22 : 30, COLORS.gold)).setOrigin(0.5, 0));
 
     const gap = 16;
     const cardW = Math.min(240, (width - 40 - gap * 2) / 3);
     const top = compact ? 48 : 76;
-    const cardH = Math.min(260, height - top - (compact ? 64 : 90));
+    const cardH = Math.min(300, height - top - (compact ? 64 : 90));
     const left = (width - (cardW * 3 + gap * 2)) / 2;
     STARTERS.forEach((s, i) => this.card(s, i, left + i * (cardW + gap), top, cardW, cardH, add));
 
     const btnY = top + cardH + (compact ? 30 : 44);
-    const btn = add(this.add.rectangle(width / 2, btnY, 200, compact ? 38 : 46, 0x8a2b2b).setStrokeStyle(3, 0xc9a14a));
-    add(this.add.text(width / 2, btnY, `START AS ${STARTERS[this.selected].name.toUpperCase()}`, { ...FONT, fontSize: '16px', fontStyle: 'bold' }).setOrigin(0.5));
+    const bw = 240, bh = compact ? 40 : 48;
+    const btn = add(panel(this, width / 2 - bw / 2, btnY - bh / 2, bw, bh, true));
+    add(this.add.text(width / 2, btnY, `START AS ${STARTERS[this.selected].name.toUpperCase()}`, text(18)).setOrigin(0.5));
     btn.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.confirm());
   }
 
@@ -63,33 +64,34 @@ export class StarterScene extends Phaser.Scene {
     add: <T extends Phaser.GameObjects.GameObject>(o: T) => T,
   ) {
     const on = i === this.selected;
-    const bg = add(this.add.rectangle(x, y, w, h, on ? 0x241e40 : 0x15122a, 0.95).setOrigin(0).setStrokeStyle(on ? 3 : 2, on ? 0xffd75e : 0x6a5a8a));
+    const bg = add(panel(this, x, y, w, h, on));
+    if (!on) bg.setAlpha(0.85);
     bg.setInteractive({ useHandCursor: true }).on('pointerdown', () => (on ? this.confirm() : this.select(i)));
 
-    const small = w < 190 || h < 260;
-    const spriteScale = small ? 3 : 4;
+    const small = w < 190 || h < 330;
     const cx = x + w / 2;
-    let cy = y + 10;
-    add(this.add.image(cx, cy + 6 + 16 * spriteScale, 'shadow').setScale(spriteScale / 3));
-    add(this.add.image(cx, cy + 6 + 16 * spriteScale, s.texture).setOrigin(0.5, 1).setScale(spriteScale));
-    cy += 16 * spriteScale + 14;
+    let cy = y + 14;
+    // Hero sprite, as big as fits while keeping square pixels.
+    const info = spriteInfo(s.texture);
+    const fit = small ? 96 : 130;
+    const scale = Math.max(1, Math.floor(fit / info.h)) * info.scale;
+    add(this.add.image(cx, cy + info.h * scale, s.texture, 0).setOrigin(0.5, 1).setScale(scale));
+    cy += info.h * scale + 8;
 
     const race = s.raceId[0].toUpperCase() + s.raceId.slice(1);
-    add(this.add.text(cx, cy, s.name, { ...FONT, fontSize: small ? '16px' : '19px', fontStyle: 'bold' }).setOrigin(0.5, 0));
-    cy += small ? 20 : 24;
-    add(this.add.text(cx, cy, `${race} ${JOBS[s.jobId].name}`, { ...FONT, fontSize: '12px', color: '#c9bfa0' }).setOrigin(0.5, 0));
-    cy += 16;
-    add(this.add.text(cx, cy, s.faction, { ...FONT, fontSize: '12px', color: '#' + s.factionColor.toString(16).padStart(6, '0') }).setOrigin(0.5, 0));
-    cy += 20;
+    add(this.add.text(cx, cy, s.name, text(small ? 18 : 22, on ? COLORS.gold : COLORS.text)).setOrigin(0.5, 0));
+    cy += small ? 22 : 28;
+    add(this.add.text(cx, cy, `${race} ${JOBS[s.jobId].name}`, text(13, COLORS.dim)).setOrigin(0.5, 0));
+    cy += 17;
+    add(this.add.text(cx, cy, s.faction, text(13, '#' + s.factionColor.toString(16).padStart(6, '0'))).setOrigin(0.5, 0));
+    cy += 21;
 
     const st = computeStats(s.raceId, s.jobId, 1);
-    add(this.add.text(cx, cy, `HP ${st.hp}  MP ${st.mp}\nATK ${st.atk}  DEF ${st.def}  SPD ${st.spd}`, { ...FONT, fontSize: '11px', align: 'center', lineSpacing: 2 }).setOrigin(0.5, 0));
-    cy += 34;
+    add(this.add.text(cx, cy, `HP ${st.hp}  MP ${st.mp}\nATK ${st.atk}  DEF ${st.def}  SPD ${st.spd}`, { ...text(12), align: 'center', lineSpacing: 2 }).setOrigin(0.5, 0));
+    cy += 36;
 
-    if (y + h - cy > 28) {
-      add(this.add.text(cx, cy, s.backstory, { ...FONT, fontSize: '11px', color: '#c9bfa0', align: 'center', wordWrap: { width: w - 20 } })
-        .setOrigin(0.5, 0)
-        .setFontStyle('italic'));
+    if (y + h - cy > 30) {
+      add(this.add.text(cx, cy, s.backstory, { ...text(12, COLORS.dim), align: 'center', wordWrap: { width: w - 24 } }).setOrigin(0.5, 0));
     }
   }
 

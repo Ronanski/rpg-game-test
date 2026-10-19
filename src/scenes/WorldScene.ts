@@ -48,7 +48,8 @@ export class WorldScene extends Phaser.Scene {
     const b = this.map.bounds();
     cam.setBounds(b.x, b.y, b.width, b.height);
     cam.startFollow(this.player.sprite, true, 0.12, 0.12, 0, 20);
-    cam.setZoom(this.scale.width < 1000 ? 1.15 : 1.4);
+    // Bigger screens see the same amount of world, just with bigger pixels.
+    cam.setZoom(Phaser.Math.Clamp(Math.round((this.scale.height / 460) * 4) / 4, 1, 2.5));
     cam.setRoundPixels(true);
 
     const kb = this.input.keyboard!;
@@ -100,7 +101,7 @@ export class WorldScene extends Phaser.Scene {
   private startTalk(npc: Npc) {
     npc.face(this.player.x);
     this.player.sprite.setFlipX(npc.x < this.player.x);
-    bus.emit('dialogue-open', this.dialogue.talk(npc.def.id, npc.def.name));
+    bus.emit('dialogue-open', { ...this.dialogue.talk(npc.def.id, npc.def.name), portrait: npc.def.texture });
     bus.once('dialogue-closed', () => bus.emit('npc-nearby', this.nearNpc?.def.name ?? null));
   }
 }
