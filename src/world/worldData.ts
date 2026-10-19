@@ -264,13 +264,14 @@ export function buildWorld(): WorldData {
     { id: 'healer', name: 'Serena', texture: 'npc_serena', x: 26, y: 24, role: 'Potions', mark: 'shop' },
     { id: 'merchant', name: 'Gus', texture: 'npc_merchant', x: 33, y: 25, role: 'Weapons & Armor', mark: 'shop' },
     { id: 'wizard', name: 'Old Ezra', texture: 'npc_wizard', x: 18, y: 21, role: 'Mage Teacher', mark: 'teacher' },
-    { id: 'guard', name: 'Cole', texture: 'npc_guard', x: 31, y: 22, role: 'Guard' },
+    { id: 'guard', name: 'Cole', texture: 'npcanim_guard', x: 31, y: 22, role: 'Guard' },
     { id: 'ranger', name: 'Wren', texture: 'npc_ranger', x: 36, y: 22, role: 'Ranger' },
     { id: 'stranger', name: 'Hooded Stranger', texture: 'npc_stranger', x: 43, y: 21, role: '???' },
     // Villagers wander around their spot.
-    { id: 'villager', name: 'Lena', texture: 'npc_villager_f', x: 22, y: 22 },
+    { id: 'villager', name: 'Lena', texture: 'npcanim_villager_f', x: 22, y: 22 },
     { id: 'villager2', name: 'Hana', texture: 'npc_archer', x: 28, y: 28 },
-    { id: 'villager3', name: 'Ned', texture: 'npc_villager_m', x: 12, y: 22 },
+    { id: 'villager3', name: 'Ned', texture: 'npcanim_villager_m', x: 12, y: 22 },
+    { id: 'farmer', name: 'Jory', texture: 'npcanim_farmer', x: 15, y: 29 },
     { id: 'child', name: 'Pip', texture: 'npc_child', x: 25, y: 27 },
     { id: 'bard', name: 'Finn', texture: 'npc_bard', x: 22, y: 20, role: 'Bard' },
   ];

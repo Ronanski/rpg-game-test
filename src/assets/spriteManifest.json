@@ -401,6 +401,55 @@
   "imported": true
  },
  {
+  "key": "fx_burst",
+  "w": 39,
+  "h": 41,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "fx_explode",
+  "w": 39,
+  "h": 34,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "fx_fireball",
+  "w": 39,
+  "h": 34,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "fx_heal",
+  "w": 47,
+  "h": 47,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "fx_hit",
+  "w": 46,
+  "h": 49,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "fx_slash",
+  "w": 37,
+  "h": 43,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "fx_slash_fire",
+  "w": 37,
+  "h": 43,
+  "scale": 1,
+  "imported": true
+ },
+ {
   "key": "gate",
   "w": 45,
   "h": 38,
@@ -887,6 +936,51 @@
   "h": 56,
   "scale": 1,
   "imported": true
+ },
+ {
+  "key": "npcanim_farmer",
+  "w": 145,
+  "h": 52,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 29,
+  "nanim": true
+ },
+ {
+  "key": "npcanim_guard",
+  "w": 140,
+  "h": 52,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 28,
+  "nanim": true
+ },
+ {
+  "key": "npcanim_innkeeper",
+  "w": 160,
+  "h": 52,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 32,
+  "nanim": true
+ },
+ {
+  "key": "npcanim_villager_f",
+  "w": 185,
+  "h": 52,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 37,
+  "nanim": true
+ },
+ {
+  "key": "npcanim_villager_m",
+  "w": 140,
+  "h": 52,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 28,
+  "nanim": true
  },
  {
   "key": "orc",

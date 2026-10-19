@@ -178,6 +178,8 @@ export class DialogueSystem {
               },
             }
           : { lines: say('A bed is 10 gold, love. Come back when your purse is heavier.') };
+      case 'farmer':
+        return { lines: say('Slimes ate half my cabbages again!', 'They only come at night now. And there are more of them every week.') };
       case 'drunk':
         return { lines: say('*hic* The cave up north... it sings at night, you know.', 'My cousin went in to listen. Came out green and wobbly. *hic*', '...I am not joking.') };
       case 'villager3':

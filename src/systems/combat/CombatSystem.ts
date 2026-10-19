@@ -300,6 +300,10 @@ export class CombatSystem {
         this.scene.tweens.add({ targets: nova, scale: 2.4, alpha: 0, duration: 380, onComplete: () => nova.destroy() });
         fx.ring(this.scene, p.x, p.y - 4, 110, 0xff8a3a, 7);
         fx.flames(this.scene, p.x, p.y - 10, 100);
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * Math.PI * 2;
+          this.scene.time.delayedCall(i * 40, () => fx.burst(this.scene, p.x + Math.cos(a) * 60, p.y - 12 + Math.sin(a) * 30, 0.9));
+        }
         this.scene.cameras.main.shake(160, 0.007);
         for (const m of inRadius(110)) this.damage(m, 1.6, 0.05);
         break;
@@ -309,6 +313,7 @@ export class CombatSystem {
         const hx = p.x + f.x * 36, hy = p.y - 20 + f.y * 18;
         fx.slash(this.scene, hx - f.x * 10, hy, Math.atan2(f.y, f.x), 1.8, 0xffe08a);
         fx.ring(this.scene, hx, hy + 18, 60, 0xffe08a, 6);
+        fx.blast(this.scene, hx, hy, 1.2);
         fx.sparks(this.scene, hx, hy, 0xffe08a, 16, 220);
         this.scene.cameras.main.shake(120, 0.006);
         for (const m of inRadius(85)) {
@@ -346,7 +351,8 @@ export class CombatSystem {
     const crit = Math.random() < critChance;
     const dmg = Math.max(1, Math.round((ps.atk * power + Phaser.Math.Between(0, 3) - m.def.def) * (crit ? 1.8 : 1)));
     m.hit(dmg, this.player);
-    fx.sparks(this.scene, m.x, m.y - m.sprite.displayHeight / 2, crit ? 0xffd75e : 0xffffff, crit ? 16 : 8, crit ? 220 : 150);
+    fx.impact(this.scene, m.x, m.y - m.sprite.displayHeight / 2, crit ? 1.4 : 1);
+    fx.sparks(this.scene, m.x, m.y - m.sprite.displayHeight / 2, crit ? 0xffd75e : 0xffffff, crit ? 12 : 5, crit ? 220 : 150);
     if (crit) (fx.hitStop(this.scene), this.scene.cameras.main.shake(80, 0.005));
     this.floatText(m.x, m.y - 40, crit ? `${dmg}!` : `${dmg}`, crit ? '#ffd75e' : '#ffffff', crit ? 24 : 18);
     if (crit) countJobAction('crits');
@@ -372,8 +378,7 @@ export class CombatSystem {
     }
     const ex = target ? target.x : sx + f.x * range, ey = target ? target.y - 24 : sy + f.y * range;
     const fire = kind === 'firebolt';
-    const shot = this.scene.add.image(sx, sy, kind).setDepth(190000).setRotation(Math.atan2(ey - sy, ex - sx)).setScale(kind === 'arrow' ? 1.6 : 1);
-    if (fire) shot.setBlendMode(Phaser.BlendModes.ADD);
+    const shot = this.scene.add.image(sx, sy, fire ? 'fx_fireball' : kind).setDepth(190000).setRotation(Math.atan2(ey - sy, ex - sx)).setScale(kind === 'arrow' ? 1.6 : 0.9);
     // Trail: fire leaves embers, arrows a faint streak.
     const trail = this.scene.add.particles(0, 0, 'spark', {
       follow: shot, lifespan: fire ? 260 : 140, frequency: fire ? 18 : 30,
@@ -390,8 +395,8 @@ export class CombatSystem {
         this.scene.time.delayedCall(300, () => trail.destroy());
         if (target && !target.dead) this.damage(target, power, crit);
         if (fire) {
-          fx.flames(this.scene, ex, ey + 10, 24);
-          fx.ring(this.scene, ex, ey + 20, 30, 0xff8a3a, 4);
+          fx.burst(this.scene, ex, ey);
+          fx.flames(this.scene, ex, ey + 10, 18);
         } else if (!target) fx.dust(this.scene, ex, ey + 24);
       },
     });
@@ -408,7 +413,7 @@ export class CombatSystem {
     const gotHp = Math.min(hp, ps.maxHp - ps.hp), gotMp = Math.min(mp, ps.maxMp - ps.mp);
     ps.hp += gotHp;
     ps.mp += gotMp;
-    if (gotHp) this.floatText(this.player.x, this.player.y - 50, `+${gotHp}`, '#7dff8a');
+    if (gotHp) (this.floatText(this.player.x, this.player.y - 50, `+${gotHp}`, '#7dff8a'), fx.heal(this.scene, this.player.x, this.player.y));
     if (gotMp) this.floatText(this.player.x, this.player.y - 66, `+${gotMp} MP`, '#7fb8ff');
     emitStats();
   }

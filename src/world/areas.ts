@@ -116,8 +116,8 @@ function buildTavern(): WorldData {
   put('barrel', 9, 9);
 
   const npcs: NpcDef[] = [
-    { id: 'innkeeper', name: 'Mabel', texture: 'npc_villager_f', x: 4, y: 3, role: 'Innkeeper', mark: 'shop' },
-    { id: 'drunk', name: 'Old Tam', texture: 'npc_villager_m', x: 7, y: 7 },
+    { id: 'innkeeper', name: 'Mabel', texture: 'npcanim_innkeeper', x: 4, y: 3, role: 'Innkeeper', mark: 'shop' },
+    { id: 'drunk', name: 'Old Tam', texture: 'npcanim_villager_m', x: 7, y: 7 },
   ];
   return {
     id: 'tavern', w: TAV_W, h: TAV_H,
