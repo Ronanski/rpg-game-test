@@ -8,6 +8,7 @@ export class ActionButton extends Phaser.GameObjects.Container {
   baseScale = 1;
   private shade: Phaser.GameObjects.Rectangle;
   private size: number;
+  private labelText: Phaser.GameObjects.Text;
 
   constructor(scene: Phaser.Scene, label: string, icon: string, size: number, onPress: () => void) {
     super(scene);
@@ -17,7 +18,7 @@ export class ActionButton extends Phaser.GameObjects.Container {
     // Icons come in different sizes (code-drawn ones are tiny); scale each to ~40% of the button.
     const img = scene.add.image(0, -size * 0.1, icon);
     img.setScale(Math.max(1, Math.round((size * 0.4) / Math.max(img.height, 1))));
-    const t = scene.add.text(0, size * 0.28, label, text(Math.round(size * 0.2))).setOrigin(0.5);
+    const t = (this.labelText = scene.add.text(0, size * 0.28, label, text(Math.round(size * 0.2))).setOrigin(0.5));
     // Cooldown shade: covers the button from the top while a move recharges (see setCooldown).
     this.shade = scene.add.rectangle(0, size / 2, size - 8, 0, 0x07080e, 0.6).setOrigin(0.5, 1);
     this.add([this.frame, img, t, this.shade]);
@@ -32,6 +33,12 @@ export class ActionButton extends Phaser.GameObjects.Container {
       });
     });
     scene.add.existing(this);
+  }
+
+  /** Toggle look: a gold label when on. */
+  setOn(on: boolean, label: string) {
+    this.labelText.setText(label).setColor(on ? '#8fd18a' : '#f4ead0');
+    this.frame.setTint(on ? 0xc8ffc0 : 0xffffff);
   }
 
   /** 0 = ready, 1 = just used. */

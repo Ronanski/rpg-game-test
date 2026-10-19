@@ -203,10 +203,10 @@ ICONS = {
 
 def all_sprites() -> dict[str, Image.Image]:
     out = {
-        'ui_panel': panel('#1a2034', '#8790b4'),
-        'ui_panel_gold': panel('#1d1a2c', '#c9a14a'),
-        'ui_button': panel('#2a3150', '#9aa3c8', 16),
-        'ui_button_down': panel('#141a2c', '#5a6280', 16),
+        'ui_panel': panel('#15120e', '#a8823e'),
+        'ui_panel_gold': panel('#1c160d', '#e0b85a'),
+        'ui_button': panel('#231c13', '#c9a14a', 16),
+        'ui_button_down': panel('#120e09', '#7a6030', 16),
     }
     out.update(ICONS)
     return out

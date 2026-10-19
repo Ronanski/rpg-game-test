@@ -21,7 +21,7 @@ export class Companion extends Actor {
   constructor(scene: Phaser.Scene, x: number, y: number, texture: string, name: string) {
     super(scene, x, y, texture);
     this.label = scene.add
-      .text(x, y, name, { fontFamily: FONT, fontSize: '12px', color: '#9fe3ff', stroke: '#07080e', strokeThickness: 3 })
+      .text(x, y, name, { fontFamily: FONT, fontStyle: 'bold', resolution: 2, fontSize: '12px', color: '#9fe3ff', stroke: '#07080e', strokeThickness: 3 })
       .setOrigin(0.5, 1)
       .setDepth(100000);
   }

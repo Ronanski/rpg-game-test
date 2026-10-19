@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { state, emitStats, addItem } from '../core/GameState';
 import { bus } from '../core/EventBus';
 import { ITEMS, canEquip, equip, unequip, type Slot } from '../systems/items/Items';
-import { panel, text, COLORS } from './theme';
+import { panel, text, title as titleStyle, COLORS } from './theme';
 import { spriteScale } from '../assets/sprites';
 
 export type Add = <T extends Phaser.GameObjects.GameObject>(o: T) => T;
@@ -49,8 +49,8 @@ export abstract class Menu {
     const w = Math.min(680, width - 24), h = Math.min(420, height - 16);
     const x = (width - w) / 2, y = (height - h) / 2;
     add(panel(s, x, y, w, h, true));
-    add(s.add.text(x + 20, y + 14, title, text(20, COLORS.gold)));
-    add(s.add.text(x + 20 + title.length * 13 + 16, y + 18, subtitle, text(12, COLORS.dim)));
+    const head = add(s.add.text(x + 20, y + 12, title, titleStyle(20)));
+    add(s.add.text(head.x + head.width + 16, y + 18, subtitle, text(13, COLORS.dim)));
     const c = add(s.add.text(x + w - 18, y + 12, '✕', text(22)).setOrigin(1, 0));
     c.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.close());
     return { x, y, w, h, add, compact: height < 450 };

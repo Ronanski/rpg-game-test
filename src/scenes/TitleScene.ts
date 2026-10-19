@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { panel, text, COLORS } from '../ui/theme';
+import { panel, text, title, COLORS } from '../ui/theme';
 import { applySave, loadSave, type SaveData } from '../core/SaveGame';
 import { applyUpdate, BUILD_ID, checkForUpdate, isPhoneApp, onUpdateReady, readyUpdate, updateStatus } from '../core/Updater';
 
@@ -38,8 +38,8 @@ export class TitleScene extends Phaser.Scene {
     const compact = height < 420;
     // Backdrop: the hero art over a dark vignette.
     add(this.add.image(width / 2, height + 10, 'b_core').setOrigin(0.5, 1).setScale(compact ? 1.4 : 2).setAlpha(0.18));
-    add(this.add.text(width / 2, height * (compact ? 0.12 : 0.16), 'AETHELGARD', text(compact ? 40 : 58, COLORS.gold)).setOrigin(0.5));
-    add(this.add.text(width / 2, height * (compact ? 0.12 : 0.16) + (compact ? 34 : 46), 'CHRONOS OF FATE', text(compact ? 16 : 22, COLORS.text)).setOrigin(0.5));
+    add(this.add.text(width / 2, height * (compact ? 0.12 : 0.16), 'AETHELGARD', title(compact ? 40 : 58)).setOrigin(0.5));
+    add(this.add.text(width / 2, height * (compact ? 0.12 : 0.16) + (compact ? 34 : 46), 'CHRONOS OF FATE', title(compact ? 16 : 22, COLORS.text)).setOrigin(0.5));
 
     const bw = Math.min(320, width - 40), bh = compact ? 44 : 54;
     let y = height * (compact ? 0.42 : 0.44);

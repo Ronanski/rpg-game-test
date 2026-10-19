@@ -226,7 +226,9 @@ export class CombatSystem {
         .setRotation(Math.atan2(f0.y, f0.x)).setDepth(this.player.y + 3);
       this.scene.tweens.add({ targets: nock, x: nock.x - f0.x * 10, duration: 100, onComplete: () => nock.destroy() });
       }
-      this.scene.time.delayedCall(110, () => this.shoot('arrow', ARROW.range, ARROW.speed, style.power * ARROW.power, style.crit));
+      // Lock on now: the arrow flies to that monster even if the hero walks another way meanwhile.
+      const lock = this.nearestTarget(ARROW.range);
+      this.scene.time.delayedCall(110, () => this.shoot('arrow', ARROW.range, ARROW.speed, style.power * ARROW.power, style.crit, lock));
       return;
     }
     if (wt === 'dagger') style.cooldown *= 0.8;
@@ -355,12 +357,29 @@ export class CombatSystem {
   }
 
   /** Arrow from a tower top at a monster. */
-  towerShot(fromX: number, fromY: number, m: Monster, dmg: number) {
+  towerShot(fromX: number, fromY: number, m: Monster, dmg: number, kind: 'arrow' | 'frost' | 'cannon' = 'arrow', atk: { splash?: number; slow?: number } = {}) {
     const ex = m.x, ey = m.y - 20;
-    const shot = this.scene.add.image(fromX, fromY, 'arrow').setDepth(190000).setRotation(Math.atan2(ey - fromY, ex - fromX));
+    const key = kind === 'arrow' ? 'arrow' : kind === 'frost' ? 'spark' : 'fx_explode';
+    const shot = this.scene.add.image(fromX, fromY, key).setDepth(190000).setRotation(Math.atan2(ey - fromY, ex - fromX));
+    if (kind === 'frost') shot.setTint(0x9fe3ff).setScale(3).setBlendMode(Phaser.BlendModes.ADD);
+    if (kind === 'cannon') shot.setScale(0.35);
     this.scene.tweens.add({
-      targets: shot, x: ex, y: ey, duration: (Math.hypot(ex - fromX, ey - fromY) / 700) * 1000,
-      onComplete: () => (shot.destroy(), this.structureHit(m, dmg)),
+      targets: shot, x: ex, y: ey, duration: (Math.hypot(ex - fromX, ey - fromY) / (kind === 'cannon' ? 420 : 700)) * 1000,
+      onComplete: () => {
+        shot.destroy();
+        if (kind === 'cannon') {
+          // Blast: every monster near the impact is hit.
+          const r = (atk.splash ?? 1) * 32;
+          fx.blast(this.scene, ex, ey + 10, 0.9);
+          for (const o of [...this.monsters]) if (!o.dead && Phaser.Math.Distance.Between(o.x, o.y, m.x, m.y) < r) this.structureHit(o, dmg);
+          return;
+        }
+        if (kind === 'frost' && !m.dead) {
+          m.slow(atk.slow ?? 0.5, 2000);
+          fx.sparks(this.scene, ex, ey, 0x9fe3ff, 8, 120);
+        }
+        this.structureHit(m, dmg);
+      },
     });
   }
 
@@ -396,6 +415,14 @@ export class CombatSystem {
     });
   }
 
+  /** How far the current weapon reaches (AUTO only attacks monsters this close). */
+  attackReach() {
+    const wt = weaponType();
+    if (wt === 'bow') return ARROW.range * 0.85;
+    if (state.player!.jobId === 'mage' && wt === 'staff' && state.player!.mp >= FIREBOLT.mp) return FIREBOLT.range * 0.85;
+    return 110;
+  }
+
   /** The monster the next attack goes for: the nearest one within reach of a dash. */
   nearestTarget(range = AUTO_RANGE): Monster | null {
     let best: Monster | null = null, bd = range;
@@ -420,45 +447,61 @@ export class CombatSystem {
 
   /** Mage spell: a fireball flies in the facing direction and burns the first monster in its path. */
   private firebolt() {
-    this.shoot('firebolt', FIREBOLT.range, FIREBOLT.speed, FIREBOLT.power, 0.05);
+    this.shoot('firebolt', FIREBOLT.range, FIREBOLT.speed, FIREBOLT.power, 0.05, this.nearestTarget(FIREBOLT.range));
   }
 
   /** Fires a projectile (firebolt or arrow) at the first monster in the facing direction. */
-  private shoot(kind: 'firebolt' | 'arrow', range: number, speed: number, power: number, crit: number) {
-    const f = this.player.facing.clone().normalize();
+  private shoot(kind: 'firebolt' | 'arrow', range: number, speed: number, power: number, crit: number, locked: Monster | null = null) {
+    // Locked on a monster (auto-target): the shot homes in on it wherever the hero is walking.
+    // Otherwise it goes for the first monster in the facing direction.
+    let target: Monster | null = locked && !locked.dead ? locked : null;
+    const f = target
+      ? new Phaser.Math.Vector2(target.x - this.player.x, target.y - this.player.y).normalize()
+      : this.player.facing.clone().normalize();
     const sx = this.player.x + f.x * 12, sy = this.player.y - 26;
-    let target: Monster | null = null, best = range;
-    for (const m of this.monsters) {
-      if (m.dead) continue;
-      const dx = m.x - this.player.x, dy = m.y - this.player.y;
-      const along = dx * f.x + dy * f.y;
-      const off = Math.abs(dx * f.y - dy * f.x);
-      if (along > 0 && along < best && off < 34) (best = along), (target = m);
+    if (!target) {
+      let best = range;
+      for (const m of this.monsters) {
+        if (m.dead) continue;
+        const dx = m.x - this.player.x, dy = m.y - this.player.y;
+        const along = dx * f.x + dy * f.y;
+        const off = Math.abs(dx * f.y - dy * f.x);
+        if (along > 0 && along < best && off < 34) (best = along), (target = m);
+      }
     }
-    const ex = target ? target.x : sx + f.x * range, ey = target ? target.y - 24 : sy + f.y * range;
     const fire = kind === 'firebolt';
-    const shot = this.scene.add.image(sx, sy, fire ? 'fx_fireball' : kind).setDepth(190000).setRotation(Math.atan2(ey - sy, ex - sx)).setScale(kind === 'arrow' ? 1.6 : 0.9);
+    const shot = this.scene.add.image(sx, sy, fire ? 'fx_fireball' : kind).setDepth(190000).setRotation(Math.atan2(f.y, f.x)).setScale(kind === 'arrow' ? 1.6 : 0.9);
     // Trail: fire leaves embers, arrows a faint streak.
     const trail = this.scene.add.particles(0, 0, 'spark', {
       follow: shot, lifespan: fire ? 260 : 140, frequency: fire ? 18 : 30,
       scale: { start: fire ? 1.4 : 0.6, end: 0 }, alpha: { start: 0.8, end: 0 },
       tint: fire ? [0xffe08a, 0xff7a2a] : 0xe8f4ff, blendMode: Phaser.BlendModes.ADD,
     }).setDepth(189999);
-    this.scene.tweens.add({
-      targets: shot, x: ex, y: ey,
-      // At least ~120 ms in the air so even point-blank shots are visible.
-      duration: Math.max(120, (Math.hypot(ex - sx, ey - sy) / speed) * 1000),
-      onComplete: () => {
-        shot.destroy();
-        trail.stop();
-        this.scene.time.delayedCall(300, () => trail.destroy());
-        if (target && !target.dead) this.damage(target, power, crit);
-        if (fire) {
-          fx.burst(this.scene, ex, ey);
-          fx.flames(this.scene, ex, ey + 10, 18);
-        } else if (!target) fx.dust(this.scene, ex, ey + 24);
-      },
-    });
+    // Flies each frame toward where the target is now (or straight on if there is none).
+    const end = { x: sx + f.x * range, y: sy + f.y * range };
+    let travelled = 0;
+    const tick = (_t: number, dtMs: number) => {
+      const tx = target && !target.dead ? target.x : end.x, ty = target && !target.dead ? target.y - 24 : end.y;
+      const dx = tx - shot.x, dy = ty - shot.y, d = Math.hypot(dx, dy);
+      const step = (speed * dtMs) / 1000;
+      if (d > step && travelled < range * 1.6) {
+        shot.x += (dx / d) * step;
+        shot.y += (dy / d) * step;
+        shot.setRotation(Math.atan2(dy, dx));
+        travelled += step;
+        return;
+      }
+      this.scene.events.off('update', tick);
+      shot.destroy();
+      trail.stop();
+      this.scene.time.delayedCall(300, () => trail.destroy());
+      if (target && !target.dead) this.damage(target, power, crit);
+      if (fire) {
+        fx.burst(this.scene, tx, ty);
+        fx.flames(this.scene, tx, ty + 10, 18);
+      } else if (!target) fx.dust(this.scene, tx, ty + 24);
+    };
+    this.scene.events.on('update', tick);
   }
 
   /** Drinks a potion (health by default). Does nothing when that bar is full or none are left. */
@@ -543,7 +586,7 @@ export class CombatSystem {
 
   floatText(x: number, y: number, text: string, color: string, size = 18) {
     const t = this.scene.add
-      .text(x, y, text, { fontFamily: FONT, fontSize: `${size}px`, color, stroke: '#07080e', strokeThickness: 4 })
+      .text(x, y, text, { fontFamily: FONT, fontStyle: 'bold', resolution: 2, fontSize: `${size}px`, color, stroke: '#07080e', strokeThickness: 4 })
       .setOrigin(0.5)
       .setDepth(200000);
     this.scene.tweens.add({ targets: t, y: y - 30, alpha: 0, duration: 800, ease: 'Cubic.easeOut', onComplete: () => t.destroy() });

@@ -8,7 +8,7 @@ export interface LevelDef {
   cost: Cost;
   seconds: number;
   hp: number;
-  attack?: { dmg: number; range: number; rate: number }; // range in tiles, rate in shots per second
+  attack?: { dmg: number; range: number; rate: number; splash?: number; slow?: number }; // range in tiles, rate in shots per second; splash radius in tiles; slow = speed multiplier for 2 s
   produces?: Partial<Record<Resource, number>>;
   per?: number;
   cap?: number;
@@ -25,6 +25,8 @@ export interface BuildingDef {
   sprites: string[];
   /** Shown while it is being built (the wooden frame going up). */
   site?: string;
+  /** Colour tint over the art (towers that share the Arrow Tower's look). */
+  tint?: number;
   desc: string;
   levels: LevelDef[];
   /** Hidden from the build menu (the Core is there from the start). */
@@ -62,6 +64,26 @@ export const BUILDINGS: Record<string, BuildingDef> = {
       { cost: { gold: 50, wood: 40 }, seconds: 30, hp: 200, attack: { dmg: 8, range: 4, rate: 1.0 } },
       { cost: { gold: 120, wood: 80 }, seconds: 180, hp: 300, attack: { dmg: 14, range: 5, rate: 1.2 } },
       { cost: { gold: 300, stone: 150 }, seconds: 900, hp: 450, attack: { dmg: 22, range: 5, rate: 1.5 } },
+    ],
+  },
+  mage_tower: {
+    id: 'mage_tower', name: 'Mage Tower', category: 'tower', size: 1, solid: true,
+    sprites: ['bl_tower_3', 'bl_tower_5', 'bl_tower_7'], site: 'bl_tower_1', tint: 0x9fc8ff,
+    desc: 'Frost bolts that slow monsters down.',
+    levels: [
+      { cost: { gold: 120, stone: 40 }, seconds: 45, hp: 180, attack: { dmg: 6, range: 4, rate: 0.8, slow: 0.5 } },
+      { cost: { gold: 250, stone: 100 }, seconds: 240, hp: 260, attack: { dmg: 10, range: 5, rate: 0.9, slow: 0.45 } },
+      { cost: { gold: 500, stone: 200, mana: 30 }, seconds: 900, hp: 380, attack: { dmg: 16, range: 5, rate: 1.0, slow: 0.4 } },
+    ],
+  },
+  cannon_tower: {
+    id: 'cannon_tower', name: 'Cannon Tower', category: 'tower', size: 1, solid: true,
+    sprites: ['bl_tower_3', 'bl_tower_5', 'bl_tower_7'], site: 'bl_tower_1', tint: 0xffb08a,
+    desc: 'Slow, but its blast hits every monster nearby.',
+    levels: [
+      { cost: { gold: 150, wood: 60, stone: 60 }, seconds: 60, hp: 250, attack: { dmg: 14, range: 4, rate: 0.4, splash: 1.3 } },
+      { cost: { gold: 300, stone: 150 }, seconds: 300, hp: 350, attack: { dmg: 22, range: 4, rate: 0.45, splash: 1.5 } },
+      { cost: { gold: 600, stone: 300 }, seconds: 1200, hp: 500, attack: { dmg: 34, range: 5, rate: 0.5, splash: 1.7 } },
     ],
   },
   spike_trap: {
@@ -109,8 +131,8 @@ export const BUILDINGS: Record<string, BuildingDef> = {
   },
 };
 
-/** Builder's Huts cost more for each one you already have (the first one is free). Max 3. */
-export const HUT_COSTS: Cost[] = [{ gold: 0 }, { gold: 250, wood: 100 }, { gold: 1000, stone: 300 }];
+/** Builder's Huts cost more for each one you already have (the first one is free). Max 4. */
+export const HUT_COSTS: Cost[] = [{ gold: 0 }, { gold: 150, wood: 50 }, { gold: 500, wood: 150, stone: 100 }, { gold: 1200, stone: 300 }];
 
 /** How many builders the town has, and how many are not working on anything. */
 export function builders(list: { type: string; status: string }[]) {

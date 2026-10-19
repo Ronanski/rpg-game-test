@@ -72,6 +72,14 @@ export const state = {
   cooldowns: { skillReady: 0, skillTotal: 1, dodgeReady: 0, dodgeTotal: 1 },
   /** Build mode: camera over the town, grid shown, hero stands still. */
   buildMode: false,
+  /** AUTO: the hero attacks the nearest monster in reach by itself. */
+  autoAttack: (() => {
+    try {
+      return localStorage.getItem('aethelgard.auto') !== '0';
+    } catch {
+      return true;
+    }
+  })(),
   /** True while a full-screen menu (e.g. JOBS) is open; the world pauses input like dialogue. */
   inMenu: false,
 };

@@ -75,6 +75,9 @@ export class Monster extends Actor {
   /** Drawn frames (idle, attack, hurt, dying); an attack or hurt frame shows until `actionUntil`. */
   readonly animated: boolean;
   private actionUntil = 0;
+  /** Slowed (Mage Tower frost): speed multiplier until `slowUntil`. */
+  private slowBy = 1;
+  private slowUntil = 0;
   private wanderTarget: { x: number; y: number } | null = null;
   private nextThink = 0;
   private knockback = new Phaser.Math.Vector2();
@@ -101,7 +104,7 @@ export class Monster extends Actor {
     this.hpBar = scene.add.graphics().setDepth(100000);
     if (def.boss) {
       this.title = scene.add
-        .text(x, y, def.boss, { fontFamily: FONT, fontSize: '13px', color: '#ffb347', stroke: '#07080e', strokeThickness: 4 })
+        .text(x, y, def.boss, { fontFamily: FONT, fontStyle: 'bold', resolution: 2, fontSize: '13px', color: '#ffb347', stroke: '#07080e', strokeThickness: 4 })
         .setOrigin(0.5, 1)
         .setDepth(100000);
       // A dark-red glow under the boss's feet.
@@ -150,7 +153,9 @@ export class Monster extends Actor {
     }
 
     const len = Math.hypot(vx, vy);
-    const speed = this.wanderTarget ? this.def.speed * 0.4 : this.def.speed;
+    const chilled = this.scene.time.now < this.slowUntil;
+    if (!chilled && this.slowBy !== 1) (this.slowBy = 1), this.sprite.clearTint();
+    const speed = (this.wanderTarget ? this.def.speed * 0.4 : this.def.speed) * (chilled ? this.slowBy : 1);
     let mx = len > 1 ? (vx / len) * speed * dt : 0;
     let my = len > 1 ? (vy / len) * speed * dt : 0;
     // Stop just short of the player instead of stacking on top of them.
@@ -179,6 +184,13 @@ export class Monster extends Actor {
     if (this.animated && t > this.actionUntil) this.sprite.setFrame(Math.floor(t / (len > 1 ? 180 : 420)) % 2);
     this.sync();
     this.drawHp();
+  }
+
+  /** Frost: moves at `factor` speed for `ms`, tinted icy blue. */
+  slow(factor: number, ms: number) {
+    this.slowBy = factor;
+    this.slowUntil = this.scene.time.now + ms;
+    this.sprite.setTint(0x9fd8ff);
   }
 
   /** Wind-up then strike (when it bites the hero or hits a building). */

@@ -140,6 +140,16 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 - [x] Elf archer walks in 3 directions from the owner's sheet: toward the camera, away from it (you see his back), and sideways (mirrored for left); he keeps facing that way when he stops
 - [ ] 3-direction walks for the other heroes (characters without them still have one facing, 3/4 front): walking up shows their face. Needs back and side walk frames (owner's art)
 
+## Playtest 4 fixes (archer focus) ✅
+- [x] One hero for now: New Game makes an Elf archer, you only pick the name
+- [x] Readable fonts: Alegreya Sans for text, Cinzel for titles (SIL OFL); black-and-gold panels like the owner's UI kit
+- [x] Trees, rocks and props only block their middle, so you can walk close past them; bushes can be walked through
+- [x] More builders: Builder's Huts are cheaper (150 gold + 50 wood, then 500 gold, then 1200) and you can have up to 4
+- [x] New towers: Mage Tower (frost bolts that slow) and Cannon Tower (blast that hits everything nearby)
+- [x] Bosses are weaker (night 1 Alpha Wolf about 2x a wolf instead of 3x)
+- [x] AUTO button (on by default): attacks the nearest monster in reach by itself
+- [x] Arrows lock on: they fly to the monster even if you walk the other way
+
 ## M7: Story chapter 1 and new places ✅
 - [x] Separate places you walk into through doors (the screen fades, quests and saves come along):
   - **Old Cave** at the end of the north road: entrance hall, slime grotto, bone hall with skeletons, and Gravemaw's pit; dark, lit by torches, crystals to mine

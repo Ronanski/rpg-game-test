@@ -246,6 +246,8 @@ export class WorldScene extends Phaser.Scene {
       if (Phaser.Input.Keyboard.JustDown(this.keys.shift)) c.dodge = true;
       if (Phaser.Input.Keyboard.JustDown(this.keys.f)) c.skill = true;
       if (this.town?.isPlacing && Phaser.Input.Keyboard.JustDown(this.keys.enter)) bus.emit('build-confirm');
+      // AUTO: attack the nearest monster in reach (the attack's own cooldown sets the pace).
+      if (state.autoAttack && !this.walkTo && this.combat.nearestTarget(this.combat.attackReach())) c.attack = true;
       if (c.dodge) this.player.roll(mx, my, time);
       if (c.skill) this.combat.useSkill(time);
       if (c.attack) this.combat.playerAttack(time);
