@@ -51,6 +51,16 @@ SPRITES = {
     'cart': ('sheet_e.webp', (1356, 262, 1468, 348), 46),
     'hay_cart': ('sheet_e.webp', (1386, 362, 1474, 452), 44),
     'lamp': ('sheet_e.webp', (1474, 260, 1530, 384), 56),
+    # Item icons (inventory, shop, buttons).
+    'item_sword': ('sheet_e.webp', (1367, 914, 1393, 946), 24),
+    'item_shield': ('sheet_e.webp', (1397, 915, 1422, 946), 24),
+    'item_health_potion': ('sheet_e.webp', (1426, 910, 1451, 944), 24),
+    'item_mana_potion': ('sheet_h.webp', (947, 871, 969, 900), 22),
+    'item_core_shard': ('sheet_e.webp', (1422, 955, 1447, 983), 22),
+    'item_slime_gel': ('sheet_h.webp', (983, 871, 1004, 900), 22),
+    'item_wolf_pelt': ('sheet_e.webp', (1398, 953, 1419, 983), 22),
+    'item_bag': ('sheet_h.webp', (1156, 871, 1180, 900), 22),
+    'item_coin': ('sheet_e.webp', (1371, 991, 1394, 1017), 20),
     # sheet_h: the owner's named cast (see docs/WORLD.md).
     'npc_martha': ('sheet_h.webp', (482, 562, 553, 661), 56),
     'npc_grom': ('sheet_h.webp', (564, 555, 653, 659), 56),

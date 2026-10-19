@@ -148,7 +148,7 @@ src/
     WorldScene.ts              free-roam field: wires the map, entities and systems
 ```
 
-Controls: the virtual stick (left thumb) and the ATK/TALK buttons on touch; WASD/arrows, Space, E and Q (potion) on keyboard. Touch controls hide during dialogue, and will hide during base-building mode.
+Controls: the virtual stick (left thumb) and ATTACK / SKILL / DODGE / TALK / POTION buttons on touch; on keyboard WASD or arrows, Space (attack), F (skill), Shift (dodge), E (talk), Q (potion), I (bag), J (jobs), Esc (close menu). Touch controls hide during dialogue, and will hide during base-building mode.
 
 ## 5. Art pipeline (rich isometric pixel art)
 

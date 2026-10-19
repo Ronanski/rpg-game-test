@@ -1,6 +1,7 @@
-import { state, emitStats } from '../../core/GameState';
+import { state } from '../../core/GameState';
 import { bus } from '../../core/EventBus';
-import { computeStats, JOBS } from './ClassSystem';
+import { JOBS } from './ClassSystem';
+import { checkWeaponForJob, recalcStats } from '../items/Items';
 
 // Jobs are earned by what the player does, and can be changed anytime from the JOBS menu.
 // Everyone starts as a classless Adventurer.
@@ -52,13 +53,9 @@ export function countJobAction(counter: JobCounter) {
 export function changeJob(id: string) {
   const ps = state.player!;
   if (!isUnlocked(id) || ps.jobId === id) return;
-  const hpFrac = ps.hp / ps.maxHp, mpFrac = ps.mp / ps.maxMp;
   ps.jobId = id;
-  const s = computeStats(ps.raceId, id, ps.level);
-  Object.assign(ps, { maxHp: s.hp, maxMp: s.mp, atk: s.atk, def: s.def, spd: s.spd });
-  ps.hp = Math.max(1, Math.round(s.hp * hpFrac));
-  ps.mp = Math.round(s.mp * mpFrac);
+  recalcStats();
+  checkWeaponForJob();
   bus.emit('toast', `You are now a ${JOBS[id].name}.`);
   bus.emit('jobs-changed');
-  emitStats();
 }

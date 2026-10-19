@@ -13,6 +13,7 @@ export interface SaveData {
   inventory: [string, number][];
   storyFlags: string[];
   jobs?: typeof state.jobs; // missing in saves made before jobs existed
+  equipment?: typeof state.equipment;
   quests: QuestState;
   pos: { x: number; y: number };
 }
@@ -33,6 +34,7 @@ export function saveGame(): boolean {
     inventory: [...state.inventory.entries()],
     storyFlags: [...state.storyFlags],
     jobs: { ...state.jobs, unlocked: [...state.jobs.unlocked] },
+    equipment: { ...state.equipment },
     ...snapshot(),
   };
   try {
@@ -70,6 +72,7 @@ export function applySave(data: SaveData) {
   state.inventory = new Map(data.inventory);
   state.storyFlags = new Set(data.storyFlags);
   state.jobs = data.jobs ?? { unlocked: ['adventurer'], kills: 0, crits: 0, built: 0 };
+  state.equipment = data.equipment ?? { weapon: null, armor: null, accessory: null };
   // Older saves started with a job the player never earned; keep it usable.
   if (!state.jobs.unlocked.includes(state.player.jobId)) state.jobs.unlocked.push(state.player.jobId);
 }

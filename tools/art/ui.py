@@ -35,6 +35,53 @@ def icon(rows: list[str], pal: dict[str, str]) -> Image.Image:
 
 
 ICONS = {
+    # Weapons the sheets don't have (drawn at half size like the other code icons).
+    'item_staff': icon([
+        '.........GBG',
+        '........GWBG',
+        '.........GBG',
+        '........WW..',
+        '.......WW...',
+        '......WW....',
+        '.....WW.....',
+        '....WW......',
+        '...WW.......',
+        '..WW........',
+        '.WW.........',
+    ], {'W': '#8a5a2b', 'G': '#c9a14a', 'B': '#7fe0ff'}),
+    'item_dagger': icon([
+        '........SS',
+        '.......SWS',
+        '......SWS.',
+        '.....SWS..',
+        '..G.SWS...',
+        '...GWS....',
+        '...BG.....',
+        '..BB.G....',
+        '.BB.......',
+    ], {'S': '#9aa0b0', 'W': '#eef2ff', 'G': '#e8c15a', 'B': '#5a3418'}),
+    'icon_dodge': icon([
+        '....WWW....',
+        '..WW...WW..',
+        '.W.......W.',
+        'W..........',
+        'W.....W....',
+        'W....WWW...',
+        '.W..WWWWW..',
+        '..WW..W....',
+        '....WWW....',
+    ], {'W': '#9fe3ff'}),
+    'icon_skill': icon([
+        '.....Y.....',
+        '....YYY....',
+        '.Y..YWY..Y.',
+        '..YYYWYYY..',
+        '...YWWWY...',
+        '..YYYWYYY..',
+        '.Y..YWY..Y.',
+        '....YYY....',
+        '.....Y.....',
+    ], {'Y': '#ffd75e', 'W': '#fff8d0'}),
     'icon_sword': icon([
         '.........SS',
         '........SWS',

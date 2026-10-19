@@ -1,5 +1,6 @@
 import { state } from '../../core/GameState';
 import { isUnlocked, unlockJob } from '../combat/JobSystem';
+import { bus } from '../../core/EventBus';
 import type { QuestTracker } from '../quest/QuestTracker';
 
 export interface DialogueLine {
@@ -74,9 +75,15 @@ export class DialogueSystem {
       case 'villager':
         return { lines: say('Fresh bread at the stall! Well... fresh yesterday.') };
       case 'merchant':
-        return { lines: say('Potions, rope, lantern oil! Shop opens soon, friend.', 'Bring me pelts and gel and I\'ll make it worth your while.') };
+        return {
+          lines: say('Swords, daggers, staves and armor! Take a look, friend.', 'I buy pelts and gel too.'),
+          onEnd: () => bus.emit('open-shop', { name: 'Gus\'s Goods', sells: ['iron_sword', 'hunter_dagger', 'oak_staff', 'leather_armor', 'rusty_sword'] }),
+        };
       case 'healer':
-        return { lines: say('Serena\'s remedies! Potions for cuts, bites and slime burns.', 'My shop opens soon. Until then, stay out of the ruins.') };
+        return {
+          lines: say('Serena\'s remedies! Potions for cuts, bites and slime burns.'),
+          onEnd: () => bus.emit('open-shop', { name: 'Serena\'s Remedies', sells: ['health_potion', 'mana_potion'] }),
+        };
       case 'child':
         return { lines: say('Are you an adventurer? I saw a purple slime once!', 'Mom says the cave up north eats people.') };
       case 'bard':

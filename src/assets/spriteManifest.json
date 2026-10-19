@@ -253,6 +253,12 @@
   "scale": 2
  },
  {
+  "key": "icon_dodge",
+  "w": 13,
+  "h": 11,
+  "scale": 2
+ },
+ {
   "key": "icon_potion",
   "w": 11,
   "h": 12,
@@ -261,6 +267,12 @@
  {
   "key": "icon_scroll",
   "w": 12,
+  "h": 11,
+  "scale": 2
+ },
+ {
+  "key": "icon_skill",
+  "w": 13,
   "h": 11,
   "scale": 2
  },
@@ -280,6 +292,81 @@
   "key": "inn",
   "w": 113,
   "h": 128,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "item_bag",
+  "w": 19,
+  "h": 22,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "item_coin",
+  "w": 19,
+  "h": 20,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "item_core_shard",
+  "w": 17,
+  "h": 22,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "item_dagger",
+  "w": 12,
+  "h": 11,
+  "scale": 2
+ },
+ {
+  "key": "item_health_potion",
+  "w": 16,
+  "h": 24,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "item_mana_potion",
+  "w": 17,
+  "h": 22,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "item_shield",
+  "w": 20,
+  "h": 24,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "item_slime_gel",
+  "w": 17,
+  "h": 22,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "item_staff",
+  "w": 14,
+  "h": 13,
+  "scale": 2
+ },
+ {
+  "key": "item_sword",
+  "w": 21,
+  "h": 24,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "item_wolf_pelt",
+  "w": 17,
+  "h": 22,
   "scale": 1,
   "imported": true
  },

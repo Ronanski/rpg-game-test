@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { state, resetJobs } from '../core/GameState';
+import { state, resetJobs, resetEquipment } from '../core/GameState';
+import { recalcStats } from '../systems/items/Items';
 import { computeStats, expToNext, RACES } from '../systems/combat/ClassSystem';
 import { RACES_INFO, START_JOB, type Gender, type RaceDef } from '../systems/combat/Origins';
 import { panel, text, COLORS } from '../ui/theme';
@@ -253,6 +254,10 @@ export class StarterScene extends Phaser.Scene {
     state.inventory.set('health_potion', 3);
     state.storyFlags.clear();
     resetJobs();
+    resetEquipment();
+    // Everyone starts with a rusty sword in hand.
+    state.equipment.weapon = 'rusty_sword';
+    recalcStats(true);
     this.cameras.main.fadeOut(250);
     this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('World'));
   }

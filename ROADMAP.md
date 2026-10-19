@@ -65,7 +65,7 @@ Target look: detailed 16-bit isometric pixel art with warm torch light, matching
 **Checkpoint**
 - [ ] Survive one night with the towers you built, and see the rewards
 
-## M6: Jobs, skills and gear 🔄
+## M6: Jobs, skills and gear 🔄 (core done)
 Jobs are earned by what you do in the game (start classless), and can be changed anytime.
 - [x] Everyone starts as a classless Adventurer
 - [x] Earn jobs by playing: Warrior (defeat 15 monsters), Rogue (8 critical hits), Mage (reach level 3 and learn from Old Ezra), Builder (build 5 structures, arrives with M4)
@@ -73,12 +73,19 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 - [x] Each job attacks differently: Warrior heavy wide swing, Rogue fast strikes and more crits, Mage Firebolt (ranged, 5 MP)
 - [x] MP slowly refills; race bonuses apply (Human +10% EXP, Elf +20% MP regen)
 - [x] Jobs and unlock progress are saved
+- [x] More actions: DODGE roll (Shift; brief invulnerability) and a SKILL per job (F): Power Strike, Whirlwind, Dash Strike, Flame Nova, Hammer Slam (MP + cooldown shown on the button)
+- [x] Weapons and gear: weapon / armor / accessory slots that add stats; each job has its weapon types (Warrior sword, Rogue dagger, Mage staff); Mages need a staff to cast
+- [x] BAG screen (BAG button or I): equip, unequip, drink potions
+- [x] Shops: Serena (potions) and Gus (weapons, armor; buys loot)
+- [x] Gear drops from goblins; mana potions from blue slimes; everyone starts with a Rusty Sword
 - [ ] Sub-classes (Knight, Assassin, …) and job levels
-- [ ] Inventory and equipment screen
+- [ ] Bow and ranged weapons
 
 **Checkpoint**
 - [ ] Defeat 15 monsters, open JOBS, change to Warrior, and see stronger, wider hits
 - [ ] Reach level 3, talk to Old Ezra, change to Mage, and cast Firebolt
+- [ ] Buy an Iron Sword from Gus, equip it in BAG, and see ATK go up
+- [ ] Roll through a wolf with DODGE without getting hurt, then hit it with SKILL
 
 ## M7: Story chapter 1 and new places ⏳
 - [ ] Building interiors (tavern, smithy) and a cave dungeon, like the reference images

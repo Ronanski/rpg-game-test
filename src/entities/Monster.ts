@@ -13,12 +13,14 @@ export interface MonsterDef {
   exp: number;
   gold: number;
   drop: { item: string; chance: number };
+  /** Rarer extra drops (gear, potions). */
+  extra?: { item: string; chance: number }[];
 }
 
 export const MONSTERS: Record<MonsterDef['id'], MonsterDef> = {
   slime: { id: 'slime', name: 'Slime', hp: 30, atk: 7, def: 1, speed: 55, aggroRange: 170, exp: 12, gold: 3, drop: { item: 'slime_gel', chance: 0.6 } },
-  slime_blue: { id: 'slime_blue', name: 'Blue Slime', hp: 45, atk: 9, def: 2, speed: 60, aggroRange: 180, exp: 18, gold: 5, drop: { item: 'slime_gel', chance: 0.7 } },
-  goblin: { id: 'goblin', name: 'Goblin', hp: 50, atk: 11, def: 2, speed: 90, aggroRange: 210, exp: 24, gold: 10, drop: { item: 'health_potion', chance: 0.2 } },
+  slime_blue: { id: 'slime_blue', name: 'Blue Slime', hp: 45, atk: 9, def: 2, speed: 60, aggroRange: 180, exp: 18, gold: 5, drop: { item: 'slime_gel', chance: 0.7 }, extra: [{ item: 'mana_potion', chance: 0.15 }] },
+  goblin: { id: 'goblin', name: 'Goblin', hp: 50, atk: 11, def: 2, speed: 90, aggroRange: 210, exp: 24, gold: 10, drop: { item: 'health_potion', chance: 0.2 }, extra: [{ item: 'iron_sword', chance: 0.04 }, { item: 'leather_armor', chance: 0.05 }, { item: 'oak_staff', chance: 0.04 }] },
   wolf: { id: 'wolf', name: 'Wolf', hp: 60, atk: 12, def: 3, speed: 105, aggroRange: 230, exp: 28, gold: 8, drop: { item: 'wolf_pelt', chance: 0.5 } },
 };
 

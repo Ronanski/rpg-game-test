@@ -5,6 +5,7 @@ import { VirtualJoystick } from './VirtualJoystick';
 import { ActionButton } from './ActionButton';
 import { DialogueBox } from './DialogueBox';
 import { JobMenu } from './JobMenu';
+import { InventoryMenu, ShopMenu, type ShopDef } from './ItemMenus';
 import { JOBS } from '../systems/combat/ClassSystem';
 import { panel, resizePanel, text, applyPortrait, COLORS } from './theme';
 import type { Conversation } from '../systems/dialogue/DialogueSystem';
@@ -24,6 +25,10 @@ export class UIScene extends Phaser.Scene {
   private potionCount!: Phaser.GameObjects.Text;
   private dialogue!: DialogueBox;
   private jobMenu!: JobMenu;
+  private bagMenu!: InventoryMenu;
+  private shopMenu!: ShopMenu;
+  private dodgeBtn!: ActionButton;
+  private skillBtn!: ActionButton;
   private jobText!: Phaser.GameObjects.Text;
   private bars!: Phaser.GameObjects.Graphics;
   private nameText!: Phaser.GameObjects.Text;
@@ -63,9 +68,14 @@ export class UIScene extends Phaser.Scene {
     this.goldText = this.add.text(x + 32, y + STATUS_H + 9, '', text(16, COLORS.gold));
     // JOB button under the gold: shows the current job, opens the JOBS menu (J key too).
     const jobPanel = panel(this, x, y + STATUS_H + 32, 170, 32);
+    // BAG button next to it (I key too).
+    const bagPanel = panel(this, x + 178, y + STATUS_H + 32, 76, 32);
+    const bagIcon = this.add.image(x + 196, y + STATUS_H + 48, 'item_bag');
+    const bagText = this.add.text(x + 210, y + STATUS_H + 48, 'BAG', text(14)).setOrigin(0, 0.5);
+    bagPanel.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.openMenu('bag'));
     this.jobText = this.add.text(x + 12, y + STATUS_H + 48, '', text(14)).setOrigin(0, 0.5);
     jobPanel.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.toggleJobs());
-    this.statusBox = this.add.container(0, 0, [statusPanel, portraitPanel, portrait, this.nameText, this.levelText, this.barLabels, this.bars, coin, this.goldText, jobPanel, this.jobText]);
+    this.statusBox = this.add.container(0, 0, [statusPanel, portraitPanel, portrait, this.nameText, this.levelText, this.barLabels, this.bars, coin, this.goldText, jobPanel, this.jobText, bagPanel, bagIcon, bagText]);
 
     // Quest tracker (top-right).
     this.questPanel = panel(this, 0, 10, 200, 60);
@@ -78,11 +88,17 @@ export class UIScene extends Phaser.Scene {
     this.stick = new VirtualJoystick(this);
     this.attackBtn = new ActionButton(this, 'ATTACK', 'icon_sword', 84, () => (state.controls.attack = true));
     this.talkBtn = new ActionButton(this, 'TALK', 'icon_talk', 68, () => (state.controls.talk = true)).setVisible(false);
-    this.potionBtn = new ActionButton(this, 'POTION', 'icon_potion', 64, () => (state.controls.potion = true));
+    this.potionBtn = new ActionButton(this, 'POTION', 'item_health_potion', 64, () => (state.controls.potion = true));
+    this.skillBtn = new ActionButton(this, 'SKILL', 'icon_skill', 64, () => (state.controls.skill = true));
+    this.dodgeBtn = new ActionButton(this, 'DODGE', 'icon_dodge', 64, () => (state.controls.dodge = true));
     this.potionCount = this.add.text(0, 0, '', text(15, COLORS.gold)).setOrigin(1, 0).setDepth(12);
     this.dialogue = new DialogueBox(this);
     this.jobMenu = new JobMenu(this, () => this.setControlsVisible(true));
-
+    this.bagMenu = new InventoryMenu(this, () => this.setControlsVisible(true));
+    this.shopMenu = new ShopMenu(this, () => this.setControlsVisible(true));
+    bus.on('open-shop', (shop: ShopDef) => this.openMenu('shop', shop));
+    bus.on('equipment-changed', () => this.bagMenu.draw());
+    bus.on('inventory-changed', () => (this.bagMenu.draw(), this.shopMenu.draw()));
     this.layout();
     this.scale.on('resize', this.layout, this);
     this.events.once('shutdown', () => this.scale.off('resize', this.layout, this));
@@ -98,7 +114,8 @@ export class UIScene extends Phaser.Scene {
     kb?.on('keydown-SPACE', () => this.dialogue.advance());
     kb?.on('keydown-E', () => this.dialogue.advance());
     kb?.on('keydown-J', () => this.toggleJobs());
-    kb?.on('keydown-ESC', () => this.jobMenu.isOpen && this.jobMenu.close());
+    kb?.on('keydown-I', () => (this.bagMenu.isOpen ? this.bagMenu.close() : this.openMenu('bag')));
+    kb?.on('keydown-ESC', () => [this.jobMenu, this.bagMenu, this.shopMenu].forEach((m) => m.isOpen && m.close()));
     bus.on('jobs-changed', () => this.jobMenu.draw());
 
     if (state.player) this.drawStatus(state.player);
@@ -108,15 +125,26 @@ export class UIScene extends Phaser.Scene {
 
   update() {
     this.dialogue.layout();
+    const now = this.time.now, cd = state.cooldowns;
+    this.skillBtn.setCooldown((cd.skillReady - now) / cd.skillTotal);
+    this.dodgeBtn.setCooldown((cd.dodgeReady - now) / cd.dodgeTotal);
     if (!state.inDialogue && !state.inMenu) {
       state.controls.moveX = this.stick.value.x;
       state.controls.moveY = this.stick.value.y;
     }
   }
 
+  private openMenu(which: 'bag' | 'shop', shop?: ShopDef) {
+    if (state.inMenu) return;
+    this.setControlsVisible(false);
+    if (which === 'bag') this.bagMenu.open();
+    else this.shopMenu.open(shop!);
+  }
+
   private toggleJobs() {
     if (state.inDialogue) return;
     if (this.jobMenu.isOpen) return this.jobMenu.close();
+    if (state.inMenu) return;
     this.setControlsVisible(false);
     this.jobMenu.open();
   }
@@ -140,6 +168,8 @@ export class UIScene extends Phaser.Scene {
     this.stick.setEnabled(on);
     this.attackBtn.setVisible(on);
     this.potionBtn.setVisible(on);
+    this.skillBtn.setVisible(on);
+    this.dodgeBtn.setVisible(on);
     this.potionCount.setVisible(on);
     if (!on) this.talkBtn.setVisible(false);
   }
@@ -149,15 +179,20 @@ export class UIScene extends Phaser.Scene {
     const k = (this.k = height < 450 ? 0.72 : 1);
     this.statusBox.setScale(k);
     this.questBox.setScale(k);
-    for (const b of [this.attackBtn, this.talkBtn, this.potionBtn]) b.setScale((b.baseScale = k));
+    for (const b of [this.attackBtn, this.talkBtn, this.potionBtn, this.skillBtn, this.dodgeBtn]) b.setScale((b.baseScale = k));
     this.potionCount.setScale(k);
     this.attackBtn.setPosition(width - 62 * k, height - 62 * k);
-    this.talkBtn.setPosition(width - 160 * k, height - 52 * k);
+    // Thumb arc around ATTACK: SKILL above-left, DODGE left, POTION above.
+    this.skillBtn.setPosition(width - 150 * k, height - 140 * k);
+    this.dodgeBtn.setPosition(width - 168 * k, height - 52 * k);
+    this.talkBtn.setPosition(width - 252 * k, height - 52 * k);
     this.potionBtn.setPosition(width - 62 * k, height - 164 * k);
     this.potionCount.setPosition(width - 34 * k, height - 194 * k);
     this.stick.resetPosition();
     this.dialogue.layout();
     this.jobMenu.draw();
+    this.bagMenu.draw();
+    this.shopMenu.draw();
     this.drawQuests();
   }
 

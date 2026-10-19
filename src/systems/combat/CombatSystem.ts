@@ -6,7 +6,8 @@ import { gridToScreen } from '../../iso/iso';
 import type { SpawnZone } from '../../world/worldData';
 import { state, emitStats, addItem } from '../../core/GameState';
 import { bus } from '../../core/EventBus';
-import { computeStats, expToNext } from './ClassSystem';
+import { expToNext } from './ClassSystem';
+import { recalcStats, weaponType, ITEMS } from '../items/Items';
 import type { QuestTracker } from '../quest/QuestTracker';
 import { countJobAction } from './JobSystem';
 
@@ -26,10 +27,23 @@ const STYLES: Record<string, AttackStyle> = {
   mage: { cooldown: 380, range: 60, arc: 0.2, crit: 0.05, power: 0.6 }, // staff bonk when out of MP
 };
 const FIREBOLT = { mp: 5, range: 300, speed: 520, power: 1.7, cooldown: 480 };
+
+/** One special move per job (SKILL button / F key): MP cost, cooldown, and what it does. */
+interface SkillDef {
+  name: string;
+  mp: number;
+  cooldown: number;
+}
+export const SKILLS: Record<string, SkillDef> = {
+  adventurer: { name: 'Power Strike', mp: 6, cooldown: 2000 },
+  warrior: { name: 'Whirlwind', mp: 10, cooldown: 3000 },
+  rogue: { name: 'Dash Strike', mp: 8, cooldown: 2500 },
+  mage: { name: 'Flame Nova', mp: 12, cooldown: 4000 },
+  builder: { name: 'Hammer Slam', mp: 8, cooldown: 2500 },
+};
 const MP_REGEN_MS = 1200; // 1 MP per tick
 const RACE_BONUS = { humanExp: 1.1, elfMpRegen: 1.2 };
 const RESPAWN_MS = 9000;
-const POTION_HEAL = 50; // health_potion effect.heal_hp in seed.sql
 
 /** Spawns monsters, resolves attacks both ways, and awards EXP / gold / loot. */
 export class CombatSystem {
@@ -37,6 +51,8 @@ export class CombatSystem {
   private zoneOf = new Map<Monster, SpawnZone>();
   private lastAttack = 0;
   private mpTimer = 0;
+  /** When the current job's skill is ready again (time in ms). */
+  skillReadyAt = 0;
 
   constructor(
     private scene: Phaser.Scene,
@@ -87,14 +103,19 @@ export class CombatSystem {
   /** Attacks the way the current job does: a melee swing, or a Firebolt for Mages with MP. */
   playerAttack(now: number) {
     const ps = state.player!;
-    if (ps.jobId === 'mage' && ps.mp >= FIREBOLT.mp) {
+    // Mages cast Firebolt when they hold a staff and have MP; otherwise they bonk with it.
+    if (ps.jobId === 'mage' && weaponType() === 'staff' && ps.mp >= FIREBOLT.mp) {
       if (now - this.lastAttack < FIREBOLT.cooldown) return;
       this.lastAttack = now;
       ps.mp -= FIREBOLT.mp;
       emitStats();
       return this.firebolt();
     }
-    const style = STYLES[ps.jobId] ?? STYLES.adventurer;
+    const style = { ...(STYLES[ps.jobId] ?? STYLES.adventurer) };
+    // The weapon in hand changes the swing: daggers are quick, bare hands are weak.
+    const wt = weaponType();
+    if (wt === 'dagger') style.cooldown *= 0.8;
+    if (!wt) style.power *= 0.6;
     if (now - this.lastAttack < style.cooldown) return;
     this.lastAttack = now;
     const f = this.player.facing;
@@ -111,6 +132,70 @@ export class CombatSystem {
       if (dist > style.range || !(inFront || dist < 30)) continue;
       this.damage(m, style.power, style.crit);
     }
+  }
+
+  /** The current job's special move. Returns false if on cooldown or out of MP. */
+  useSkill(now: number): boolean {
+    const ps = state.player!;
+    const sk = SKILLS[ps.jobId] ?? SKILLS.adventurer;
+    if (now < this.skillReadyAt) return false;
+    if (ps.mp < sk.mp) {
+      bus.emit('toast', `Not enough MP for ${sk.name}`);
+      return false;
+    }
+    ps.mp -= sk.mp;
+    this.skillReadyAt = now + sk.cooldown;
+    state.cooldowns.skillReady = this.skillReadyAt;
+    state.cooldowns.skillTotal = sk.cooldown;
+    emitStats();
+    const p = this.player, f = p.facing.clone().normalize();
+    const crit = STYLES[ps.jobId]?.crit ?? 0.1;
+    const inRadius = (r: number) => this.monsters.filter((m) => !m.dead && m.distanceTo(p) < r);
+    switch (ps.jobId) {
+      case 'warrior': {
+        // Whirlwind: hits everything around you.
+        this.ring(p.x, p.y - 20, 95, 0xffc070);
+        for (const m of inRadius(95)) this.damage(m, 1.5, crit);
+        break;
+      }
+      case 'rogue': {
+        // Dash Strike: dash forward and cut everything on the way.
+        const sx = p.x, sy = p.y;
+        p.roll(f.x, f.y, now - 10000);
+        p.nextRollAt = now + 400;
+        this.scene.time.delayedCall(240, () => {
+          for (const m of this.monsters) {
+            if (m.dead) continue;
+            const t = Phaser.Math.Clamp(((m.x - sx) * (p.x - sx) + (m.y - sy) * (p.y - sy)) / Math.max(1, (p.x - sx) ** 2 + (p.y - sy) ** 2), 0, 1);
+            if (Math.hypot(m.x - (sx + (p.x - sx) * t), m.y - (sy + (p.y - sy) * t)) < 40) this.damage(m, 2, 0.4);
+          }
+        });
+        break;
+      }
+      case 'mage': {
+        // Flame Nova: a burst of fire around you.
+        const nova = this.scene.add.image(p.x, p.y - 20, 'glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(p.y + 3).setScale(0.3);
+        this.scene.tweens.add({ targets: nova, scale: 2.4, alpha: 0, duration: 380, onComplete: () => nova.destroy() });
+        for (const m of inRadius(110)) this.damage(m, 1.6, 0.05);
+        break;
+      }
+      default: {
+        // Power Strike / Hammer Slam: one heavy hit in front.
+        this.ring(p.x + f.x * 34, p.y - 20 + f.y * 18, 40, 0xffe08a);
+        for (const m of inRadius(85)) {
+          const d = Math.max(1, m.distanceTo(p));
+          if (((m.x - p.x) * f.x + (m.y - p.y) * f.y) / d > 0.1) this.damage(m, ps.jobId === 'builder' ? 1.7 : 1.9, crit);
+        }
+      }
+    }
+    this.floatText(p.x, p.y - 70, sk.name, '#ffe08a', 15);
+    return true;
+  }
+
+  private ring(x: number, y: number, r: number, color: number) {
+    const g = this.scene.add.graphics().setDepth(y + 200);
+    g.lineStyle(4, color, 0.9).strokeCircle(0, 0, r).setPosition(x, y).setScale(0.3, 0.15);
+    this.scene.tweens.add({ targets: g, scaleX: 1, scaleY: 0.5, alpha: 0, duration: 260, onComplete: () => g.destroy() });
   }
 
   private damage(m: Monster, power: number, critChance: number) {
@@ -149,16 +234,19 @@ export class CombatSystem {
     });
   }
 
-  /** Drinks a health potion. Does nothing at full HP or with none left. */
-  usePotion() {
+  /** Drinks a potion (health by default). Does nothing when that bar is full or none are left. */
+  usePotion(id = 'health_potion') {
     const ps = state.player!;
-    const have = state.inventory.get('health_potion') ?? 0;
-    if (have <= 0) return bus.emit('toast', 'No health potions left');
-    if (ps.hp >= ps.maxHp) return bus.emit('toast', 'HP is already full');
-    addItem('health_potion', -1);
-    const healed = Math.min(POTION_HEAL, ps.maxHp - ps.hp);
-    ps.hp += healed;
-    this.floatText(this.player.x, this.player.y - 50, `+${healed}`, '#7dff8a');
+    const it = ITEMS[id];
+    if ((state.inventory.get(id) ?? 0) <= 0) return bus.emit('toast', `No ${it.name}s left`);
+    const hp = it.heal?.hp ?? 0, mp = it.heal?.mp ?? 0;
+    if ((hp && ps.hp >= ps.maxHp && !mp) || (mp && ps.mp >= ps.maxMp && !hp)) return bus.emit('toast', hp ? 'HP is already full' : 'MP is already full');
+    addItem(id, -1);
+    const gotHp = Math.min(hp, ps.maxHp - ps.hp), gotMp = Math.min(mp, ps.maxMp - ps.mp);
+    ps.hp += gotHp;
+    ps.mp += gotMp;
+    if (gotHp) this.floatText(this.player.x, this.player.y - 50, `+${gotHp}`, '#7dff8a');
+    if (gotMp) this.floatText(this.player.x, this.player.y - 66, `+${gotMp} MP`, '#7fb8ff');
     emitStats();
   }
 
@@ -179,9 +267,10 @@ export class CombatSystem {
     const ps = state.player!;
     ps.gold += m.def.gold;
     this.floatText(m.x, m.y - 60, `+${m.def.exp} EXP`, '#9fe3ff');
-    if (Math.random() < m.def.drop.chance) {
-      addItem(m.def.drop.item);
-      bus.emit('toast', `Got ${m.def.drop.item.replace('_', ' ')}`);
+    for (const d of [m.def.drop, ...(m.def.extra ?? [])]) {
+      if (Math.random() >= d.chance) continue;
+      addItem(d.item);
+      bus.emit('toast', `Got ${ITEMS[d.item]?.name ?? d.item}`);
     }
     this.gainExp(m.def.exp);
     this.quests.onKill(m.def.id);
@@ -199,8 +288,7 @@ export class CombatSystem {
       ps.exp -= ps.expToNext;
       ps.level++;
       ps.expToNext = expToNext(ps.level);
-      const s = computeStats(ps.raceId, ps.jobId, ps.level);
-      Object.assign(ps, { maxHp: s.hp, maxMp: s.mp, atk: s.atk, def: s.def, spd: s.spd, hp: s.hp, mp: s.mp });
+      recalcStats(true);
       this.floatText(this.player.x, this.player.y - 80, 'LEVEL UP!', '#ffd75e', 26);
       bus.emit('toast', `Level ${ps.level}!`);
     }
