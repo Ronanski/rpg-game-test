@@ -28,6 +28,8 @@ export interface ControlState {
   potion: boolean;
   dodge: boolean;
   skill: boolean;
+  /** Rain of Arrows (archer, level 5+). */
+  rain: boolean;
 }
 
 /** A building the player placed in town. Times are real-world epoch ms, so timers survive reloads. */
@@ -57,7 +59,7 @@ export function newTown() {
 export const state = {
   online: false,
   player: null as PlayerStats | null,
-  controls: { moveX: 0, moveY: 0, attack: false, talk: false, potion: false, dodge: false, skill: false } as ControlState,
+  controls: { moveX: 0, moveY: 0, attack: false, talk: false, potion: false, dodge: false, skill: false, rain: false } as ControlState,
   inDialogue: false,
   inventory: new Map<string, number>(),
   storyFlags: new Set<string>(),
@@ -69,7 +71,7 @@ export const state = {
   town: newTown(),
   cycle: newCycle(),
   /** Recharge timers the HUD draws on the SKILL and DODGE buttons (game time, ms). */
-  cooldowns: { skillReady: 0, skillTotal: 1, dodgeReady: 0, dodgeTotal: 1 },
+  cooldowns: { skillReady: 0, skillTotal: 1, dodgeReady: 0, dodgeTotal: 1, rainReady: 0, rainTotal: 1 },
   /** Build mode: camera over the town, grid shown, hero stands still. */
   buildMode: false,
   /** AUTO: the hero attacks the nearest monster in reach by itself. */

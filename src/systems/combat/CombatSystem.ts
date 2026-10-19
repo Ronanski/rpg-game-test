@@ -44,6 +44,22 @@ export const SKILLS: Record<string, SkillDef> = {
   mage: { name: 'Flame Nova', mp: 12, cooldown: 4000 },
   builder: { name: 'Hammer Slam', mp: 8, cooldown: 2500 },
 };
+/**
+ * The archer's kit (anyone holding a bow): SKILL is Multi Shot; from level 3 arrows pierce one
+ * more monster, from level 5 RAIN (Rain of Arrows) unlocks, from level 7 arrows set monsters on fire.
+ */
+export const ARCHER = {
+  multi: { name: 'Multi Shot', mp: 6, cooldown: 2200, arrows: 3, power: 0.9 },
+  rain: { name: 'Rain of Arrows', mp: 14, cooldown: 10_000, level: 5, radius: 85, volleys: 7, power: 0.75 },
+  pierceLevel: 3,
+  fireLevel: 7,
+};
+/** New abilities announced when the archer reaches these levels. */
+const ARCHER_UNLOCKS: Record<number, string> = {
+  3: 'New: Piercing Arrows (each arrow hits one more monster)',
+  5: 'New: Rain of Arrows (RAIN button)',
+  7: 'New: Fire Arrows (hits burn for a while)',
+};
 const MP_REGEN_MS = 1200; // 1 MP per tick
 const RACE_BONUS = { humanExp: 1.1, elfMpRegen: 1.2 };
 const RESPAWN_MS = 9000;
@@ -66,6 +82,8 @@ export class CombatSystem {
   private mpTimer = 0;
   /** When the current job's skill is ready again (time in ms). */
   skillReadyAt = 0;
+  /** When Rain of Arrows is ready again. */
+  rainReadyAt = 0;
 
   constructor(
     private scene: Phaser.Scene,
@@ -273,6 +291,7 @@ export class CombatSystem {
   /** The current job's special move. Returns false if on cooldown or out of MP. */
   useSkill(now: number): boolean {
     const ps = state.player!;
+    if (weaponType() === 'bow') return this.multiShot(now);
     const sk = SKILLS[ps.jobId] ?? SKILLS.adventurer;
     if (now < this.skillReadyAt) return false;
     if (ps.mp < sk.mp) {
@@ -415,6 +434,93 @@ export class CombatSystem {
     });
   }
 
+  /** Archer passives from level: arrows pierce (3) and burn (7). */
+  private arrowPerks() {
+    const lv = state.player!.level;
+    return { pierce: lv >= ARCHER.pierceLevel, burn: lv >= ARCHER.fireLevel };
+  }
+
+  /** Spends MP and starts a cooldown; false (with a toast) if not ready. */
+  private spend(now: number, name: string, mp: number, readyAt: number) {
+    const ps = state.player!;
+    if (now < readyAt) return false;
+    if (ps.mp < mp) {
+      bus.emit('toast', `Not enough MP for ${name}`);
+      return false;
+    }
+    ps.mp -= mp;
+    emitStats();
+    this.floatText(this.player.x, this.player.y - 70, name, '#ffe08a', 15);
+    return true;
+  }
+
+  /** SKILL with a bow: three arrows at once, each locked on a different nearby monster. */
+  private multiShot(now: number) {
+    const sk = ARCHER.multi;
+    if (!this.spend(now, sk.name, sk.mp, this.skillReadyAt)) return false;
+    this.skillReadyAt = now + sk.cooldown;
+    state.cooldowns.skillReady = this.skillReadyAt;
+    state.cooldowns.skillTotal = sk.cooldown;
+    const targets = this.monsters.filter((m) => !m.dead && m.distanceTo(this.player) < ARROW.range)
+      .sort((a, b) => a.distanceTo(this.player) - b.distanceTo(this.player)).slice(0, sk.arrows);
+    this.player.attackAnim('bow', null);
+    const crit = (STYLES[state.player!.jobId] ?? STYLES.adventurer).crit;
+    for (let i = 0; i < sk.arrows; i++) {
+      const t = targets[i % Math.max(1, targets.length)] ?? null;
+      this.scene.time.delayedCall(110 + i * 70, () => this.shoot('arrow', ARROW.range, ARROW.speed, sk.power * ARROW.power, crit, t));
+    }
+    return true;
+  }
+
+  /** RAIN (level 5+, bow): a volley of arrows falls on the nearest monster's spot and all around it. */
+  rainOfArrows(now: number) {
+    const sk = ARCHER.rain;
+    const ps = state.player!;
+    if (weaponType() !== 'bow' || ps.level < sk.level) return false;
+    if (!this.spend(now, sk.name, sk.mp, this.rainReadyAt)) return false;
+    this.rainReadyAt = now + sk.cooldown;
+    state.cooldowns.rainReady = this.rainReadyAt;
+    state.cooldowns.rainTotal = sk.cooldown;
+    const t = this.nearestTarget(ARROW.range);
+    const cx = t ? t.x : this.player.x + this.player.facing.x * 120, cy = t ? t.y : this.player.y + this.player.facing.y * 60;
+    this.player.attackAnim('bow', null);
+    fx.ring(this.scene, cx, cy, sk.radius, 0xffd75e, 3);
+    const crit = (STYLES[ps.jobId] ?? STYLES.adventurer).crit;
+    for (let v = 0; v < sk.volleys; v++) {
+      this.scene.time.delayedCall(200 + v * 110, () => {
+        // A few arrows drop at random spots inside the circle.
+        for (let k = 0; k < 4; k++) {
+          const a = Math.random() * Math.PI * 2, r = Math.random() * sk.radius;
+          const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r * 0.5;
+          const arrow = this.scene.add.image(x - 30, y - 160, 'arrow').setScale(1.5).setRotation(Math.atan2(160, 30)).setDepth(190000);
+          this.scene.tweens.add({ targets: arrow, x, y: y - 10, duration: 170, ease: 'Quad.easeIn', onComplete: () => (arrow.destroy(), fx.dust(this.scene, x, y)) });
+        }
+        this.scene.time.delayedCall(170, () => {
+          for (const m of [...this.monsters]) {
+            if (m.dead) continue;
+            const dx = m.x - cx, dy = (m.y - cy) * 2;
+            if (Math.hypot(dx, dy) < sk.radius) this.damage(m, sk.power, crit);
+          }
+        });
+      });
+    }
+    return true;
+  }
+
+  /** Fire Arrows (level 7): a hit monster burns for 3 ticks. */
+  private burn(m: Monster) {
+    for (let i = 1; i <= 3; i++) {
+      this.scene.time.delayedCall(i * 500, () => {
+        if (m.dead) return;
+        fx.flames(this.scene, m.x, m.y - 10, 10);
+        const dmg = Math.max(1, Math.round(state.player!.atk * 0.25));
+        m.hit(dmg, { x: m.x, y: m.y });
+        this.floatText(m.x, m.y - 40, `${dmg}`, '#ff9a3a', 14);
+        if (m.hp === 0) this.kill(m);
+      });
+    }
+  }
+
   /** How far the current weapon reaches (AUTO only attacks monsters this close). */
   attackReach() {
     const wt = weaponType();
@@ -480,6 +586,13 @@ export class CombatSystem {
     // Flies each frame toward where the target is now (or straight on if there is none).
     const end = { x: sx + f.x * range, y: sy + f.y * range };
     let travelled = 0;
+    const perks = kind === 'arrow' ? this.arrowPerks() : { pierce: false, burn: false };
+    if (perks.burn) shot.setTint(0xffb070);
+    let pierced = false;
+    const hitAndBurn = (m: Monster) => {
+      this.damage(m, power, crit);
+      if (perks.burn && !m.dead) this.burn(m);
+    };
     const tick = (_t: number, dtMs: number) => {
       const tx = target && !target.dead ? target.x : end.x, ty = target && !target.dead ? target.y - 24 : end.y;
       const dx = tx - shot.x, dy = ty - shot.y, d = Math.hypot(dx, dy);
@@ -491,11 +604,29 @@ export class CombatSystem {
         travelled += step;
         return;
       }
+      // Piercing Arrows: after the first hit the arrow flies on to one more monster close by.
+      if (target && !target.dead && perks.pierce && !pierced) {
+        const first = target;
+        hitAndBurn(first);
+        pierced = true;
+        let next: Monster | null = null, bd = 150;
+        for (const m of this.monsters) {
+          if (m.dead || m === first) continue;
+          const dd = Phaser.Math.Distance.Between(first.x, first.y, m.x, m.y);
+          if (dd < bd) (bd = dd), (next = m);
+        }
+        if (next) {
+          target = next;
+          travelled = 0;
+          return;
+        }
+        target = null;
+      }
       this.scene.events.off('update', tick);
       shot.destroy();
       trail.stop();
       this.scene.time.delayedCall(300, () => trail.destroy());
-      if (target && !target.dead) this.damage(target, power, crit);
+      if (target && !target.dead) hitAndBurn(target);
       if (fire) {
         fx.burst(this.scene, tx, ty);
         fx.flames(this.scene, tx, ty + 10, 18);
@@ -568,6 +699,8 @@ export class CombatSystem {
       recalcStats(true);
       this.floatText(this.player.x, this.player.y - 80, 'LEVEL UP!', '#ffd75e', 26);
       bus.emit('toast', `Level ${ps.level}!`);
+      if (weaponType() === 'bow' && ARCHER_UNLOCKS[ps.level]) bus.emit('toast', ARCHER_UNLOCKS[ps.level]);
+      bus.emit('level-up', ps.level);
     }
     emitStats();
   }
