@@ -17,8 +17,8 @@ import { give } from './Economy';
 const DAY_MS = 150_000;
 const DUSK_MS = 25_000; // last part of the day, getting darker (warning)
 const CORE_REACH = 46; // px from the Core's centre where raiders can hit it
-// Grid tiles in the northern wilds (west of the river, which raiders can't cross).
-const SPAWNS = [[30, 3], [33, 4], [34, 8], [20, 5], [25, 3]];
+// Grid tiles at the wild edges around the town grounds (east of the river, which raiders can't cross).
+const SPAWNS = [[61, 42], [62, 51], [61, 61], [52, 62], [44, 62]];
 
 type Id = MonsterDef['id'];
 

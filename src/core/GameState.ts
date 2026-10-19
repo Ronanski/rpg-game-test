@@ -70,6 +70,8 @@ export const state = {
   cycle: newCycle(),
   /** Recharge timers the HUD draws on the SKILL and DODGE buttons (game time, ms). */
   cooldowns: { skillReady: 0, skillTotal: 1, dodgeReady: 0, dodgeTotal: 1 },
+  /** Build mode: camera over the town, grid shown, hero stands still. */
+  buildMode: false,
   /** True while a full-screen menu (e.g. JOBS) is open; the world pauses input like dialogue. */
   inMenu: false,
 };

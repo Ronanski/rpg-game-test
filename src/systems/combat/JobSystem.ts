@@ -2,6 +2,7 @@ import { state } from '../../core/GameState';
 import { bus } from '../../core/EventBus';
 import { JOBS } from './ClassSystem';
 import { checkWeaponForJob, recalcStats } from '../items/Items';
+import { outfitFor } from './Origins';
 
 // Jobs are earned by what the player does, and can be changed anytime from the JOBS menu.
 // Everyone starts as a classless Adventurer.
@@ -54,8 +55,10 @@ export function changeJob(id: string) {
   const ps = state.player!;
   if (!isUnlocked(id) || ps.jobId === id) return;
   ps.jobId = id;
+  ps.texture = outfitFor(ps.raceId, ps.gender, id);
   recalcStats();
   checkWeaponForJob();
+  bus.emit('appearance-changed', ps.texture);
   bus.emit('toast', `You are now a ${JOBS[id].name}.`);
   bus.emit('jobs-changed');
 }

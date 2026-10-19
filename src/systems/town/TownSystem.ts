@@ -9,7 +9,7 @@ import type { CombatSystem } from '../combat/CombatSystem';
 import { spriteScale } from '../../assets/sprites';
 import { LIGHT_DEPTH } from '../LightingSystem';
 import { countJobAction } from '../combat/JobSystem';
-import { BUILDINGS, timeText, type BuildingDef, type Resource } from './Buildings';
+import { BUILDINGS, builders, placeCost, timeText, type BuildingDef, type Resource } from './Buildings';
 import { canAfford, give, pay } from './Economy';
 import { FONT } from '../../ui/theme';
 import * as fx from '../combat/Fx';
@@ -39,7 +39,9 @@ export class TownSystem {
   private ghost: Phaser.GameObjects.Image | null = null;
   private placing: BuildingDef | null = null;
   private cursor = { x: 0, y: 0 };
-  private cursorSet = false;
+  /** Building being moved in build mode (null when placing a new one). */
+  private moving: PlacedBuilding | null = null;
+  private builders: { spr: Phaser.GameObjects.Sprite; x: number; y: number; bob: number; nextHit: number }[] = [];
   /** Outline of the area you can build in, shown while placing. */
   private zone: Phaser.GameObjects.Graphics;
 
@@ -50,8 +52,18 @@ export class TownSystem {
     private combat: CombatSystem,
   ) {
     // The Core is always there (level 1, free).
+    // Saves from before the town moved: carry the whole town to the new grounds.
+    const old = state.town.buildings.find((b) => b.type === 'ancient_core');
+    if (old && (old.x !== TOWN.coreX || old.y !== TOWN.coreY)) {
+      const dx = TOWN.coreX - old.x, dy = TOWN.coreY - old.y;
+      for (const b of state.town.buildings) (b.x += dx), (b.y += dy);
+    }
     if (!state.town.buildings.some((b) => b.type === 'ancient_core')) {
       state.town.buildings.push({ id: state.town.nextId++, type: 'ancient_core', level: 1, x: TOWN.coreX, y: TOWN.coreY, status: 'idle', endsAt: 0, lastCollected: Date.now() });
+    }
+    // Everyone starts with one Builder's Hut (one builder) next to the Core.
+    if (!state.town.buildings.some((b) => b.type === 'builder_hut')) {
+      state.town.buildings.push({ id: state.town.nextId++, type: 'builder_hut', level: 1, x: TOWN.coreX - 4, y: TOWN.coreY + 1, status: 'idle', endsAt: 0, lastCollected: Date.now() });
     }
     for (const b of state.town.buildings) this.addView(b);
 
@@ -59,17 +71,19 @@ export class TownSystem {
     bus.on('player-swing', onSwing);
     scene.events.once('shutdown', () => bus.off('player-swing', onSwing));
 
-    // Build zone: the tiles within TOWN.radius of the Core, outlined on the ground.
+    // Build-mode grid: a diamond outline on every buildable tile of the town grounds.
     this.zone = scene.add.graphics().setDepth(-99980).setVisible(false);
-    const cx = TOWN.coreX + 0.5, cy = TOWN.coreY + 0.5;
-    this.zone.fillStyle(0x9fe3ff, 0.12).lineStyle(2, 0x9fe3ff, 0.8);
-    const pts: Phaser.Math.Vector2[] = [];
-    for (let i = 0; i < 48; i++) {
-      const a = (i / 48) * Math.PI * 2;
-      const p = gridToScreen(cx + Math.cos(a) * TOWN.radius, cy + Math.sin(a) * TOWN.radius);
-      pts.push(new Phaser.Math.Vector2(p.x, p.y));
+    this.zone.lineStyle(1, 0xe8f4ff, 0.35);
+    for (let y = TOWN.coreY - 11; y <= TOWN.coreY + 11; y++) {
+      for (let x = TOWN.coreX - 11; x <= TOWN.coreX + 11; x++) {
+        if (!inTown(x, y)) continue;
+        const c = gridToScreen(x, y);
+        this.zone.strokePoints([
+          new Phaser.Math.Vector2(c.x, c.y - TILE_H / 2), new Phaser.Math.Vector2(c.x + TILE_H, c.y),
+          new Phaser.Math.Vector2(c.x, c.y + TILE_H / 2), new Phaser.Math.Vector2(c.x - TILE_H, c.y),
+        ], true);
+      }
     }
-    this.zone.fillPoints(pts, true).strokePoints(pts, true);
 
     // The Core glows.
     const c = this.anchor(TOWN.coreX, TOWN.coreY, 2);
@@ -120,6 +134,7 @@ export class TownSystem {
       if (lv.attack) this.attack(v, def, lv.attack, now);
     }
     this.updateGhost();
+    this.updateBuilders(this.scene.game.loop.delta);
   }
 
   private finish(v: View) {
@@ -260,44 +275,130 @@ export class TownSystem {
     }
   }
 
-  // ---------------------------------------------------------------- building and upgrading
+  // ---------------------------------------------------------------- builders (Clash of Clans style)
 
-  /** Start placing a new building; the ghost follows the tile in front of the hero (or a tapped tile). */
-  startPlacing(type: string) {
+  get builderCount() {
+    return builders(state.town.buildings).total;
+  }
+
+  get freeBuilders() {
+    return builders(state.town.buildings).free;
+  }
+
+  /** Cost of a building, taking the growing price of extra Builder's Huts into account. */
+  costOf(def: BuildingDef) {
+    return placeCost(def, state.town.buildings);
+  }
+
+  /** Builders walk from their hut to a building under work and hammer away until it is done. */
+  private updateBuilders(dtMs: number) {
+    const huts = state.town.buildings.filter((b) => b.type === 'builder_hut');
+    while (this.builders.length < huts.length) {
+      const a = this.anchor(huts[this.builders.length].x, huts[this.builders.length].y, 2);
+      const spr = this.scene.add.sprite(a.x + 20, a.y + 4, 'npc_borgan', 0).setOrigin(0.5, 1).setScale(spriteScale('npc_borgan'));
+      this.builders.push({ spr, x: a.x + 20, y: a.y + 4, bob: 0, nextHit: 0 });
+    }
+    const jobs = this.views.filter((v) => v.b.status !== 'idle');
+    this.builders.forEach((bd, i) => {
+      const job = jobs[i];
+      const hut = huts[i];
+      const home = hut ? this.anchor(hut.x, hut.y, 2) : { x: bd.x, y: bd.y };
+      const tx = job ? job.img.x + 22 : home.x + 20, ty = job ? job.img.y + 2 : home.y + 4;
+      const dx = tx - bd.x, dy = ty - bd.y, d = Math.hypot(dx, dy);
+      const now = this.scene.time.now;
+      if (d > 4) {
+        const step = Math.min(d, (90 * dtMs) / 1000);
+        bd.x += (dx / d) * step;
+        bd.y += (dy / d) * step;
+        bd.bob += dtMs / 90;
+        bd.spr.setFrame([0, 1, 0, 2][Math.floor(bd.bob / 2) % 4]).setFlipX(dx < 0);
+        bd.spr.setPosition(bd.x, bd.y - Math.abs(Math.sin(bd.bob * 0.7)) * 2);
+      } else {
+        bd.spr.setFrame(0).setPosition(bd.x, bd.y);
+        if (job) {
+          bd.spr.setFlipX(true);
+          if (now > bd.nextHit) {
+            // Hammer: a quick hop toward the building and a spark.
+            bd.nextHit = now + 550;
+            this.scene.tweens.add({ targets: bd.spr, y: bd.y - 4, duration: 90, yoyo: true });
+            fx.sparks(this.scene, job.img.x + 10, job.img.y - 12, 0xffe08a, 4, 80);
+          }
+        }
+      }
+      bd.spr.setDepth(bd.y);
+    });
+  }
+
+  // ---------------------------------------------------------------- build mode: placing and moving
+
+  /** Grid shown over the buildable tiles in build mode. */
+  showGrid(on: boolean) {
+    this.zone.setVisible(on);
+  }
+
+  /** Start placing a new building (or moving `moving`); the ghost starts on a free spot near the view. */
+  startPlacing(type: string, near?: { x: number; y: number }, moving: PlacedBuilding | null = null) {
     this.cancelPlacing();
-    this.placing = BUILDINGS[type];
-    this.cursorSet = false;
-    const key = this.placing.sprites[0];
-    this.ghost = this.scene.add.image(0, 0, key).setOrigin(0.5, 1).setScale(spriteScale(key)).setAlpha(0.6).setDepth(150002);
-    this.zone.setVisible(true);
+    const def = BUILDINGS[type];
+    if (!moving) {
+      const cost = this.costOf(def);
+      if (!cost) return bus.emit('toast', 'You have all the builders (3).');
+      if (!canAfford(cost)) return bus.emit('toast', 'Not enough resources');
+      if (type !== 'builder_hut' && this.freeBuilders <= 0) return bus.emit('toast', 'All builders are busy. Build a Builder\'s Hut for more.');
+    }
+    this.placing = def;
+    this.moving = moving;
+    const key = moving ? (this.views.find((v) => v.b === moving)?.img.texture.key ?? def.sprites[0]) : def.sprites[0];
+    this.ghost = this.scene.add.image(0, 0, key).setOrigin(0.5, 1).setScale(spriteScale(key)).setAlpha(0.7).setDepth(150002);
+    // Start on the nearest free spot to the middle of the view.
+    const c = near ? screenToTile(near.x, near.y) : { x: TOWN.coreX, y: TOWN.coreY };
+    let best = moving ? { x: moving.x, y: moving.y } : { x: c.x, y: c.y };
+    if (!moving) {
+      let bd = Infinity;
+      for (let y = TOWN.coreY - 11; y <= TOWN.coreY + 11; y++) for (let x = TOWN.coreX - 11; x <= TOWN.coreX + 11; x++) {
+        if (!this.canPlaceAt(x, y, def)) continue;
+        const d = Math.hypot(x - c.x, y - c.y);
+        if (d < bd) (bd = d), (best = { x, y });
+      }
+    }
+    this.cursor = best;
+    if (moving) this.views.find((v) => v.b === moving)?.img.setAlpha(0.25);
     this.updateGhost();
   }
 
   cancelPlacing() {
     this.ghost?.destroy();
     this.ghost = null;
-    this.zone?.setVisible(false);
+    if (this.moving) this.views.find((v) => v.b === this.moving)?.img.setAlpha(1);
     this.placing = null;
+    this.moving = null;
   }
 
   get isPlacing() {
     return !!this.placing;
   }
 
-  /** A tap on the world while placing moves the cursor there (screen point -> tile). */
+  /** Dragging in build mode moves the ghost: the footprint centres under the finger. */
   setCursorFromWorld(wx: number, wy: number) {
-    const t = screenToTile(wx, wy);
-    this.cursor = { x: t.x, y: t.y };
-    this.cursorSet = true;
+    const t = screenToTile(wx, wy + (this.placing?.size === 2 ? 16 : 0));
+    const off = this.placing?.size === 2 ? 1 : 0;
+    this.cursor = { x: t.x - off, y: t.y - off };
+  }
+
+  /** The building drawn at a world point (for taps in build mode). */
+  buildingAt(wx: number, wy: number): PlacedBuilding | null {
+    let best: PlacedBuilding | null = null, bd = Infinity;
+    for (const v of this.views) {
+      const b = v.img.getBounds();
+      if (!b.contains(wx, wy)) continue;
+      const d = Math.abs(v.img.y - wy);
+      if (d < bd) (bd = d), (best = v.b);
+    }
+    return best;
   }
 
   private updateGhost() {
     if (!this.ghost || !this.placing) return;
-    if (!this.cursorSet) {
-      const f = this.player.facing;
-      const t = screenToTile(this.player.x + f.x * 56, this.player.y + f.y * 40);
-      this.cursor = { x: t.x - (this.placing.size === 2 ? 1 : 0), y: t.y - (this.placing.size === 2 ? 1 : 0) };
-    }
     const a = this.anchor(this.cursor.x, this.cursor.y, this.placing.size);
     this.ghost.setPosition(a.x, a.y).setTint(this.canPlaceAt(this.cursor.x, this.cursor.y, this.placing) ? 0x9fffa0 : 0xff7070);
   }
@@ -306,10 +407,11 @@ export class TownSystem {
     for (let dy = 0; dy < def.size; dy++) {
       for (let dx = 0; dx < def.size; dx++) {
         const tx = x + dx, ty = y + dy;
-        if (!inTown(tx, ty) || this.map.isBlocked(tx, ty)) return false;
+        if (!inTown(tx, ty)) return false;
+        const own = this.moving && tx >= this.moving.x && tx < this.moving.x + def.size && ty >= this.moving.y && ty < this.moving.y + def.size;
+        if (!own && (this.map.isBlocked(tx, ty) || this.occupied(tx, ty))) return false;
         const tile = this.map.tileAt(tx, ty);
         if (tile === undefined || tile === Tile.Water || tile === Tile.Bridge || tile === Tile.Path) return false;
-        if (this.occupied(tx, ty)) return false;
       }
     }
     // Don't build on top of the hero.
@@ -319,32 +421,51 @@ export class TownSystem {
 
   private occupied(tx: number, ty: number) {
     return state.town.buildings.some((b) => {
+      if (b === this.moving) return false;
       const s = BUILDINGS[b.type].size;
       return tx >= b.x && tx < b.x + s && ty >= b.y && ty < b.y + s;
     });
   }
 
-  /** Places the building at the cursor if allowed and affordable. Returns true on success. */
+  /** Places (or moves) the building at the cursor if allowed. Returns true on success. */
   confirmPlacing(): boolean {
     const def = this.placing;
     if (!def) return false;
     if (!this.canPlaceAt(this.cursor.x, this.cursor.y, def)) {
-      bus.emit('toast', inTown(this.cursor.x, this.cursor.y) ? 'Can\'t build there' : 'Build closer to the Ancient Core');
+      bus.emit('toast', inTown(this.cursor.x, this.cursor.y) ? 'Can\'t build there' : 'Build inside the town grounds');
       return false;
     }
-    if (!pay(def.levels[0].cost)) {
+    if (this.moving) {
+      const b = this.moving, v = this.views.find((w) => w.b === b)!;
+      if (def.solid) this.setFootprint(b, def, false);
+      b.x = this.cursor.x;
+      b.y = this.cursor.y;
+      if (def.solid) this.setFootprint(b, def, true);
+      const a = this.anchor(b.x, b.y, def.size);
+      v.img.setPosition(a.x, a.y).setDepth(def.category === 'trap' || b.type === 'farm' ? -99990 + a.y / 1000 : a.y);
+      v.scaffold.setPosition(a.x, a.y).setDepth(a.y + 1);
+      v.stored.setPosition(a.x, a.y - v.img.displayHeight - 8);
+      fx.dust(this.scene, a.x, a.y, 2);
+      this.cancelPlacing();
+      bus.emit('town-changed');
+      return true;
+    }
+    const cost = this.costOf(def);
+    if (!cost || !pay(cost)) {
       bus.emit('toast', 'Not enough resources');
       return false;
     }
+    const hut = def.id === 'builder_hut';
     const secs = def.levels[0].seconds * (state.player!.jobId === 'builder' ? BUILDER_SPEEDUP : 1);
     const b: PlacedBuilding = {
       id: state.town.nextId++, type: def.id, level: 1, x: this.cursor.x, y: this.cursor.y,
-      status: 'building', endsAt: Date.now() + secs * 1000, lastCollected: Date.now(),
+      status: hut || secs <= 0 ? 'idle' : 'building', endsAt: Date.now() + secs * 1000, lastCollected: Date.now(),
     };
     state.town.buildings.push(b);
     this.addView(b);
     fx.dust(this.scene, this.ghost!.x, this.ghost!.y, 2);
     this.cancelPlacing();
+    if (hut) bus.emit('toast', 'A new builder moved in!');
     bus.emit('town-changed');
     return true;
   }
@@ -362,6 +483,10 @@ export class TownSystem {
   upgrade(b: PlacedBuilding): boolean {
     const def = BUILDINGS[b.type];
     if (b.status !== 'idle' || b.level >= def.levels.length) return false;
+    if (this.freeBuilders <= 0) {
+      bus.emit('toast', 'All builders are busy. Build a Builder\'s Hut for more.');
+      return false;
+    }
     const next = def.levels[b.level];
     if (!canAfford(next.cost) || !pay(next.cost)) {
       bus.emit('toast', 'Not enough resources');

@@ -202,3 +202,31 @@ export class ShopMenu extends Menu {
     this.draw();
   }
 }
+
+/** MENU: resume, or save and quit to the title screen. */
+export class PauseMenu extends Menu {
+  constructor(scene: Phaser.Scene, onClose: () => void, private onQuit: () => void) {
+    super(scene, onClose);
+  }
+
+  open() {
+    this.show();
+  }
+
+  draw() {
+    if (!this.isOpen) return;
+    const s = this.scene, { width, height } = s.scale;
+    const { add } = this.frame('MENU', `Day ${state.cycle.day}`);
+    const bw = 260, x = (width - bw) / 2;
+    let y = height / 2 - 50;
+    const big = (label: string, on: () => void, gold = false) => {
+      const b = add(panel(s, x, y, bw, 46, gold));
+      add(s.add.text(width / 2, y + 23, label, text(17, gold ? COLORS.gold : COLORS.text)).setOrigin(0.5));
+      b.setInteractive({ useHandCursor: true }).on('pointerdown', on);
+      y += 58;
+    };
+    big('RESUME', () => this.close(), true);
+    big('SAVE & QUIT TO TITLE', () => this.onQuit());
+    add(s.add.text(width / 2, y + 6, 'Your game also saves by itself every few seconds.', text(11, COLORS.dim)).setOrigin(0.5));
+  }
+}

@@ -5,7 +5,8 @@ import { VirtualJoystick } from './VirtualJoystick';
 import { ActionButton } from './ActionButton';
 import { DialogueBox } from './DialogueBox';
 import { JobMenu } from './JobMenu';
-import { InventoryMenu, ShopMenu, type ShopDef } from './ItemMenus';
+import { InventoryMenu, ShopMenu, PauseMenu, type ShopDef } from './ItemMenus';
+import { saveGame } from '../core/SaveGame';
 import { BuildMenu, BuildingPanel, PlacementBar } from './BuildMenus';
 import type { PlacedBuilding } from '../core/GameState';
 import { BUILDINGS } from '../systems/town/Buildings';
@@ -30,10 +31,15 @@ export class UIScene extends Phaser.Scene {
   private jobMenu!: JobMenu;
   private bagMenu!: InventoryMenu;
   private shopMenu!: ShopMenu;
+  private pauseMenu!: PauseMenu;
+  private menuBtn!: Phaser.GameObjects.Container;
   private buildMenu!: BuildMenu;
   private buildingPanel!: BuildingPanel;
   private placementBar!: PlacementBar;
   private resTexts: Phaser.GameObjects.Text[] = [];
+  private buildBar!: Phaser.GameObjects.Container;
+  private buildBarText!: Phaser.GameObjects.Text;
+  private buildBarBtns: Phaser.GameObjects.Container[] = [];
   private cycleBox!: Phaser.GameObjects.Container;
   private cyclePanel!: Phaser.GameObjects.NineSlice;
   private cycleText!: Phaser.GameObjects.Text;
@@ -61,6 +67,12 @@ export class UIScene extends Phaser.Scene {
     super('UI');
   }
 
+  /** Bus listeners added by this scene, removed when it shuts down (quit to title). */
+  private listen(ev: string, fn: (...a: any[]) => void) {
+    bus.on(ev, fn);
+    this.events.once('shutdown', () => bus.off(ev, fn));
+  }
+
   create(data: { quests: QuestTracker }) {
     this.quests = data.quests;
     this.input.addPointer(2);
@@ -72,6 +84,7 @@ export class UIScene extends Phaser.Scene {
     const portrait = this.add.image(x + 10 + PORTRAIT / 2, 0, state.player!.texture);
     const ph = applyPortrait(portrait, state.player!.texture, PORTRAIT - 12);
     portrait.setY(y + 10 + (PORTRAIT - ph) / 2);
+    this.listen('appearance-changed', (key: string) => portrait.setY(y + 10 + (PORTRAIT - applyPortrait(portrait, key, PORTRAIT - 12)) / 2));
     this.nameText = this.add.text(x + PORTRAIT + 30, y + 12, '', text(18));
     this.levelText = this.add.text(x + STATUS_W - 16, y + 14, '', text(15, COLORS.gold)).setOrigin(1, 0);
     this.barLabels = this.add.text(x + PORTRAIT + 30, y + 38, '', { ...text(14), lineSpacing: 6 });
@@ -89,7 +102,7 @@ export class UIScene extends Phaser.Scene {
     const buildPanel = panel(this, x + 262, y + STATUS_H + 32, 90, 32);
     const buildIcon = this.add.image(x + 280, y + STATUS_H + 48, 'icon_build').setScale(2);
     const buildText = this.add.text(x + 294, y + STATUS_H + 48, 'BUILD', text(14)).setOrigin(0, 0.5);
-    buildPanel.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.openMenu('build'));
+    buildPanel.setInteractive({ useHandCursor: true }).on('pointerdown', () => bus.emit('build-mode', true));
     // Town resources next to the gold.
     const resIcons = ['res_wood', 'res_stone', 'res_mana'].map((k, i) => this.add.image(x + 96 + i * 70, y + STATUS_H + 18, k).setScale(2));
     this.resTexts = resIcons.map((_, i) => this.add.text(x + 110 + i * 70, y + STATUS_H + 9, '', text(16)));
@@ -103,6 +116,11 @@ export class UIScene extends Phaser.Scene {
     this.questTitle = this.add.text(0, 0, 'QUESTS', text(15, COLORS.gold));
     this.questText = this.add.text(0, 0, '', { ...text(13), lineSpacing: 4 });
     this.questBox = this.add.container(0, 0, [this.questPanel, this.questIcon, this.questTitle, this.questText]);
+    // MENU button (top-right corner; Esc too when nothing else is open).
+    const mPanel = panel(this, -44, 10, 44, 44);
+    const mText = this.add.text(-22, 32, '☰', text(22)).setOrigin(0.5);
+    mPanel.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.openPause());
+    this.menuBtn = this.add.container(0, 0, [mPanel, mText]);
 
     // Day / night clock (top centre): time to nightfall and START NIGHT, or raiders left and Core HP.
     this.cyclePanel = panel(this, -120, 0, 240, 40);
@@ -113,7 +131,7 @@ export class UIScene extends Phaser.Scene {
     nbBg.setInteractive({ useHandCursor: true }).on('pointerdown', () => bus.emit('start-night'));
     this.nightBtn = this.add.container(0, 0, [nbBg, nbTx]);
     this.cycleBox = this.add.container(0, 10, [this.cyclePanel, this.cycleText, this.cycleBar, this.nightBtn]);
-    bus.on('cycle-tick', (c: { raiders: number; coreHp: number; coreMax: number }) => this.drawCycle(c));
+    this.listen('cycle-tick', (c: { raiders: number; coreHp: number; coreMax: number }) => this.drawCycle(c));
 
     // Touch controls (bottom). They also show on desktop, where keys work too.
     this.stick = new VirtualJoystick(this);
@@ -127,54 +145,93 @@ export class UIScene extends Phaser.Scene {
     this.jobMenu = new JobMenu(this, () => this.setControlsVisible(true));
     this.bagMenu = new InventoryMenu(this, () => this.setControlsVisible(true));
     this.shopMenu = new ShopMenu(this, () => this.setControlsVisible(true));
-    this.buildMenu = new BuildMenu(this, () => this.setControlsVisible(!this.placementBar.visible));
+    this.pauseMenu = new PauseMenu(this, () => this.setControlsVisible(true), () => this.quitToTitle());
+    this.buildMenu = new BuildMenu(this, () => this.showBuildBar());
     this.buildingPanel = new BuildingPanel(this, () => this.setControlsVisible(true));
     this.placementBar = new PlacementBar(this);
-    bus.on('open-building', (b: PlacedBuilding) => {
+    this.listen('open-building', (b: PlacedBuilding) => {
       if (state.inMenu || state.inDialogue) return;
       this.setControlsVisible(false);
       this.buildingPanel.open(b);
     });
-    bus.on('placing', (type: string | null) => {
+    this.listen('placing', (type: string | null) => {
       if (type) {
-        this.setControlsVisible(false);
-        this.stick.setEnabled(true); // still walk while placing
+        this.buildBar.setVisible(false);
         this.placementBar.show(BUILDINGS[type].name);
       } else {
+        this.placementBar.hide();
+        this.showBuildBar();
+      }
+    });
+    // Build mode bar: builders free, SHOP and DONE.
+    const bbText = this.add.text(0, 0, '', { ...text(15), backgroundColor: '#1a2034e6', padding: { x: 12, y: 6 } }).setOrigin(0.5, 0);
+    const mkBtn = (label: string, color: number, on: () => void) => {
+      const r = this.add.rectangle(0, 0, 120, 48, color).setStrokeStyle(3, 0xf4ead0).setInteractive({ useHandCursor: true }).on('pointerdown', on);
+      const t = this.add.text(0, 0, label, text(17)).setOrigin(0.5);
+      return this.add.container(0, 0, [r, t]);
+    };
+    const shopBtn = mkBtn('SHOP', 0x2b4f8a, () => (this.buildBar.setVisible(false), this.buildMenu.open()));
+    const doneBtn = mkBtn('DONE', 0x2b7a3f, () => bus.emit('build-mode', false));
+    this.buildBar = this.add.container(0, 0, [bbText, shopBtn, doneBtn]).setDepth(55).setVisible(false);
+    this.buildBarText = bbText;
+    this.buildBarBtns = [shopBtn, doneBtn];
+    this.listen('build-mode-changed', (on: boolean) => {
+      if (on) {
+        this.setControlsVisible(false);
+        this.showBuildBar();
+      } else {
+        this.buildBar.setVisible(false);
         this.placementBar.hide();
         this.setControlsVisible(true);
       }
     });
-    // While placing, a tap on the world moves the build cursor there.
+    // In build mode, drag on the world to move the building (or pan); tap to select.
+    let down: { x: number; y: number; lx: number; ly: number; drag: boolean } | null = null;
     this.input.on('pointerdown', (p: Phaser.Input.Pointer, over: unknown[]) => {
-      if (this.placementBar.visible && over.length === 0 && p.x > this.scale.width * 0.45) bus.emit('build-tap', p.x, p.y);
+      if (state.buildMode && !state.inMenu && over.length === 0) down = { x: p.x, y: p.y, lx: p.x, ly: p.y, drag: false };
     });
-    bus.on('resources-changed', () => this.drawResources());
-    bus.on('town-changed', () => (this.drawResources(), this.buildingPanel.draw(), this.buildMenu.draw()));    bus.on('open-shop', (shop: ShopDef) => this.openMenu('shop', shop));
-    bus.on('equipment-changed', () => this.bagMenu.draw());
-    bus.on('inventory-changed', () => (this.bagMenu.draw(), this.shopMenu.draw()));
+    this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      if (!down || !p.isDown) return;
+      if (!down.drag && Math.hypot(p.x - down.x, p.y - down.y) > 8) down.drag = true;
+      if (down.drag) bus.emit('build-drag', p.x, p.y, p.x - down.lx, p.y - down.ly);
+      down.lx = p.x;
+      down.ly = p.y;
+    });
+    this.input.on('pointerup', (p: Phaser.Input.Pointer) => {
+      if (down && !down.drag) bus.emit('build-tap', p.x, p.y);
+      down = null;
+    });
+    this.listen('resources-changed', () => this.drawResources());
+    this.listen('town-changed', () => (this.drawResources(), this.buildingPanel.draw(), this.buildMenu.draw(), this.buildBar.visible && this.showBuildBar()));
+    this.listen('open-shop', (shop: ShopDef) => this.openMenu('shop', shop));
+    this.listen('equipment-changed', () => this.bagMenu.draw());
+    this.listen('inventory-changed', () => (this.bagMenu.draw(), this.shopMenu.draw()));
     this.layout();
     this.scale.on('resize', this.layout, this);
     this.events.once('shutdown', () => this.scale.off('resize', this.layout, this));
 
-    bus.on('player-stats', (s: PlayerStats) => this.drawStatus(s));
-    bus.on('quest-updated', () => this.drawQuests());
-    bus.on('npc-nearby', (name: string | null) => this.talkBtn.setVisible(!!name && !state.inDialogue));
-    bus.on('toast', (msg: string) => this.toast(msg));
-    bus.on('dialogue-open', (c: Conversation) => this.openDialogue(c));
-    bus.on('inventory-changed', () => this.drawPotions());
+    this.listen('player-stats', (s: PlayerStats) => this.drawStatus(s));
+    this.listen('quest-updated', () => this.drawQuests());
+    this.listen('npc-nearby', (name: string | null) => this.talkBtn.setVisible(!!name && !state.inDialogue));
+    this.listen('toast', (msg: string) => this.toast(msg));
+    this.listen('dialogue-open', (c: Conversation) => this.openDialogue(c));
+    this.listen('inventory-changed', () => this.drawPotions());
 
     const kb = this.input.keyboard;
     kb?.on('keydown-SPACE', () => this.dialogue.advance());
     kb?.on('keydown-E', () => this.dialogue.advance());
     kb?.on('keydown-J', () => this.toggleJobs());
     kb?.on('keydown-I', () => (this.bagMenu.isOpen ? this.bagMenu.close() : this.openMenu('bag')));
-    kb?.on('keydown-B', () => (this.buildMenu.isOpen ? this.buildMenu.close() : this.openMenu('build')));
+    kb?.on('keydown-B', () => bus.emit('build-mode', !state.buildMode));
     kb?.on('keydown-ESC', () => {
-      [this.jobMenu, this.bagMenu, this.shopMenu, this.buildMenu, this.buildingPanel].forEach((m) => m.isOpen && m.close());
+      const open = [this.jobMenu, this.bagMenu, this.shopMenu, this.buildMenu, this.buildingPanel, this.pauseMenu].filter((m) => m.isOpen);
+      open.forEach((m) => m.close());
+      if (this.placementBar.visible) bus.emit('build-cancel');
+      else if (state.buildMode && !open.length) bus.emit('build-mode', false);
+      else if (!open.length) this.openPause();
       if (this.placementBar.visible) bus.emit('build-cancel');
     });
-    bus.on('jobs-changed', () => this.jobMenu.draw());
+    this.listen('jobs-changed', () => this.jobMenu.draw());
 
     if (state.player) this.drawStatus(state.player);
     this.drawQuests();
@@ -200,6 +257,33 @@ export class UIScene extends Phaser.Scene {
     if (which === 'bag') this.bagMenu.open();
     else if (which === 'build') this.buildMenu.open();
     else this.shopMenu.open(shop!);
+  }
+
+  /** Build mode bar: shows how many builders are free; SHOP lists buildings, DONE leaves. */
+  private showBuildBar() {
+    if (!state.buildMode) return this.setControlsVisible(!state.inMenu);
+    const { width, height } = this.scale;
+    const huts = state.town.buildings.filter((b) => b.type === 'builder_hut').length;
+    const busy = state.town.buildings.filter((b) => b.status !== 'idle').length;
+    this.buildBarText.setText(`BUILD MODE · Builders free: ${huts - busy}/${huts} · drag to look around, tap a building`).setPosition(width / 2, 64 * this.k);
+    this.buildBarBtns[0].setPosition(width - 210 * this.k, height - 40 * this.k).setScale(this.k);
+    this.buildBarBtns[1].setPosition(width - 76 * this.k, height - 40 * this.k).setScale(this.k);
+    this.buildBar.setVisible(!this.placementBar.visible);
+  }
+
+  private openPause() {
+    if (state.inMenu || state.inDialogue) return;
+    if (this.placementBar.visible) bus.emit('build-cancel');
+    this.setControlsVisible(false);
+    this.pauseMenu.open();
+  }
+
+  private quitToTitle() {
+    saveGame();
+    state.inMenu = false;
+    state.inDialogue = false;
+    this.scene.stop('World');
+    this.scene.start('Title');
   }
 
   private toggleJobs() {
@@ -241,6 +325,7 @@ export class UIScene extends Phaser.Scene {
     this.statusBox.setScale(k);
     this.cycleBox.setScale(k).setPosition(width / 2, 10);
     this.questBox.setScale(k);
+    this.menuBtn.setScale(k).setPosition(width - 10, 0);
     for (const b of [this.attackBtn, this.talkBtn, this.potionBtn, this.skillBtn, this.dodgeBtn]) b.setScale((b.baseScale = k));
     this.potionCount.setScale(k);
     this.attackBtn.setPosition(width - 62 * k, height - 62 * k);
@@ -253,6 +338,7 @@ export class UIScene extends Phaser.Scene {
     this.stick.resetPosition();
     this.dialogue.layout();
     this.jobMenu.draw();
+    this.pauseMenu.draw();
     this.bagMenu.draw();
     this.shopMenu.draw();
     this.drawQuests();
@@ -316,7 +402,7 @@ export class UIScene extends Phaser.Scene {
       });
     this.questText.setText(lines.join('\n'));
     const w = Math.max(190, this.questText.width + 34), h = this.questText.height + 52;
-    const x = this.scale.width / this.k - w - 10;
+    const x = this.scale.width / this.k - w - 64; // leave room for the MENU button
     resizePanel(this.questPanel, w, h);
     this.questPanel.setPosition(x, 10);
     this.questIcon.setPosition(x + 24, 33);

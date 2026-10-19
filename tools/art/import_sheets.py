@@ -431,8 +431,10 @@ def all_sprites() -> dict:
     # Playable sprites get step frames: front idle/step/step (+ back idle/step/step for the hero).
     front, back = frames_same_canvas([out.pop('hero_front'), out.pop('hero_back')])
     out['hero'] = walk_frames(soften_shadow(front)) + walk_frames(soften_shadow(back))
-    out['hero_rook'] = walk_frames(soften_shadow(out['hero_rook']))
-    for key in ('hero_lyra', 'npc_healer'):
+    # Playable outfits (starting looks and job outfits) get walk frames.
+    for key in ('hero_rook', 'npc_knight', 'npc_hilda', 'npc_kaelah', 'npc_borgan'):
+        out[key] = walk_frames(soften_shadow(out[key]))
+    for key in ('hero_lyra', 'npc_healer', 'npc_valerius'):
         out[key] = walk_frames(soften_shadow(out[key]), robe=True)
     for key, (name, boxes, height) in ANIMS.items():
         frames = [sprite(name, b, height) for b in boxes]

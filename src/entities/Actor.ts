@@ -8,7 +8,7 @@ import { spriteInfo } from '../assets/sprites';
 export class Actor {
   readonly sprite: Phaser.GameObjects.Sprite;
   readonly shadow: Phaser.GameObjects.Image;
-  readonly baseScale: number;
+  baseScale: number;
   x: number;
   y: number;
   protected bob = 0;

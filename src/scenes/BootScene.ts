@@ -28,6 +28,6 @@ export class BootScene extends Phaser.Scene {
       console.warn('Supabase unavailable, playing offline', e);
       state.online = false;
     }
-    this.scene.start('Starter');
+    this.scene.start('Title');
   }
 }

@@ -1,6 +1,15 @@
 import Phaser from 'phaser';
 import { Actor } from './Actor';
 import type { IsoMap } from '../iso/IsoMap';
+import { screenToTile } from '../iso/iso';
+import { isSafeTile } from '../world/worldData';
+
+const LEASH = 280; // wild monsters give up a chase this far from home
+
+function safeAt(x: number, y: number) {
+  const t = screenToTile(x, y);
+  return isSafeTile(t.x, t.y);
+}
 
 export interface MonsterDef {
   id: 'slime' | 'slime_blue' | 'wolf' | 'goblin' | 'orc' | 'skeleton';
@@ -76,7 +85,7 @@ export class Monster extends Actor {
         this.sidestepUntil = now + 900;
         this.stuckMs = 0;
       }
-    } else if (dist < this.def.aggroRange && leash < 500) {
+    } else if (dist < this.def.aggroRange && leash < LEASH && !safeAt(target.x, target.y)) {
       vx = target.x - this.x;
       vy = target.y - this.y;
       this.wanderTarget = null;
@@ -105,8 +114,10 @@ export class Monster extends Actor {
     this.knockback.scale(Math.pow(0.0005, dt));
 
     const ox = this.x, oy = this.y;
-    if (map.walkable(this.x + mx, this.y)) this.x += mx;
-    if (map.walkable(this.x, this.y + my)) this.y += my;
+    // Wild monsters stay out of the village and the town (raiders don't).
+    const ok = (x: number, y: number) => map.walkable(x, y) && (!!this.goal || !safeAt(x, y));
+    if (ok(this.x + mx, this.y)) this.x += mx;
+    if (ok(this.x, this.y + my)) this.y += my;
     this.heading.set(vx, vy).normalize();
     this.stuck = len > 1 && Math.hypot(this.x - ox, this.y - oy) < 0.05 * Math.hypot(mx, my) + 0.01;
     this.stuckMs = this.stuck ? this.stuckMs + dtMs : 0;

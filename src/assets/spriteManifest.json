@@ -473,10 +473,11 @@
  },
  {
   "key": "npc_borgan",
-  "w": 40,
-  "h": 54,
+  "w": 126,
+  "h": 57,
   "scale": 1,
-  "imported": true
+  "imported": true,
+  "frameWidth": 42
  },
  {
   "key": "npc_bran",
@@ -530,10 +531,11 @@
  },
  {
   "key": "npc_hilda",
-  "w": 34,
-  "h": 56,
+  "w": 108,
+  "h": 59,
   "scale": 1,
-  "imported": true
+  "imported": true,
+  "frameWidth": 36
  },
  {
   "key": "npc_ignis",
@@ -544,17 +546,19 @@
  },
  {
   "key": "npc_kaelah",
-  "w": 55,
-  "h": 54,
+  "w": 171,
+  "h": 57,
   "scale": 1,
-  "imported": true
+  "imported": true,
+  "frameWidth": 57
  },
  {
   "key": "npc_knight",
-  "w": 39,
-  "h": 56,
+  "w": 123,
+  "h": 59,
   "scale": 1,
-  "imported": true
+  "imported": true,
+  "frameWidth": 41
  },
  {
   "key": "npc_lyra",
@@ -635,10 +639,11 @@
  },
  {
   "key": "npc_valerius",
-  "w": 35,
-  "h": 54,
+  "w": 111,
+  "h": 57,
   "scale": 1,
-  "imported": true
+  "imported": true,
+  "frameWidth": 37
  },
  {
   "key": "npc_villager",

@@ -5,7 +5,7 @@ import { computeStats, expToNext, RACES } from '../systems/combat/ClassSystem';
 import { RACES_INFO, START_JOB, type Gender, type RaceDef } from '../systems/combat/Origins';
 import { panel, text, COLORS } from '../ui/theme';
 import { spriteInfo } from '../assets/sprites';
-import { applySave, deleteSave, loadSave, type SaveData } from '../core/SaveGame';
+import { deleteSave } from '../core/SaveGame';
 
 type Step = 'race' | 'gender' | 'name';
 const STEPS: Step[] = ['race', 'gender', 'name'];
@@ -14,7 +14,8 @@ type Add = <T extends Phaser.GameObjects.GameObject>(o: T) => T;
 
 /**
  * Character creation: race, then gender, then a name. Everyone starts as a classless Adventurer.
- * Tap to choose; keyboard: arrows, Enter (next), Esc (back). With a save, CONTINUE (or C) resumes it.
+ * Tap to choose; keyboard: arrows, Enter (next), Esc (back). Starting replaces any saved game
+ * (the title screen already asked).
  */
 export class StarterScene extends Phaser.Scene {
   private step: Step = 'race';
@@ -23,9 +24,6 @@ export class StarterScene extends Phaser.Scene {
   private nameIndex = 0;
   private root!: Phaser.GameObjects.Container;
   private starting = false;
-  private save: SaveData | null = null;
-  /** Starting over replaces the save, so the first START only asks to confirm. */
-  private confirmNew = false;
 
   constructor() {
     super('Starter');
@@ -33,9 +31,7 @@ export class StarterScene extends Phaser.Scene {
 
   create() {
     this.starting = false;
-    this.confirmNew = false;
     this.step = 'race';
-    this.save = loadSave();
     this.root = this.add.container();
     this.layout();
     this.scale.on('resize', this.layout, this);
@@ -50,7 +46,6 @@ export class StarterScene extends Phaser.Scene {
     kb?.on('keydown-SPACE', () => this.next());
     kb?.on('keydown-ESC', () => this.back());
     kb?.on('keydown-BACKSPACE', () => this.back());
-    kb?.on('keydown-C', () => this.continueGame());
   }
 
   private get raceDef(): RaceDef {
@@ -77,7 +72,6 @@ export class StarterScene extends Phaser.Scene {
       const n = this.raceDef.names[GENDERS[this.gender]].length;
       this.nameIndex = (this.nameIndex + d + n) % n;
     }
-    this.confirmNew = false;
     this.layout();
   }
 
@@ -90,9 +84,8 @@ export class StarterScene extends Phaser.Scene {
 
   private back() {
     const i = STEPS.indexOf(this.step);
-    if (i === 0) return;
+    if (i === 0) return this.scene.start('Title');
     this.step = STEPS[i - 1];
-    this.confirmNew = false;
     this.layout();
   }
 
@@ -113,22 +106,12 @@ export class StarterScene extends Phaser.Scene {
     else if (this.step === 'gender') this.genderCards(top, areaH, add);
     else this.nameCard(top, areaH, add);
 
-    // Bottom buttons: BACK | CONTINUE (first step, with a save) | NEXT / START.
+    // Bottom buttons: BACK (to the title on step 1) | NEXT / START.
     const btnY = top + areaH + (compact ? 12 : 20) + bh / 2;
-    const buttons: { label: string; color: string; gold: boolean; on: () => void }[] = [];
-    if (this.step !== 'race') buttons.push({ label: 'BACK', color: COLORS.text, gold: false, on: () => this.back() });
-    if (this.step === 'race' && this.save) {
-      const p = this.save.player;
-      buttons.push({ label: `CONTINUE  ${p.name.toUpperCase()} LV ${p.level}`, color: COLORS.gold, gold: true, on: () => this.continueGame() });
-    }
-    const last = this.step === 'name';
-    const startLabel = this.save && this.confirmNew ? 'TAP AGAIN: START OVER' : this.save ? 'START NEW GAME' : 'START';
-    buttons.push({
-      label: last ? startLabel : 'NEXT',
-      color: this.confirmNew ? '#ff8a7a' : COLORS.text,
-      gold: last || !this.save,
-      on: () => this.next(),
-    });
+    const buttons: { label: string; color: string; gold: boolean; on: () => void }[] = [
+      { label: 'BACK', color: COLORS.text, gold: false, on: () => this.back() },
+      { label: this.step === 'name' ? 'START' : 'NEXT', color: COLORS.text, gold: true, on: () => this.next() },
+    ];
     const bw = Math.min(250, (width - 40) / buttons.length - 12);
     const total = buttons.length * bw + (buttons.length - 1) * 16;
     buttons.forEach((b, i) => {
@@ -225,22 +208,8 @@ export class StarterScene extends Phaser.Scene {
     ].join('\n'), { ...text(13), lineSpacing: 6 }));
   }
 
-  private continueGame() {
-    if (this.starting || !this.save) return;
-    this.starting = true;
-    applySave(this.save);
-    const save = this.save;
-    this.cameras.main.fadeOut(250);
-    this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('World', { save }));
-  }
-
   private start() {
     if (this.starting) return;
-    if (this.save && !this.confirmNew) {
-      this.confirmNew = true;
-      this.layout();
-      return;
-    }
     deleteSave();
     this.starting = true;
     const r = this.raceDef, g = GENDERS[this.gender];

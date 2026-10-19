@@ -69,6 +69,11 @@ export class Player extends Actor {
       this.bob = 0;
       this.walking = false;
       this.lastPhase = -1;
+      // Idle: breathe and settle the sway (unless an animation is playing).
+      if (!this.scene.tweens.isTweening(this.pose)) {
+        this.pose.ox = 0;
+        this.pose.sy = 1 + Math.sin(this.scene.time.now / 450) * 0.025;
+      }
       const f = Number(this.sprite.frame.name);
       if (f !== 0 && f !== 3) this.sprite.setFrame(f >= 3 ? 3 : 0);
       this.sync();

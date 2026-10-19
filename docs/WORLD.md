@@ -51,6 +51,10 @@ The owner's cast and regions. Each region (set) is one area of the game with its
 
 Short, easy names that don't clash with the main cast.
 
+In game, key characters stand at their post with a gold name, their job under it, and a marker:
+`!` has a quest, `?` ready to hand in, `$` shop, `✦` teacher. Plain villagers stroll around and
+show their name only when you walk close.
+
 | Name | Role |
 |---|---|
 | Old Ezra | Old wizard; teaches the Mage job at level 3 |
@@ -59,9 +63,9 @@ Short, easy names that don't clash with the main cast.
 | Hana | Archer villager |
 | Ned | Villager (the windmill rumor) |
 | Pip | Child |
-| Finn the Bard | Bard |
+| Finn the Bard | Bard (strolls around the plaza) |
 | Ranger Wren | Ranger (goblin and blue slime tips) |
-| Gus the Merchant | Merchant (shop comes later) |
+| Gus the Merchant | Weapons and armor shop |
 | Hooded Stranger | Mystery figure across the river |
 
 ## The player character

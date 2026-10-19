@@ -50,3 +50,18 @@ export const RACES_INFO: RaceDef[] = [
 ];
 
 export const START_JOB = 'adventurer';
+
+/**
+ * What the hero wears in each job (by gender). The Adventurer keeps the race's own look.
+ * Changing job changes the outfit, so the art always matches the job and weapon.
+ */
+export const JOB_OUTFIT: Record<string, Partial<Record<Gender, string>>> = {
+  warrior: { male: 'npc_knight', female: 'npc_hilda' },
+  rogue: { male: 'hero_rook', female: 'npc_kaelah' },
+  mage: { male: 'npc_valerius', female: 'hero_lyra' },
+  builder: { male: 'npc_borgan', female: 'npc_healer' },
+};
+
+export function outfitFor(raceId: string, gender: Gender, jobId: string): string {
+  return JOB_OUTFIT[jobId]?.[gender] ?? RACES_INFO.find((r) => r.id === raceId)?.sprite[gender] ?? 'hero';
+}

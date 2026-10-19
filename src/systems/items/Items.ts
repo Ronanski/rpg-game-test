@@ -92,13 +92,32 @@ export function unequip(slot: Slot) {
   bus.emit('equipment-changed');
 }
 
-/** After a job change: take off a weapon the new job can't use. */
+/** Each job's main weapon type and the basic weapon a new job comes with. */
+const JOB_WEAPON: Record<string, { type: WeaponType; starter: string }> = {
+  adventurer: { type: 'sword', starter: 'rusty_sword' },
+  warrior: { type: 'sword', starter: 'rusty_sword' },
+  rogue: { type: 'bow', starter: 'hunter_bow' },
+  mage: { type: 'staff', starter: 'oak_staff' },
+  builder: { type: 'sword', starter: 'rusty_sword' },
+};
+
+/**
+ * After a job change: switch to the best weapon of the job's main type (carried or worn), and if
+ * there is none, the job comes with its basic weapon.
+ */
 export function checkWeaponForJob() {
-  const w = state.equipment.weapon;
-  if (w && !canEquip(w)) {
-    unequip('weapon');
-    bus.emit('toast', `${ITEMS[w].name} unequipped: your job can't use it.`);
+  const jw = JOB_WEAPON[state.player!.jobId];
+  if (!jw) return;
+  const worn = state.equipment.weapon;
+  // Adventurers can use anything, so they keep what they hold.
+  if (worn && (ITEMS[worn].weapon === jw.type || (state.player!.jobId === 'adventurer' && canEquip(worn)))) return;
+  const owned = [...state.inventory.entries()].filter(([id, n]) => n > 0 && ITEMS[id]?.weapon === jw.type).map(([id]) => id);
+  const best = owned.sort((a, b) => (ITEMS[b].stats?.atk ?? 0) - (ITEMS[a].stats?.atk ?? 0))[0];
+  if (!best) {
+    addItem(jw.starter, 1);
+    bus.emit('toast', `You received a ${ITEMS[jw.starter].name} for your new job.`);
   }
+  equip(best ?? jw.starter);
 }
 
 export function weaponType(): WeaponType | null {

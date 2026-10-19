@@ -39,6 +39,11 @@ export const BUILDINGS: Record<string, BuildingDef> = {
       { cost: { gold: 2000, stone: 1000, mana: 400 }, seconds: 7200, hp: 4500 },
     ],
   },
+  builder_hut: {
+    id: 'builder_hut', name: "Builder's Hut", category: 'utility', size: 2, solid: true,
+    sprites: ['house_small'], desc: 'Home of one builder. Each builder works on one building at a time.',
+    levels: [{ cost: { gold: 0 }, seconds: 0, hp: 300 }],
+  },
   wooden_wall: {
     id: 'wooden_wall', name: 'Wall', category: 'wall', size: 1, solid: true,
     sprites: ['fence', 'fence', 'b_stone_wall'], desc: 'Blocks monsters. Level 3 is stone.',
@@ -101,6 +106,22 @@ export const BUILDINGS: Record<string, BuildingDef> = {
     ],
   },
 };
+
+/** Builder's Huts cost more for each one you already have (the first one is free). Max 3. */
+export const HUT_COSTS: Cost[] = [{ gold: 0 }, { gold: 250, wood: 100 }, { gold: 1000, stone: 300 }];
+
+/** How many builders the town has, and how many are not working on anything. */
+export function builders(list: { type: string; status: string }[]) {
+  const total = list.filter((b) => b.type === 'builder_hut').length;
+  const busy = list.filter((b) => b.status !== 'idle').length;
+  return { total, free: total - busy };
+}
+
+/** Cost to place a new building (Builder's Huts get pricier); null when no more can be built. */
+export function placeCost(def: BuildingDef, list: { type: string }[]): Cost | null {
+  if (def.id !== 'builder_hut') return def.levels[0].cost;
+  return HUT_COSTS[list.filter((b) => b.type === 'builder_hut').length] ?? null;
+}
 
 export function spriteFor(def: BuildingDef, level: number) {
   return def.sprites[Math.min(level, def.sprites.length) - 1];

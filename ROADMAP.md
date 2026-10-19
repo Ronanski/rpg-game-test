@@ -44,7 +44,8 @@ Target look: detailed 16-bit isometric pixel art with warm torch light, matching
 ## M3: Save progress 🔄
 - [x] Progress is saved in the browser and reloaded: hero, level, stats, gold, items, quests, story flags, position (autosave every 5 seconds, after quest changes and when the tab closes)
 - [x] CONTINUE button on the title screen; NEW GAME asks for a second tap before replacing the save
-- [ ] Cloud save, so the same progress works in the browser and on the phone (needs Supabase keys and an account login)
+- [x] Title screen at launch (CONTINUE / NEW GAME) and a ☰ MENU in game (Esc) with SAVE & QUIT TO TITLE
+- [ ] ~~Cloud save~~ put on hold by the owner: local save only for now
 
 **Checkpoint**
 - [ ] Level up, refresh the page, press CONTINUE, and you are still that level with the same gold
@@ -60,7 +61,11 @@ Target look: detailed 16-bit isometric pixel art with warm torch light, matching
 - [x] Arrow towers shoot and spike traps hurt monsters that come close
 - [x] Builder job unlocks after 5 buildings and builds 30% faster
 - [x] Town is saved
-- [ ] Cloud save of the town (with M3's cloud save)
+- [ ] Cloud save of the town (on hold with M3's cloud save)
+- [x] Clash of Clans style building: BUILD MODE (button or B) zooms out over the town with a grid; drag to look around, tap a building for its info, SHOP to buy, PLACE by dragging the ghost
+- [x] Builders: each Builder's Hut has one builder who walks to the job and hammers; one job per builder. The first hut is free, more cost 250 gold + 100 wood, then 1000 gold + 300 stone (max 3)
+- [x] MOVE a finished building from its panel
+- [x] Bigger town grounds (radius 10) at the south-east, away from the village
 
 **Checkpoint**
 - [ ] Chop trees for wood, build a farm and an arrow tower, wait for the timer, and refresh: they are still there
@@ -104,6 +109,15 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 - [ ] Reach level 3, talk to Old Ezra, change to Mage, and cast Firebolt
 - [ ] Buy an Iron Sword from Gus, equip it in BAG, and see ATK go up
 - [ ] Roll through a wolf with DODGE without getting hurt, then hit it with SKILL
+
+## Playtest 2 fixes (owner feedback) ✅
+- [x] NEW GAME always works (title menu; second tap confirms replacing the save)
+- [x] Changing job changes the outfit and the weapon (sword, dagger/bow, staff)
+- [x] Back to menu: ☰ MENU button / Esc
+- [x] Safe zones: wild monsters stop chasing at the village and town edge and give up when you run far
+- [x] Bigger town; NPCs spread out with names, jobs and markers so you can tell who is who
+- [x] NPCs breathe, glance around, and villagers walk around
+- [ ] Better walking and attack animation ("paper" look): needs new frame-by-frame art, waiting on the owner's choice
 
 ## M7: Story chapter 1 and new places ⏳
 - [ ] Building interiors (tavern, smithy) and a cave dungeon, like the reference images

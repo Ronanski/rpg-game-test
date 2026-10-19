@@ -9,6 +9,8 @@ import { QuestTracker } from '../systems/quest/QuestTracker';
 import { DialogueSystem } from '../systems/dialogue/DialogueSystem';
 import { state, emitStats } from '../core/GameState';
 import { bus } from '../core/EventBus';
+import { isUnlocked } from '../systems/combat/JobSystem';
+import { spriteScale } from '../assets/sprites';
 import { LightingSystem } from '../systems/LightingSystem';
 import { TownSystem } from '../systems/town/TownSystem';
 import { WaveSystem } from '../systems/town/WaveSystem';
@@ -29,6 +31,8 @@ export class WorldScene extends Phaser.Scene {
   private nearNpc: Npc | null = null;
   private nearBuilding: PlacedBuilding | null = null;
   private town!: TownSystem;
+  private zoom = 1;
+  private quests!: QuestTracker;
   private waves!: WaveSystem;
   private lighting!: LightingSystem;
 
@@ -37,6 +41,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   create(data: { save?: SaveData } = {}) {
+    state.buildMode = false;
     const world = buildWorld();
     this.map = new IsoMap(this, world);
     this.map.render();
@@ -50,6 +55,7 @@ export class WorldScene extends Phaser.Scene {
     });
 
     const quests = new QuestTracker();
+    this.quests = quests;
     this.combat = new CombatSystem(this, this.map, this.player, quests, start);
     quests.setExpHandler((n) => this.combat.gainExp(n));
     this.combat.spawnAll(world.spawns);
@@ -82,7 +88,8 @@ export class WorldScene extends Phaser.Scene {
     cam.setBounds(b.x, b.y, b.width, b.height);
     cam.startFollow(this.player.sprite, true, 0.12, 0.12, 0, 20);
     // Bigger screens see the same amount of world, just with bigger pixels.
-    cam.setZoom(Phaser.Math.Clamp(Math.round((this.scale.height / 460) * 4) / 4, 1, 2.5));
+    this.zoom = Phaser.Math.Clamp(Math.round((this.scale.height / 460) * 4) / 4, 1, 2.5);
+    cam.setZoom(this.zoom);
     cam.setRoundPixels(true);
 
     const kb = this.input.keyboard!;
@@ -90,6 +97,13 @@ export class WorldScene extends Phaser.Scene {
 
     this.scene.launch('UI', { quests });
     emitStats();
+    // Job outfits: the hero's sprite follows the job.
+    const onLook = (key: string) => {
+      this.player.sprite.setTexture(key, 0);
+      this.player.baseScale = spriteScale(key);
+    };
+    bus.on('appearance-changed', onLook);
+    this.events.once('shutdown', () => bus.off('appearance-changed', onLook));
     // Potions used from the BAG menu.
     const onUse = (id: string) => this.combat.usePotion(id);
     bus.on('use-item', onUse);
@@ -99,7 +113,7 @@ export class WorldScene extends Phaser.Scene {
 
   update(time: number, delta: number) {
     const c = state.controls;
-    if (!state.inDialogue && !state.inMenu) {
+    if (!state.inDialogue && !state.inMenu && !state.buildMode) {
       const k = this.keys;
       let kx = (k.right.isDown || k.d.isDown ? 1 : 0) - (k.left.isDown || k.a.isDown ? 1 : 0);
       let ky = (k.down.isDown || k.s.isDown ? 1 : 0) - (k.up.isDown || k.w.isDown ? 1 : 0);
@@ -128,7 +142,24 @@ export class WorldScene extends Phaser.Scene {
     if (!state.inMenu) this.combat.update(time, delta);
     this.town.update(time);
     this.waves.update(time, delta);
+    this.updateNpcs(time, delta);
     this.updateNearbyNpc();
+  }
+
+  /** NPC life (wandering, names up close) and their markers: ! quest, ? hand in, $ shop, ✦ teacher. */
+  private updateNpcs(time: number, delta: number) {
+    for (const n of this.npcs) {
+      const d = n.distanceTo(this.player);
+      n.near = d < TALK_RANGE * 1.4;
+      n.update(time, delta, this.map, d);
+      const m = n.def.mark;
+      if (m === 'shop') n.setMarker('$');
+      else if (m === 'teacher') n.setMarker(!isUnlocked('mage') && state.player!.level >= 3 ? '✦' : '');
+      else if (m === 'quest' && n.def.quest) {
+        const st = this.quests.statusOf(n.def.quest);
+        n.setMarker(st === 'available' ? '!' : st === 'active' && this.quests.isDone(n.def.quest) ? '?' : '');
+      }
+    }
   }
 
   private updateNearbyNpc() {
@@ -148,13 +179,50 @@ export class WorldScene extends Phaser.Scene {
 
   /** Build-mode events from the UI scene. */
   private wireTown() {
+    const cam = this.cameras.main;
+    const world = (sx: number, sy: number) => cam.getWorldPoint(sx, sy);
     const handlers: [string, (...a: any[]) => void][] = [
-      ['build-start', (type: string) => (this.town.startPlacing(type), bus.emit('placing', type))],
+      // Build mode (Clash of Clans style): camera over the town, grid on, hero stands still.
+      ['build-mode', (on: boolean) => {
+        if (on && state.cycle.phase === 'night') return bus.emit('toast', 'No building at night. Defend the Core!');
+        state.buildMode = on;
+        this.town.showGrid(on);
+        if (on) {
+          cam.stopFollow();
+          const c = this.town.corePoint();
+          cam.pan(c.x, c.y, 400, 'Sine.easeInOut');
+          cam.zoomTo(Math.max(0.8, this.zoom * 0.7), 400);
+        } else {
+          this.town.cancelPlacing();
+          cam.startFollow(this.player.sprite, true, 0.12, 0.12, 0, 20);
+          cam.zoomTo(this.zoom, 300);
+        }
+        bus.emit('build-mode-changed', state.buildMode);
+      }],
+      ['build-start', (type: string) => {
+        this.town.startPlacing(type, cam.midPoint);
+        if (this.town.isPlacing) bus.emit('placing', type);
+      }],
+      ['building-move', (b: PlacedBuilding) => {
+        if (!state.buildMode) bus.emit('build-mode', true);
+        this.town.startPlacing(b.type, undefined, b);
+        bus.emit('placing', b.type);
+      }],
       ['build-confirm', () => this.town.confirmPlacing() && bus.emit('placing', null)],
       ['build-cancel', () => (this.town.cancelPlacing(), bus.emit('placing', null))],
+      // Drag: moves the building being placed, otherwise pans the view.
+      ['build-drag', (sx: number, sy: number, dx: number, dy: number) => {
+        if (this.town.isPlacing) {
+          const p = world(sx, sy);
+          this.town.setCursorFromWorld(p.x, p.y);
+        } else cam.setScroll(cam.scrollX - dx / cam.zoom, cam.scrollY - dy / cam.zoom);
+      }],
+      // Tap: drop the building there, or open the building you tapped.
       ['build-tap', (sx: number, sy: number) => {
-        const p = this.cameras.main.getWorldPoint(sx, sy);
-        this.town.setCursorFromWorld(p.x, p.y);
+        const p = world(sx, sy);
+        if (this.town.isPlacing) return this.town.setCursorFromWorld(p.x, p.y);
+        const b = this.town.buildingAt(p.x, p.y);
+        if (b) bus.emit('open-building', b);
       }],
       ['building-upgrade', (b: PlacedBuilding) => this.town.upgrade(b)],
     ];

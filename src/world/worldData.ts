@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 
-export const MAP_W = 48;
-export const MAP_H = 48;
+export const MAP_W = 64;
+export const MAP_H = 64;
 
 export enum Tile {
   Grass,
@@ -39,6 +39,12 @@ export interface NpcDef {
   texture: string;
   x: number;
   y: number;
+  /** What they do, shown under the name ("Potions", "Blacksmith"). Villagers have none and wander. */
+  role?: string;
+  /** Quest giver (shows ! / ?), shopkeeper (shows a bag), or teacher. */
+  mark?: 'quest' | 'shop' | 'teacher';
+  /** Quest this NPC gives (for the ! / ? marker). */
+  quest?: string;
 }
 
 export interface SpawnZone {
@@ -60,11 +66,16 @@ export interface WorldData {
 }
 
 const VILLAGE = { x0: 18, y0: 18, x1: 29, y1: 29 };
-/** Town grounds north-east of the village: the Ancient Core and the area you can build on around it. */
-export const TOWN = { coreX: 27, coreY: 11, radius: 6.5 };
+/** Town grounds south-east of the village, across the bridge: the Ancient Core and the land around it. */
+export const TOWN = { coreX: 51, coreY: 50, radius: 10 };
 
 export function inTown(x: number, y: number) {
   return Math.hypot(x - (TOWN.coreX + 0.5), y - (TOWN.coreY + 0.5)) <= TOWN.radius;
+}
+
+/** The village and the town grounds: wild monsters never come in, and stop chasing you there. */
+export function isSafeTile(x: number, y: number) {
+  return inVillage(x, y) || inTown(x, y);
 }
 const RIVER_X = 37;
 
@@ -97,6 +108,8 @@ export function buildWorld(): WorldData {
   for (let x = VILLAGE.x1; x < MAP_W - 3; x++) set(x, 23, Tile.Path), set(x, 24, Tile.Path);
   for (let y = VILLAGE.y1; y < MAP_H - 3; y++) set(23, y, Tile.Path), set(24, y, Tile.Path);
   for (let y = 3; y < VILLAGE.y0; y++) set(23, y, Tile.Path);
+  // Road from the east road down to the town grounds.
+  for (let y = 24; y < TOWN.coreY - 2; y++) set(47, y, Tile.Path), set(48, y, Tile.Path);
 
   // River with a bridge where the east road crosses.
   for (let y = 0; y < MAP_H; y++) {
@@ -209,19 +222,21 @@ export function buildWorld(): WorldData {
   for (let i = 0; i < MAP_W; i++) blocked[0][i] = blocked[MAP_H - 1][i] = blocked[i][0] = blocked[i][MAP_W - 1] = true;
 
   const npcs: NpcDef[] = [
-    { id: 'elder', name: 'Martha', texture: 'npc_martha', x: 23, y: 21 },
-    { id: 'smith', name: 'Grom', texture: 'npc_grom', x: 21, y: 25 },
-    { id: 'stranger', name: 'Hooded Stranger', texture: 'npc_stranger', x: 43, y: 21 },
-    { id: 'guard', name: 'Guard Cole', texture: 'npc_guard', x: 30, y: 23 },
-    { id: 'wizard', name: 'Old Ezra', texture: 'npc_wizard', x: 26, y: 26 },
-    { id: 'villager', name: 'Lena', texture: 'npc_villager_f', x: 21, y: 23 },
-    { id: 'villager2', name: 'Hana', texture: 'npc_archer', x: 27, y: 24 },
-    { id: 'villager3', name: 'Ned', texture: 'npc_villager_m', x: 30, y: 28 },
-    { id: 'merchant', name: 'Gus the Merchant', texture: 'npc_merchant', x: 33, y: 26 },
-    { id: 'healer', name: 'Serena', texture: 'npc_serena', x: 22, y: 22 },
-    { id: 'child', name: 'Pip', texture: 'npc_child', x: 24, y: 28 },
-    { id: 'bard', name: 'Finn the Bard', texture: 'npc_bard', x: 28, y: 20 },
-    { id: 'ranger', name: 'Ranger Wren', texture: 'npc_ranger', x: 35, y: 22 },
+    // Key characters stand still where you can find them.
+    { id: 'elder', name: 'Martha', texture: 'npc_martha', x: 24, y: 20, role: 'Village Elder', mark: 'quest', quest: 'main_01_slimes' },
+    { id: 'smith', name: 'Grom', texture: 'npc_grom', x: 21, y: 25, role: 'Blacksmith', mark: 'quest', quest: 'guild_wolves' },
+    { id: 'healer', name: 'Serena', texture: 'npc_serena', x: 26, y: 24, role: 'Potions', mark: 'shop' },
+    { id: 'merchant', name: 'Gus', texture: 'npc_merchant', x: 33, y: 25, role: 'Weapons & Armor', mark: 'shop' },
+    { id: 'wizard', name: 'Old Ezra', texture: 'npc_wizard', x: 18, y: 21, role: 'Mage Teacher', mark: 'teacher' },
+    { id: 'guard', name: 'Cole', texture: 'npc_guard', x: 31, y: 22, role: 'Guard' },
+    { id: 'ranger', name: 'Wren', texture: 'npc_ranger', x: 36, y: 22, role: 'Ranger' },
+    { id: 'stranger', name: 'Hooded Stranger', texture: 'npc_stranger', x: 43, y: 21, role: '???' },
+    // Villagers wander around their spot.
+    { id: 'villager', name: 'Lena', texture: 'npc_villager_f', x: 22, y: 22 },
+    { id: 'villager2', name: 'Hana', texture: 'npc_archer', x: 28, y: 28 },
+    { id: 'villager3', name: 'Ned', texture: 'npc_villager_m', x: 12, y: 22 },
+    { id: 'child', name: 'Pip', texture: 'npc_child', x: 25, y: 27 },
+    { id: 'bard', name: 'Finn', texture: 'npc_bard', x: 22, y: 20, role: 'Bard' },
   ];
   const playerStart = { x: 24, y: 25 };
 
@@ -244,7 +259,7 @@ export function buildWorld(): WorldData {
     spawns: [
       { monster: 'slime', x0: 33, y0: 17, x1: 36, y1: 21, count: 5 },
       { monster: 'slime', x0: 10, y0: 31, x1: 20, y1: 40, count: 5 },
-      { monster: 'wolf', x0: 41, y0: 28, x1: 45, y1: 42, count: 4 },
+      { monster: 'wolf', x0: 54, y0: 12, x1: 60, y1: 26, count: 4 },
       { monster: 'slime_blue', x0: 28, y0: 36, x1: 34, y1: 43, count: 4 },
       { monster: 'goblin', x0: 4, y0: 6, x1: 12, y1: 13, count: 4 },
     ],

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene';
 import { StarterScene } from './scenes/StarterScene';
+import { TitleScene } from './scenes/TitleScene';
 import { WorldScene } from './scenes/WorldScene';
 import { UIScene } from './ui/UIScene';
 
@@ -20,7 +21,7 @@ function startGame() {
     pixelArt: true,
     scale: { mode: Phaser.Scale.RESIZE, width: window.innerWidth, height: window.innerHeight },
     input: { activePointers: 3 },
-    scene: [BootScene, StarterScene, WorldScene, UIScene],
+    scene: [BootScene, TitleScene, StarterScene, WorldScene, UIScene],
   });
   // Dev server only: lets automated browser tests inspect and drive the game.
   if (import.meta.env.DEV) (window as unknown as { game: Phaser.Game }).game = game;
