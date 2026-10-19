@@ -51,6 +51,32 @@ SPRITES = {
     'cart': ('sheet_e.webp', (1356, 262, 1468, 348), 46),
     'hay_cart': ('sheet_e.webp', (1386, 362, 1474, 452), 44),
     'lamp': ('sheet_e.webp', (1474, 260, 1530, 384), 56),
+    # sheet_f (magenta): more NPCs, monsters, buildings, animals and props.
+    'npc_merchant': ('sheet_f.webp', (710, 562, 773, 657), 56),
+    'npc_healer': ('sheet_f.webp', (959, 555, 1009, 655), 56),
+    'npc_child': ('sheet_f.webp', (639, 690, 681, 776), 42),
+    'npc_bard': ('sheet_f.webp', (954, 684, 1018, 778), 54),
+    'npc_ranger': ('sheet_f.webp', (784, 686, 843, 778), 56),
+    'npc_thief': ('sheet_f.webp', (867, 686, 924, 777), 54),
+    'slime_blue': ('sheet_f.webp', (1184, 574, 1255, 631), 30),
+    'slime_purple': ('sheet_f.webp', (1299, 569, 1373, 628), 30),
+    'slime_king': ('sheet_f.webp', (1411, 559, 1483, 629), 46),
+    'orc': ('sheet_f.webp', (1280, 656, 1378, 732), 56),
+    'dragon': ('sheet_f.webp', (1360, 753, 1525, 832), 130),
+    'inn': ('sheet_f.webp', (946, 30, 1074, 177), 128),
+    'warehouse': ('sheet_f.webp', (551, 225, 674, 340), 100),
+    'ruins': ('sheet_f.webp', (548, 381, 682, 505), 100),
+    'tent': ('sheet_f.webp', (806, 385, 929, 498), 84),
+    'stable': ('sheet_f.webp', (941, 384, 1068, 498), 90),
+    'deer': ('sheet_f.webp', (10, 861, 52, 914), 40),
+    'boar': ('sheet_f.webp', (62, 865, 110, 913), 34),
+    'rabbit': ('sheet_f.webp', (114, 869, 150, 911), 20),
+    'chicken': ('sheet_f.webp', (155, 874, 193, 913), 20),
+    'cow': ('sheet_f.webp', (197, 866, 245, 913), 36),
+    'horse': ('sheet_f.webp', (247, 866, 295, 913), 42),
+    'grave': ('sheet_f.webp', (544, 933, 585, 997), 34),
+    'bone_pile': ('sheet_f.webp', (590, 931, 637, 994), 26),
+    'stump': ('sheet_f.webp', (838, 862, 884, 910), 26),
     'fountain': ('sheet_b.jpg', (1157, 712, 1609, 1147), 62),
     'chest': ('sheet_b.jpg', (1650, 806, 1945, 1093), 30),
     'crystal': ('sheet_c.png', (384, 566, 556, 723), 32),
@@ -97,18 +123,23 @@ def sheet(name: str) -> np.ndarray:
 
 # Sheets drawn on a grey/white checkerboard ("fake transparency") instead of plain white.
 CHECKER = {'sheet_d.webp', 'sheet_e.webp'}
+# Sheets drawn on solid magenta.
+MAGENTA = {'sheet_f.webp'}
 
 
 def cut(name: str, box, pad: int | None = None) -> tuple[np.ndarray, np.ndarray]:
     """Returns (rgb, alpha 0..1) with the white (or checkerboard) background removed."""
     a = sheet(name)
     if pad is None:
-        pad = 1 if name in CHECKER else 6  # checker sheets are packed tight
+        pad = 1 if name in CHECKER or name in MAGENTA else 6  # these sheets are packed tight
     x0, y0, x1, y1 = box
     x0, y0 = max(0, x0 - pad), max(0, y0 - pad)
     x1, y1 = min(a.shape[1], x1 + pad), min(a.shape[0], y1 + pad)
     rgb = a[y0:y1, x0:x1]
-    if name in CHECKER:
+    if name in MAGENTA:
+        r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+        white = (r > 110) & (b > 110) & (g < 0.6 * np.minimum(r, b)) & (np.abs(r - b) < 45)
+    elif name in CHECKER:
         white = ((rgb.max(axis=2) - rgb.min(axis=2)) < 20) & (rgb.mean(axis=2) > 170)
     else:
         white = rgb.min(axis=2) > 228
@@ -119,7 +150,12 @@ def cut(name: str, box, pad: int | None = None) -> tuple[np.ndarray, np.ndarray]
     sizes = ndi.sum(white, lab, index=np.arange(lab.max() + 1))
     bg |= white & (sizes[lab] > 250)
     # Drop the anti-aliased white fringe around the sprite.
-    fringe = ndi.binary_dilation(bg, iterations=2) & (rgb.min(axis=2) > (165 if name in CHECKER else 200))
+    if name in MAGENTA:
+        # Pink halo left by the magenta background.
+        r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+        fringe = ndi.binary_dilation(bg, iterations=2) & (r > 130) & (b > 120) & (g < r - 40)
+    else:
+        fringe = ndi.binary_dilation(bg, iterations=2) & (rgb.min(axis=2) > (165 if name in CHECKER else 200))
     alpha = (~(bg | fringe)).astype(np.float32)
     # Keep only the main object (neighbouring sprites can poke into the box).
     lab2, n2 = ndi.label(ndi.binary_dilation(alpha > 0, iterations=3))

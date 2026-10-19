@@ -42,7 +42,7 @@ export interface NpcDef {
 }
 
 export interface SpawnZone {
-  monster: 'slime' | 'wolf';
+  monster: 'slime' | 'slime_blue' | 'wolf' | 'goblin';
   x0: number;
   y0: number;
   x1: number;
@@ -113,6 +113,7 @@ export function buildWorld(): WorldData {
     [19, 19, 'tavern', false], [26, 19, 'house_thatch', false], [19, 26, 'blacksmith', false], [27, 27, 'house_thatch', true],
     // Outside the plaza.
     [31, 26, 'market', false], [14, 16, 'chapel', false], [9, 20, 'windmill', false], [33, 19, 'watchtower', false], [15, 31, 'house_small', true], [10, 34, 'house_red', false],
+    [33, 29, 'inn', false], [17, 12, 'warehouse', false], [6, 9, 'ruins', false], [45, 19, 'tent', false], [5, 23, 'stable', false],
   ];
   for (const [hx, hy, texture, flip] of buildings) {
     props.push({ kind: 'building', texture, x: hx, y: hy, flip });
@@ -157,6 +158,20 @@ export function buildWorld(): WorldData {
   deco('mushroom', 25, 3, false);
   deco('signpost', 25, 6);
 
+  // Farm animals and wildlife (decoration for now).
+  deco('chicken', 17, 34, false);
+  deco('chicken', 18, 33, false);
+  deco('cow', 7, 27);
+  deco('horse', 4, 26);
+  deco('deer', 40, 8);
+  deco('rabbit', 30, 10, false);
+  deco('boar', 42, 40);
+  // Goblin ruins in the north-west.
+  deco('grave', 9, 12);
+  deco('grave', 10, 9);
+  deco('bone_pile', 8, 13, false);
+  deco('stump', 12, 7);
+
   // The stranger's camp across the river.
   deco('campfire', 44, 22, true, { light: true });
 
@@ -196,6 +211,11 @@ export function buildWorld(): WorldData {
     { id: 'villager', name: 'Mira', texture: 'npc_villager_f', x: 21, y: 23 },
     { id: 'villager2', name: 'Sela', texture: 'npc_archer', x: 27, y: 24 },
     { id: 'villager3', name: 'Tobin', texture: 'npc_villager_m', x: 30, y: 28 },
+    { id: 'merchant', name: 'Gus the Merchant', texture: 'npc_merchant', x: 33, y: 26 },
+    { id: 'healer', name: 'Sister Ana', texture: 'npc_healer', x: 16, y: 18 },
+    { id: 'child', name: 'Pip', texture: 'npc_child', x: 23, y: 23 },
+    { id: 'bard', name: 'Lute the Bard', texture: 'npc_bard', x: 21, y: 20 },
+    { id: 'ranger', name: 'Ranger Wren', texture: 'npc_ranger', x: 35, y: 22 },
   ];
   const playerStart = { x: 24, y: 25 };
 
@@ -219,6 +239,8 @@ export function buildWorld(): WorldData {
       { monster: 'slime', x0: 29, y0: 8, x1: 35, y1: 17, count: 5 },
       { monster: 'slime', x0: 10, y0: 31, x1: 20, y1: 40, count: 5 },
       { monster: 'wolf', x0: 41, y0: 28, x1: 45, y1: 42, count: 4 },
+      { monster: 'slime_blue', x0: 28, y0: 36, x1: 34, y1: 43, count: 4 },
+      { monster: 'goblin', x0: 4, y0: 6, x1: 12, y1: 13, count: 4 },
     ],
   };
 }

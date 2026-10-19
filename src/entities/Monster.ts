@@ -3,7 +3,7 @@ import { Actor } from './Actor';
 import type { IsoMap } from '../iso/IsoMap';
 
 export interface MonsterDef {
-  id: 'slime' | 'wolf';
+  id: 'slime' | 'slime_blue' | 'wolf' | 'goblin';
   name: string;
   hp: number;
   atk: number;
@@ -17,6 +17,8 @@ export interface MonsterDef {
 
 export const MONSTERS: Record<MonsterDef['id'], MonsterDef> = {
   slime: { id: 'slime', name: 'Slime', hp: 30, atk: 7, def: 1, speed: 55, aggroRange: 170, exp: 12, gold: 3, drop: { item: 'slime_gel', chance: 0.6 } },
+  slime_blue: { id: 'slime_blue', name: 'Blue Slime', hp: 45, atk: 9, def: 2, speed: 60, aggroRange: 180, exp: 18, gold: 5, drop: { item: 'slime_gel', chance: 0.7 } },
+  goblin: { id: 'goblin', name: 'Goblin', hp: 50, atk: 11, def: 2, speed: 90, aggroRange: 210, exp: 24, gold: 10, drop: { item: 'health_potion', chance: 0.2 } },
   wolf: { id: 'wolf', name: 'Wolf', hp: 60, atk: 12, def: 3, speed: 105, aggroRange: 230, exp: 28, gold: 8, drop: { item: 'wolf_pelt', chance: 0.5 } },
 };
 
@@ -74,8 +76,8 @@ export class Monster extends Actor {
 
     if (map.walkable(this.x + mx, this.y)) this.x += mx;
     if (map.walkable(this.x, this.y + my)) this.y += my;
-    if (Math.abs(mx) > 0.01) this.sprite.setFlipX(this.def.id === 'wolf' ? mx < 0 : false);
-    if (len > 1) this.bob += dtMs / (this.def.id === 'slime' ? 120 : 60);
+    if (Math.abs(mx) > 0.01) this.sprite.setFlipX(this.def.id === 'wolf' || this.def.id === 'goblin' ? mx < 0 : false);
+    if (len > 1) this.bob += dtMs / (this.def.id.startsWith('slime') ? 120 : 60);
     // Slimes squish through their 3 frames as they hop.
     if (this.def.id === 'slime') this.sprite.setFrame(len > 1 ? Math.floor(now / 160) % 3 : 0);
     this.sync();

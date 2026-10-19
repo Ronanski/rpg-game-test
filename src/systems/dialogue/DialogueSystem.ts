@@ -62,6 +62,16 @@ export class DialogueSystem {
         return { lines: say('The Core\'s light is beautiful, isn\'t it?', 'Beautiful things are often hungry.') };
       case 'villager':
         return { lines: say('Fresh bread at the stall! Well... fresh yesterday.') };
+      case 'merchant':
+        return { lines: say('Potions, rope, lantern oil! Shop opens soon, friend.', 'Bring me pelts and gel and I\'ll make it worth your while.') };
+      case 'healer':
+        return { lines: say('The Light of the Core heals all wounds.', 'That is what the Order taught me. Lately I have my doubts.') };
+      case 'child':
+        return { lines: say('Are you an adventurer? I saw a purple slime once!', 'Mom says the cave up north eats people.') };
+      case 'bard':
+        return { lines: say('♪ Oh the Core it glows, and the river flows... ♪', 'Need a song? I take tips. And gossip.') };
+      case 'ranger':
+        return { lines: say('Goblins have taken the old ruins to the north-west.', 'And blue slimes in the southern woods. They hit harder than the green ones.') };
       case 'villager3':
         return { lines: say('The windmill west of here has been creaking all night.', 'Nobody has been inside it for years.') };
       case 'villager2':
