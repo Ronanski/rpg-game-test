@@ -121,7 +121,12 @@ export class WorldScene extends Phaser.Scene {
   private startTalk(npc: Npc) {
     npc.face(this.player.x);
     this.player.sprite.setFlipX(npc.x < this.player.x);
-    bus.emit('dialogue-open', { ...this.dialogue.talk(npc.def.id, npc.def.name), portrait: npc.def.texture });
+    // The speech bubble follows the NPC's head on screen.
+    const anchor = () => {
+      const cam = this.cameras.main;
+      return { x: (npc.x - cam.worldView.x) * cam.zoom, y: (npc.y - npc.sprite.displayHeight - cam.worldView.y) * cam.zoom };
+    };
+    bus.emit('dialogue-open', { ...this.dialogue.talk(npc.def.id, npc.def.name), anchor });
     bus.once('dialogue-closed', () => bus.emit('npc-nearby', this.nearNpc?.def.name ?? null));
   }
 }

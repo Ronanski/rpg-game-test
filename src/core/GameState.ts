@@ -2,7 +2,7 @@ import { bus } from './EventBus';
 
 export interface PlayerStats {
   name: string;
-  starterId: string;
+  gender: 'male' | 'female';
   raceId: string;
   jobId: string;
   texture: string;

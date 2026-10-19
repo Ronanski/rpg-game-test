@@ -16,14 +16,15 @@ Database schema, isometric free-roam village, NPC dialogue, real-time combat, an
 - [x] You can walk around, talk to Martha, and fight slimes
 
 ## M1: Playable prototype 🔄
-- [x] Pick the starting hero: Kael, Lyra or Rook (PR #6)
+- [x] Character creation: race → gender → name (easy names per race); everyone starts as a classless Adventurer
+- [x] Octopath-style speech bubbles over the speaker's head
 - [x] Health potions: POT button / Q key (PR #6)
 - [x] A browser test link for the PR (private claude.ai page, updated with each change)
 - [ ] An automatic preview link on every pull request (needs the owner's GO)
 - [x] This roadmap
 
 **Checkpoint**
-- [ ] Open the test link and choose each of the 3 heroes. Each one looks and plays a little differently.
+- [ ] Open the test link, make a character (race, gender, name), and talk to Martha: the speech bubble appears over her head.
 - [ ] Get hurt by a slime, press POT, and watch the HP go up and the potion count go down.
 
 ## M2: Art overhaul (reference style) 🔄
@@ -65,6 +66,7 @@ Target look: detailed 16-bit isometric pixel art with warm torch light, matching
 - [ ] Survive one night with the towers you built, and see the rewards
 
 ## M6: Jobs, skills and gear ⏳
+Jobs are earned by what you do in the game (start classless), and can be changed anytime.
 - [ ] Each job attacks differently (Mage: firebolt, Rogue: backstab)
 - [ ] Job change menu and sub-classes (Knight, Assassin, …)
 - [ ] Inventory and equipment screen; race bonuses apply

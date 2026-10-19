@@ -24,6 +24,8 @@ export interface JobDef {
 }
 
 export const JOBS: Record<string, JobDef> = {
+  // Everyone starts classless; jobs are earned in play.
+  adventurer: { name: 'Adventurer', mods: {} },
   warrior: { name: 'Warrior', mods: { hp: 1.2, atk: 1.1 } },
   mage: { name: 'Mage', mods: { mp: 1.4, def: 0.9 } },
   rogue: { name: 'Rogue', mods: { spd: 1.25, atk: 1.05 } },

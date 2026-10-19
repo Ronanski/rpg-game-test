@@ -1,15 +1,25 @@
 import Phaser from 'phaser';
 import type { DialogueLine } from '../systems/dialogue/DialogueSystem';
-import { panel, resizePanel, text, applyPortrait, COLORS } from './theme';
+import { panel, resizePanel, text, COLORS } from './theme';
 
-const H = 132;
-const PORTRAIT = 104;
+const MAX_W = 380;
+const PAD = 16;
+const TAIL = 12;
+const FILL = 0x1a2034;
+const RIM = 0x8790b4;
 
-/** Bottom-of-screen dialogue panel with the speaker's portrait and a typewriter effect. Tap / Space / E to advance. */
+/** Where the speaker's head is on screen, so the bubble can point at it (null = off screen). */
+export type Anchor = () => { x: number; y: number } | null;
+
+/**
+ * Speech bubble over the speaker's head (Octopath-style): name plate, typewriter text, and a tail
+ * pointing at whoever is talking. Without an anchor it sits at the bottom of the screen.
+ * Tap / Space / E to advance.
+ */
 export class DialogueBox {
   private frame: Phaser.GameObjects.NineSlice;
-  private portraitFrame: Phaser.GameObjects.NineSlice;
-  private portrait: Phaser.GameObjects.Image;
+  private tail: Phaser.GameObjects.Graphics;
+  private plate: Phaser.GameObjects.NineSlice;
   private nameText: Phaser.GameObjects.Text;
   private bodyText: Phaser.GameObjects.Text;
   private hint: Phaser.GameObjects.Text;
@@ -18,35 +28,31 @@ export class DialogueBox {
   private index = 0;
   private typing?: Phaser.Time.TimerEvent;
   private onDone: () => void = () => {};
+  private anchor: Anchor | null = null;
+  private boxW = MAX_W;
+  private boxH = 80;
 
   constructor(private scene: Phaser.Scene) {
-    this.frame = panel(scene, 0, 0, 400, H, true).setDepth(50);
-    this.portraitFrame = panel(scene, 0, 0, PORTRAIT, PORTRAIT).setDepth(51);
-    this.portrait = scene.add.image(0, 0, 'portrait_hero').setDepth(52);
-    this.nameText = scene.add.text(0, 0, '', text(18, COLORS.gold)).setDepth(51);
-    this.bodyText = scene.add.text(0, 0, '', { ...text(17), lineSpacing: 5 }).setDepth(51);
-    this.hint = scene.add.text(0, 0, '▼', text(14, COLORS.dim)).setOrigin(1, 1).setDepth(51);
+    this.frame = panel(scene, 0, 0, MAX_W, 80).setDepth(50);
+    this.tail = scene.add.graphics().setDepth(50);
+    this.plate = panel(scene, 0, 0, 120, 28, true).setDepth(51);
+    this.nameText = scene.add.text(0, 0, '', text(15, COLORS.gold)).setOrigin(0, 0.5).setDepth(52);
+    this.bodyText = scene.add.text(0, 0, '', { ...text(16), lineSpacing: 4 }).setDepth(51);
+    this.hint = scene.add.text(0, 0, '▼', text(13, COLORS.dim)).setOrigin(1, 1).setDepth(51);
     scene.tweens.add({ targets: this.hint, alpha: 0.3, duration: 500, yoyo: true, repeat: -1 });
     this.zone = scene.add.zone(0, 0, 10, 10).setOrigin(0).setDepth(53).setInteractive();
     this.zone.on('pointerdown', () => this.advance());
     this.hide();
   }
 
-  open(lines: DialogueLine[], onDone: () => void, portrait?: string) {
+  open(lines: DialogueLine[], onDone: () => void, anchor?: Anchor) {
     this.lines = lines;
     this.index = 0;
     this.onDone = onDone;
-    this.setPortrait(portrait);
-    [this.frame, this.portraitFrame, this.portrait, this.nameText, this.bodyText, this.hint].forEach((o) => o.setVisible(true));
-    this.portrait.setVisible(!!portrait);
-    this.portraitFrame.setVisible(!!portrait);
-    this.layout();
+    this.anchor = anchor ?? null;
+    [this.frame, this.tail, this.plate, this.nameText, this.bodyText, this.hint].forEach((o) => o.setVisible(true));
     this.zone.setVisible(true).setInteractive();
     this.show();
-  }
-
-  private setPortrait(key?: string) {
-    if (key) this.portrait.setData('h', applyPortrait(this.portrait, key, PORTRAIT - 16));
   }
 
   get isOpen() {
@@ -70,26 +76,62 @@ export class DialogueBox {
     this.show();
   }
 
+  /** Re-places the bubble; called every frame so it follows the speaker as the camera moves. */
   layout() {
+    if (!this.isOpen) return;
     const { width, height } = this.scene.scale;
-    const w = Math.min(width - 24, 900), x = (width - w) / 2, y = height - H - 12;
-    resizePanel(this.frame, w, H);
+    const w = this.boxW, h = this.boxH;
+    const a = this.anchor?.() ?? null;
+    let x: number, y: number;
+    let tailDown = true;
+    if (a) {
+      x = Phaser.Math.Clamp(a.x - w / 2, 12, width - w - 12);
+      y = a.y - TAIL - h;
+      // No room above the head: put the bubble under it instead.
+      if (y < 40) {
+        y = a.y + 70 + TAIL;
+        tailDown = false;
+      }
+      y = Phaser.Math.Clamp(y, 40, height - h - 12);
+    } else {
+      x = (width - w) / 2;
+      y = height - h - 16;
+    }
     this.frame.setPosition(x, y);
-    const hasPortrait = this.portraitFrame.visible;
-    this.portraitFrame.setPosition(x + 14, y + (H - PORTRAIT) / 2);
-    const ph = (this.portrait.getData('h') as number) ?? 0;
-    this.portrait.setPosition(x + 14 + PORTRAIT / 2, y + (H - PORTRAIT) / 2 + (PORTRAIT - ph) / 2);
-    const tx = x + (hasPortrait ? PORTRAIT + 30 : 22);
-    this.nameText.setPosition(tx, y + 14);
-    this.bodyText.setPosition(tx, y + 42).setWordWrapWidth(x + w - tx - 20);
-    this.hint.setPosition(x + w - 14, y + H - 10);
+    resizePanel(this.frame, w, h);
+
+    // Tail: a small triangle from the bubble edge toward the speaker.
+    const g = this.tail.clear();
+    if (a) {
+      const tx = Phaser.Math.Clamp(a.x, x + 20, x + w - 20);
+      const baseY = tailDown ? y + h - 4 : y + 4;
+      const tipY = tailDown ? baseY + TAIL + 2 : baseY - TAIL - 2;
+      g.fillStyle(FILL).fillTriangle(tx - 9, baseY, tx + 9, baseY, tx, tipY);
+      g.lineStyle(2, RIM).lineBetween(tx - 9, baseY + (tailDown ? 2 : -2), tx, tipY).lineBetween(tx + 9, baseY + (tailDown ? 2 : -2), tx, tipY);
+    }
+
+    // Name plate sits on the top-left corner of the bubble.
+    const pw = Math.max(80, this.nameText.width + 24);
+    resizePanel(this.plate, pw, 28);
+    this.plate.setPosition(x + 10, y - 16);
+    this.nameText.setPosition(x + 22, y - 2);
+    this.bodyText.setPosition(x + PAD, y + PAD + 6);
+    this.hint.setPosition(x + w - 10, y + h - 6);
     this.zone.setPosition(0, 0).setSize(width, height);
   }
 
   private show() {
     const line = this.lines[this.index];
+    const { width } = this.scene.scale;
     this.nameText.setText(line.speaker);
+    // Size the bubble to the whole line first, so it doesn't grow while typing.
+    this.boxW = Math.min(MAX_W, width - 24);
+    this.bodyText.setWordWrapWidth(this.boxW - PAD * 2).setText(line.text);
+    this.boxW = Math.min(this.boxW, Math.max(200, this.bodyText.width + PAD * 2 + 10));
+    this.bodyText.setWordWrapWidth(this.boxW - PAD * 2);
+    this.boxH = this.bodyText.height + PAD * 2 + 10;
     this.bodyText.setText('');
+    this.layout();
     this.typing?.remove();
     let i = 0;
     this.typing = this.scene.time.addEvent({
@@ -101,7 +143,7 @@ export class DialogueBox {
 
   private hide() {
     this.typing?.remove();
-    [this.frame, this.portraitFrame, this.portrait, this.nameText, this.bodyText, this.hint].forEach((o) => o.setVisible(false));
+    [this.frame, this.tail, this.plate, this.nameText, this.bodyText, this.hint].forEach((o) => o.setVisible(false));
     this.zone.setVisible(false).disableInteractive();
   }
 }

@@ -8,7 +8,8 @@ export interface DialogueLine {
 
 export interface Conversation {
   lines: DialogueLine[];
-  portrait?: string; // sprite key of the speaker
+  /** Screen position of the speaker's head, for the speech bubble. */
+  anchor?: () => { x: number; y: number } | null;
   onEnd?: () => void;
 }
 

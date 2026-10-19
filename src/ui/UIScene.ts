@@ -95,6 +95,7 @@ export class UIScene extends Phaser.Scene {
   }
 
   update() {
+    this.dialogue.layout();
     if (!state.inDialogue) {
       state.controls.moveX = this.stick.value.x;
       state.controls.moveY = this.stick.value.y;
@@ -111,7 +112,7 @@ export class UIScene extends Phaser.Scene {
         this.setControlsVisible(true);
         c.onEnd?.();
         bus.emit('dialogue-closed');
-      }, c.portrait),
+      }, c.anchor),
     );
   }
 
