@@ -122,8 +122,9 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 - [x] Better walking and attack animation: the 4 starting heroes use frame-by-frame art (walk, attack, hurt) from the owner's sheet
 - [x] Frame-by-frame monsters from the owner's board: slimes (green, blue, new fire slime), goblin, orc, skeleton, and new zombie, bat and cave spider; they step between idle poses, wind up and strike, flinch when hit, and fall over when defeated (wolf and dragon keep their single picture: the board's versions overlap)
 - [x] Building levels from the owner's board: Ancient Core (crystal shrine), Arrow Tower, Lumber Mill (workshop), Stone Mine (forge) and Farm (windmill) look bigger and grander each level; new buildings show their wooden frame while going up
-- [ ] Frame-by-frame art for the job outfits and NPCs
-- [ ] Weapon and skill effects from the owner's effects board
+- [x] Townsfolk from the owner's NPC board walk and gesture when you talk to them: Lena, Ned, Cole, Mabel, Old Tam and the new farmer Jory (the board changes faces between some poses, so only the rows that stay the same person are used; Martha, Grom, Serena and the other named cast keep their own art)
+- [x] Weapon and skill effects from the owner's effects board: sword and flame slashes, hit stars, the Mage's fireball and fire bursts (also in Flame Nova), Power Strike blast, and a healing ring for potions
+- [ ] Frame-by-frame art for the job outfits
 
 ## M7: Story chapter 1 and new places 🔄
 - [x] Separate places you walk into through doors (the screen fades, quests and saves come along):

@@ -18,6 +18,8 @@ import ui  # noqa: E402
 import import_sheets  # noqa: E402
 import import_monsters  # noqa: E402
 import import_buildings  # noqa: E402
+import import_npcs  # noqa: E402
+import import_effects  # noqa: E402
 from pix import hstack  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -38,6 +40,9 @@ def main():
     monsters = import_monsters.monster_anims()
     imported.update(monsters)
     imported.update(import_buildings.building_levels())
+    imported.update(import_effects.effects())
+    npcs = import_npcs.npc_anims()
+    imported.update(npcs)
     sprites.update(imported)
     manifest = []
     for key, art in sorted(sprites.items()):
@@ -49,6 +54,8 @@ def main():
             entry['imported'] = True
         if isinstance(art, list):
             entry['frameWidth'] = im.width // len(art)
+        if key in npcs:
+            entry['nanim'] = True  # townsperson: 0 idle, 1-3 walk, 4 talking
         if key in monsters:
             entry['manim'] = True  # monster: 0-1 idle, 2-3 attack, 4 hurt, 5-6 dying (gets the game's shadow)
         if key.startswith('anim_'):

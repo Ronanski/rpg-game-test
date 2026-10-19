@@ -43,16 +43,43 @@ export function dust(scene: Phaser.Scene, x: number, y: number, size = 1) {
   scene.tweens.add({ targets: d, y: y - 6, scale: 1.3 * size, alpha: 0, duration: 380, onComplete: () => d.destroy() });
 }
 
-/** A sword arc: two bright crescents sweeping in the swing direction. */
+/**
+ * A sword arc in the swing direction, from the owner's effects art: cool blue for normal swings,
+ * the flame blade for warm-tinted (heavy) ones.
+ */
 export function slash(scene: Phaser.Scene, x: number, y: number, angle: number, size = 1, tint = 0xffffff) {
-  const g = scene.add.graphics().setPosition(x, y).setRotation(angle).setDepth(TOP - 1);
-  const r = 34 * size;
-  // Dark edge first so the arc reads on bright grass, then the bright blade trail on top.
-  g.lineStyle(10 * size, 0x1a1420, 0.35).beginPath().arc(0, 0, r, -1.35, 1.35).strokePath();
-  g.lineStyle(8 * size, tint, 0.55).beginPath().arc(0, 0, r, -1.3, 1.3).strokePath();
-  g.lineStyle(4 * size, 0xffffff, 1).beginPath().arc(0, 0, r, -1.0, 1.0).strokePath();
-  g.setScale(0.7, 0.55);
-  scene.tweens.add({ targets: g, scaleX: 1.2, scaleY: 0.85, alpha: 0, rotation: angle + 0.6, duration: 260, ease: 'Quad.easeOut', onComplete: () => g.destroy() });
+  const warm = (tint >> 16) - (tint & 0xff) > 40;
+  // Drawn normally: the art's soft colours wash out to white with additive blending.
+  const img = scene.add.image(x, y, warm ? 'fx_slash_fire' : 'fx_slash').setDepth(TOP - 1).setRotation(angle).setScale(0.8 * size);
+  // Pointing left, mirror it so the arc still curves the same way on screen.
+  if (Math.cos(angle) < 0) img.setFlipY(true);
+  scene.tweens.add({ targets: img, scale: 1.35 * size, alpha: 0, rotation: angle + (Math.cos(angle) < 0 ? -0.5 : 0.5), duration: 260, ease: 'Quad.easeOut', onComplete: () => img.destroy() });
+}
+
+/** An effect picture that pops up and fades (hit stars, fire bursts, healing rings). */
+function pop(scene: Phaser.Scene, key: string, x: number, y: number, from: number, to: number, ms: number, rise = 0, spin = 0) {
+  const img = scene.add.image(x, y, key).setDepth(TOP).setScale(from).setRotation(spin ? Math.random() * spin : 0);
+  scene.tweens.add({ targets: img, scale: to, alpha: 0, y: y - rise, duration: ms, ease: 'Cubic.easeOut', onComplete: () => img.destroy() });
+}
+
+/** The impact star where a hit lands. */
+export function impact(scene: Phaser.Scene, x: number, y: number, size = 1) {
+  pop(scene, 'fx_hit', x, y, 0.35 * size, 0.95 * size, 200, 0, Math.PI);
+}
+
+/** A fire explosion (firebolt hits, Flame Nova). */
+export function burst(scene: Phaser.Scene, x: number, y: number, size = 1) {
+  pop(scene, 'fx_burst', x, y, 0.5 * size, 1.4 * size, 420, 10);
+}
+
+/** A heavy blast (Power Strike, Hammer Slam). */
+export function blast(scene: Phaser.Scene, x: number, y: number, size = 1) {
+  pop(scene, 'fx_explode', x, y, 0.5 * size, 1.6 * size, 380, 0, Math.PI);
+}
+
+/** A green healing ring that rises around someone (potions, resting). */
+export function heal(scene: Phaser.Scene, x: number, y: number) {
+  pop(scene, 'fx_heal', x, y - 20, 0.8, 1.5, 700, 24);
 }
 
 /** An expanding ground ring (shockwaves, whirlwinds, novas). */

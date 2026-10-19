@@ -53,8 +53,9 @@ def _split(rgb: np.ndarray, al: np.ndarray, ref_w: float):
     return out
 
 
-def _cell(a: np.ndarray, x0, x1, y0, y1):
-    """Sprites in one grid cell, left to right: list of (rgb, alpha) crops."""
+def _cell(a: np.ndarray, x0, x1, y0, y1, grounded: bool = False):
+    """Sprites in one grid cell, left to right: list of (rgb, alpha) crops.
+    `grounded` drops bits floating in the top half (speech bubbles over NPCs)."""
     pad = 3
     rgb = a[y0 + pad:y1 - pad, x0 + pad:x1 - pad]
     border = np.concatenate([rgb[0], rgb[-1], rgb[:, 0], rgb[:, -1]])
@@ -71,11 +72,15 @@ def _cell(a: np.ndarray, x0, x1, y0, y1):
         return []
     sizes = ndi.sum(solid, lab, index=np.arange(1, n + 1))
     objs = ndi.find_objects(lab)
+    if grounded:
+        for i, o in enumerate(objs):
+            if o[0].stop < rgb.shape[0] * 0.55:
+                sizes[i] = 0
     big = [i for i in range(n) if sizes[i] >= max(60, sizes.max() * 0.25)]
     # Small bits (effects, sparks) join the nearest big sprite.
     groups = {i: [i] for i in big}
     for i in range(n):
-        if i in groups or sizes[i] < 6:
+        if i in groups or sizes[i] < 6 or not big:
             continue
         cx = (objs[i][1].start + objs[i][1].stop) / 2
         j = min(big, key=lambda b: abs((objs[b][1].start + objs[b][1].stop) / 2 - cx))
@@ -83,6 +88,9 @@ def _cell(a: np.ndarray, x0, x1, y0, y1):
     out = []
     for i in sorted(big, key=lambda b: objs[b][1].start):
         m = np.isin(lab, [k + 1 for k in groups[i]]) & solid
+        # Pale parts fully inside a sprite (aprons, highlights) close to the board colour stay solid.
+        if grounded:
+            m = ndi.binary_fill_holes(m)
         ys, xs = np.nonzero(m)
         crop = (slice(ys.min(), ys.max() + 1), slice(xs.min(), xs.max() + 1))
         out.append((rgb[crop], m[crop].astype(np.float32)))

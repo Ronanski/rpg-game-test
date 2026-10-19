@@ -3,7 +3,7 @@ import { Actor } from './Actor';
 import { FONT } from '../ui/theme';
 import type { NpcDef } from '../world/worldData';
 import type { IsoMap } from '../iso/IsoMap';
-import { frameCount } from '../assets/sprites';
+import { frameCount, isNpcAnim } from '../assets/sprites';
 
 const NAME_RANGE = 170; // villagers' names only show when you're close
 const WANDER = 40; // px villagers stroll from their spot
@@ -85,12 +85,17 @@ export class Npc extends Actor {
         } else this.target = null;
       }
     }
+    const drawn = isNpcAnim(this.sprite.texture.key);
     if (this.walking) {
       this.bob += dtMs / 90;
-      if (frameCount(this.sprite.texture.key) >= 3) this.sprite.setFrame([0, 1, 0, 2][Math.floor(this.bob / 2) % 4]);
+      // Drawn townsfolk step through their 3 walk frames; others alternate two step poses.
+      if (drawn) this.sprite.setFrame(1 + (Math.floor(this.bob / 1.6) % 3));
+      else if (frameCount(this.sprite.texture.key) >= 3) this.sprite.setFrame([0, 1, 0, 2][Math.floor(this.bob / 2) % 4]);
     } else {
       this.bob = 0;
-      if (Number(this.sprite.frame.name) !== 0) this.sprite.setFrame(0);
+      // Drawn townsfolk gesture while you stand and talk with them.
+      const f = drawn && this.near ? 4 : 0;
+      if (Number(this.sprite.frame.name) !== f) this.sprite.setFrame(f);
     }
     this.place();
   }
