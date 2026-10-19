@@ -145,10 +145,15 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 |---|---|---|---|
 | R1 | Archer kit ✅ | Multi Shot, Piercing (Lv3), Rain of Arrows (Lv5), Fire Arrows (Lv7) | no |
 | R2 | Balance and bug pass ✅ | long automated runs (10 nights), difficulty, prices, EXP, gold | no |
-| R3 | Tutorial | short guide on the first play: walk, AUTO, quests, build, night | no |
+| R3 | Tutorial ✅ | short guide on the first play: walk, AUTO, quests, build, night | no |
 | R4 | Chapter 2: Sylvan | new region, monsters, boss, story after the Core's secret | no |
 | R5 | Beta | Beta APK for other testers | GO BETA |
 | R6 | Stable | official release | GO STABLE |
+
+## R3: Tutorial ✅
+- [x] On a new game, one short tip at a time at the bottom centre (TIP 1/6 ... 6/6): walk, talk to Martha, defeat a slime (AUTO), finish her quest, build a tower, survive the first night
+- [x] Each tip finishes by doing it in the game (no extra buttons); the tower tip gives a little wood if you can't afford one yet
+- [x] Hidden in menus, talks and build mode; ends with "Tutorial complete" and never shows again (older saves past day 1 skip it)
 
 ## R2: Balance pass ✅
 Measured with a fast automated run (the archer on AUTO by the Core, 60 + 30 gold a day from the fields):
