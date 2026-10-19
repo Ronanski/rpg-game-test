@@ -9,6 +9,9 @@ Rules from the owner for working on this repository. They apply to every session
   Every merge to `main` updates the web version, and the phone app picks it up as an in-app update.
 - **Stable release: always ask first.** Only the owner's "GO STABLE" starts a Stable release.
 - **Beta release:** only on the owner's "GO BETA" (that covers Beta, not Stable).
+- **Development APKs** (GitHub pre-releases, made automatically when `package.json`'s version is
+  bumped) are for testing on the owner's phone. Only bump the version when the phone app itself
+  must change (for example the updater); everything else reaches the phone as an in-app update.
 - Never change another repository without the owner's say-so.
 
 ## How the owner works
