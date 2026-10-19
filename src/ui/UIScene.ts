@@ -131,7 +131,7 @@ export class UIScene extends Phaser.Scene {
     nbBg.setInteractive({ useHandCursor: true }).on('pointerdown', () => bus.emit('start-night'));
     this.nightBtn = this.add.container(0, 0, [nbBg, nbTx]);
     this.cycleBox = this.add.container(0, 10, [this.cyclePanel, this.cycleText, this.cycleBar, this.nightBtn]);
-    this.listen('cycle-tick', (c: { raiders: number; coreHp: number; coreMax: number }) => this.drawCycle(c));
+    this.listen('cycle-tick', (c: { raiders: number; coreHp: number; coreMax: number; indoor?: string }) => this.drawCycle(c));
 
     // Touch controls (bottom). They also show on desktop, where keys work too.
     this.stick = new VirtualJoystick(this);
@@ -366,9 +366,15 @@ export class UIScene extends Phaser.Scene {
     this.jobText.setText(`JOB  ${JOBS[s.jobId].name.toUpperCase()}  ▸`);
   }
 
-  private drawCycle(c: { raiders: number; coreHp: number; coreMax: number }) {
+  private drawCycle(c: { raiders: number; coreHp: number; coreMax: number; indoor?: string }) {
     const cy = state.cycle;
     const g = this.cycleBar.clear();
+    if (c.indoor) {
+      // Inside a cave or a building the day doesn't move on (and no night can be called).
+      this.cycleText.setText(`${c.indoor} · DAY ${cy.day}`).setColor(COLORS.dim).setY(20);
+      this.nightBtn.setVisible(false);
+      return;
+    }
     if (cy.phase === 'day') {
       const s = Math.max(0, Math.ceil(cy.left / 1000));
       this.cycleText.setText(`☀ DAY ${cy.day}   night in ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`).setColor(COLORS.text).setY(20);

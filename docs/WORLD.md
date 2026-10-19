@@ -73,3 +73,17 @@ show their name only when you walk close.
 The player isn't one of the named cast. At the start they pick a race (Human, Elf; more races once
 they have art), a gender, and a name from a short list of easy names per race. Everyone starts as a
 classless Adventurer and earns jobs in play (see ROADMAP.md, M6).
+
+## Chapter 1: Echoes of the Core
+
+Oakhaven believes the Ancient Core protects it. The Hooded Stranger knows better.
+
+1. **Slimes at the Gate** (Martha): slimes crawl out of the ground near the fields.
+2. **The Hooded Stranger** (Martha): a stranger camps east of the river, asking about the Core. He points to the goblins.
+3. **Crystal Thieves** (Wren): goblins dig up Core crystals at the ruins and carry them into the Old Cave.
+4. **The Old Cave** (Martha): at the bottom waits **Gravemaw**, a King Slime grown huge on the Core's light. Inside it: an old locket. Martha wants it back, and wants it kept quiet.
+5. **A Locket in the Dark** (the Stranger): the locket belonged to **Rowan**, Hana's brother, who went to the mountain and never came back.
+
+The twist: every slime was someone, once. The Core does not protect Oakhaven; it feeds on it, and Martha has always known.
+
+New places and people: the **Old Cave** (north road), **The Sleeping Fox** tavern with **Mabel** (innkeeper) and **Old Tam** (a regular).

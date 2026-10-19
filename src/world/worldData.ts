@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import type { MonsterDef } from '../entities/Monster';
 
 export const MAP_W = 64;
 export const MAP_H = 64;
@@ -11,6 +12,8 @@ export enum Tile {
   Stone,
   Water,
   Bridge,
+  /** Solid darkness (cave rock, the space outside a room): not drawn, can't be walked on. */
+  Void,
 }
 
 export const TILE_TEXTURE: Record<Tile, string> = {
@@ -21,6 +24,7 @@ export const TILE_TEXTURE: Record<Tile, string> = {
   [Tile.Stone]: 'tile_stone',
   [Tile.Water]: 'tile_water',
   [Tile.Bridge]: 'tile_bridge',
+  [Tile.Void]: '',
 };
 
 export interface Prop {
@@ -48,7 +52,7 @@ export interface NpcDef {
 }
 
 export interface SpawnZone {
-  monster: 'slime' | 'slime_blue' | 'wolf' | 'goblin';
+  monster: MonsterDef['id'];
   x0: number;
   y0: number;
   x1: number;
@@ -56,7 +60,27 @@ export interface SpawnZone {
   count: number;
 }
 
+/** Separate maps: the open world, and places you walk into (cave, tavern). */
+export type AreaId = 'overworld' | 'cave' | 'tavern';
+
+/** Step on it to go to another area; you arrive at `at` (grid) there. */
+export interface Door {
+  x: number;
+  y: number; // grid (can be fractional)
+  to: AreaId;
+  at: { x: number; y: number };
+  label: string;
+}
+
 export interface WorldData {
+  id: AreaId;
+  w: number;
+  h: number;
+  doors: Door[];
+  /** Fixed light for indoor areas (the overworld follows the day/night cycle). */
+  ambient?: { color: number; alpha: number };
+  /** Screen background behind the map (dark for caves and rooms). */
+  bg?: number;
   tiles: Tile[][];
   props: Prop[];
   blocked: boolean[][];
@@ -64,6 +88,12 @@ export interface WorldData {
   npcs: NpcDef[];
   spawns: SpawnZone[];
 }
+
+/** Where you arrive inside the cave and the tavern (grid), and where you come back out. */
+export const CAVE_ENTRY = { x: 7, y: 35 };
+export const TAVERN_ENTRY = { x: 5, y: 8 };
+export const OUTSIDE_CAVE = { x: 24.6, y: 4.4 };
+export const OUTSIDE_TAVERN = { x: 19.4, y: 22.6 };
 
 const VILLAGE = { x0: 18, y0: 18, x1: 29, y1: 29 };
 /** Town grounds south-east of the village, across the bridge: the Ancient Core and the land around it. */
@@ -73,9 +103,15 @@ export function inTown(x: number, y: number) {
   return Math.hypot(x - (TOWN.coreX + 0.5), y - (TOWN.coreY + 0.5)) <= TOWN.radius;
 }
 
+let activeArea: AreaId = 'overworld';
+/** The area being played (safe zones only exist in the overworld). */
+export function setActiveArea(id: AreaId) {
+  activeArea = id;
+}
+
 /** The village and the town grounds: wild monsters never come in, and stop chasing you there. */
 export function isSafeTile(x: number, y: number) {
-  return inVillage(x, y) || inTown(x, y);
+  return activeArea === 'overworld' && (inVillage(x, y) || inTown(x, y));
 }
 const RIVER_X = 37;
 
@@ -251,6 +287,13 @@ export function buildWorld(): WorldData {
   for (const p of props) if (!kept.includes(p)) blocked[p.y][p.x] = false;
 
   return {
+    id: 'overworld',
+    w: MAP_W,
+    h: MAP_H,
+    doors: [
+      { x: 24.2, y: 3.2, to: 'cave', at: CAVE_ENTRY, label: 'Old Cave' },
+      { x: 19.8, y: 21.1, to: 'tavern', at: TAVERN_ENTRY, label: 'Tavern' },
+    ],
     tiles,
     props: kept,
     blocked,

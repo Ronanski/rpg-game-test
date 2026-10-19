@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { gridToScreen, screenToTile, TILE_H } from './iso';
-import { MAP_H, MAP_W, Tile, TILE_TEXTURE, type WorldData } from '../world/worldData';
+import { Tile, TILE_TEXTURE, type WorldData } from '../world/worldData';
 import { frameCount, spriteScale } from '../assets/sprites';
 import { LIGHT_DEPTH } from '../systems/LightingSystem';
 
@@ -26,11 +26,12 @@ export class IsoMap {
   constructor(private scene: Phaser.Scene, private world: WorldData) {}
 
   render() {
-    for (let y = 0; y < MAP_H; y++) {
-      for (let x = 0; x < MAP_W; x++) {
+    for (let y = 0; y < this.world.h; y++) {
+      for (let x = 0; x < this.world.w; x++) {
         const p = gridToScreen(x, y);
         const tile = this.world.tiles[y][x];
         const key = TILE_TEXTURE[tile];
+        if (!key) continue;
         // Pick a stable variant per cell so the ground doesn't repeat visibly.
         const frame = ((x * 73856093) ^ (y * 19349663)) >>> 0;
         const img = this.scene.add.image(p.x, p.y, key, frame % frameCount(key)).setDepth(-100000).setScale(spriteScale(key));
@@ -70,7 +71,7 @@ export class IsoMap {
   /** True if a screen-space point can be walked on. */
   walkable(x: number, y: number): boolean {
     const t = screenToTile(x, y);
-    if (t.x < 0 || t.y < 0 || t.x >= MAP_W || t.y >= MAP_H) return false;
+    if (t.x < 0 || t.y < 0 || t.x >= this.world.w || t.y >= this.world.h) return false;
     return !this.world.blocked[t.y][t.x];
   }
 
@@ -89,8 +90,9 @@ export class IsoMap {
 
   /** World bounds in screen space, for the camera. */
   bounds(): Phaser.Geom.Rectangle {
-    const left = gridToScreen(0, MAP_H).x, right = gridToScreen(MAP_W, 0).x;
-    const bottom = gridToScreen(MAP_W, MAP_H).y;
+    const { w, h } = this.world;
+    const left = gridToScreen(0, h).x, right = gridToScreen(w, 0).x;
+    const bottom = gridToScreen(w, h).y;
     return new Phaser.Geom.Rectangle(left, -TILE_H * 4, right - left, bottom + TILE_H * 5);
   }
 }
