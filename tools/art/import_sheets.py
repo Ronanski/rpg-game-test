@@ -42,6 +42,15 @@ SPRITES = {
     'windmill': ('sheet_d.webp', (254, 832, 374, 988), 150),
     'watchtower': ('sheet_d.webp', (376, 832, 456, 986), 140),
     'market': ('sheet_d.webp', (456, 832, 594, 986), 96),
+    'blacksmith': ('sheet_e.webp', (582, 256, 782, 450), 120),
+    'well': ('sheet_e.webp', (785, 268, 892, 450), 70),
+    'stall_red': ('sheet_e.webp', (1070, 278, 1180, 418), 66),
+    'stall_yellow': ('sheet_e.webp', (1188, 250, 1273, 362), 64),
+    'stall_blue': ('sheet_e.webp', (1274, 258, 1353, 354), 60),
+    'stall_green': ('sheet_e.webp', (1236, 356, 1322, 452), 64),
+    'cart': ('sheet_e.webp', (1356, 262, 1468, 348), 46),
+    'hay_cart': ('sheet_e.webp', (1386, 362, 1474, 452), 44),
+    'lamp': ('sheet_e.webp', (1474, 260, 1530, 384), 56),
     'fountain': ('sheet_b.jpg', (1157, 712, 1609, 1147), 62),
     'chest': ('sheet_b.jpg', (1650, 806, 1945, 1093), 30),
     'crystal': ('sheet_c.png', (384, 566, 556, 723), 32),
@@ -87,7 +96,7 @@ def sheet(name: str) -> np.ndarray:
 
 
 # Sheets drawn on a grey/white checkerboard ("fake transparency") instead of plain white.
-CHECKER = {'sheet_d.webp'}
+CHECKER = {'sheet_d.webp', 'sheet_e.webp'}
 
 
 def cut(name: str, box, pad: int | None = None) -> tuple[np.ndarray, np.ndarray]:

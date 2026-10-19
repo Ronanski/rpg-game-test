@@ -110,9 +110,9 @@ export function buildWorld(): WorldData {
 
   // Buildings around the plaza (2x2 footprint).
   const buildings: [number, number, string, boolean][] = [
-    [19, 19, 'tavern', false], [26, 19, 'house_thatch', false], [19, 26, 'house_red', false], [27, 27, 'house_thatch', true],
+    [19, 19, 'tavern', false], [26, 19, 'house_thatch', false], [19, 26, 'blacksmith', false], [27, 27, 'house_thatch', true],
     // Outside the plaza.
-    [31, 26, 'market', false], [14, 16, 'chapel', false], [9, 20, 'windmill', false], [33, 19, 'watchtower', false], [15, 31, 'house_small', true],
+    [31, 26, 'market', false], [14, 16, 'chapel', false], [9, 20, 'windmill', false], [33, 19, 'watchtower', false], [15, 31, 'house_small', true], [10, 34, 'house_red', false],
   ];
   for (const [hx, hy, texture, flip] of buildings) {
     props.push({ kind: 'building', texture, x: hx, y: hy, flip });
@@ -132,6 +132,13 @@ export function buildWorld(): WorldData {
   deco('crate', 29, 25);
   deco('barrel', 18, 24);
   deco('crate', 21, 19);
+  deco('stall_blue', 26, 28);
+  deco('stall_green', 31, 29);
+  deco('cart', 30, 25);
+  deco('hay_cart', 11, 22);
+  deco('well', 13, 31);
+  // Street lamps along the roads.
+  for (const [lx, ly] of [[24, 14], [25, 33], [33, 22]]) deco('lamp', lx, ly, true, { light: true });
   for (const [tx, ty] of [[18, 18], [29, 18], [18, 29], [29, 29], [22, 18], [18, 22]]) deco('torch', tx, ty, true, { light: true });
   // Signposts where the roads leave the village.
   deco('signpost', 31, 22);
