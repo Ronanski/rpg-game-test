@@ -8,10 +8,15 @@
     <style>
       html, body { margin: 0; height: 100%; background: #0d0b14; overflow: hidden; touch-action: none; }
       #game { width: 100vw; height: 100dvh; }
+      /* Landscape only: in a portrait browser, ask the player to rotate. */
+      #rotate { display: none; position: fixed; inset: 0; z-index: 10; background: #0d0b14; color: #f4e9c8;
+                font: 18px monospace; align-items: center; justify-content: center; text-align: center; padding: 24px; }
+      @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
     </style>
   </head>
   <body>
     <div id="game"></div>
+    <div id="rotate">Please rotate your device to landscape.</div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
