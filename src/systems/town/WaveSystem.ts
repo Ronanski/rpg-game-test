@@ -17,6 +17,8 @@ import { give } from './Economy';
 const DAY_MS = 150_000;
 const DUSK_MS = 25_000; // last part of the day, getting darker (warning)
 const CORE_REACH = 46;
+/** Share of gold, wood and stone the raiders take when the Core falls. */
+const LOOT = 0.15;
 /** A night never lasts longer than this: the raiders still out there flee at dawn. */
 const NIGHT_MAX_MS = 150_000; // px from the Core's centre where raiders can hit it
 // Grid tiles at the wild edges around the town grounds (east of the river, which raiders can't cross).
@@ -27,10 +29,18 @@ type Id = MonsterDef['id'];
 /** Which monsters come on a given night (stronger mixes on later nights). */
 function waveFor(day: number): { ids: Id[]; boost: number } {
   const pool: Id[] = day < 2 ? ['slime', 'slime_red'] : day < 3 ? ['slime_red', 'wolf', 'goblin', 'bat'] : day < 5 ? ['wolf', 'goblin', 'skeleton', 'zombie'] : ['goblin', 'skeleton', 'orc', 'zombie', 'spider'];
-  const count = 3 + day * 2;
+  // Night 1 is a gentle start; from about night 5 the hero alone can't hold every side.
+  const count = 3 + day * 3;
   const ids = Array.from({ length: count }, (_, i) => pool[i % pool.length]);
   if (day >= 4) ids.push('orc');
-  return { ids, boost: 1 + Math.max(0, day - 3) * 0.12 };
+  if (day >= 7) ids.push('orc', 'skeleton');
+  return { ids, boost: 1 + Math.max(0, day - 2) * 0.15 };
+}
+
+/** Raiders come in groups of a few at once, from different sides. */
+function spawnTime(i: number, day: number) {
+  const group = Math.floor(i / 3);
+  return 800 + group * Math.max(1600, 3200 - day * 150) + (i % 3) * 120;
 }
 
 /** Each night a different boss leads the raid; after the Dragon the list repeats, stronger. */
@@ -101,10 +111,10 @@ export class WaveSystem {
     c.left = 0;
     const { ids, boost } = waveFor(c.day);
     const t = this.scene.time.now;
-    this.toSpawn = ids.map((id, i) => ({ id, at: t + 800 + i * 900, boost }));
+    this.toSpawn = ids.map((id, i) => ({ id, at: t + spawnTime(i, c.day), boost }));
     // The boss walks in behind its pack.
     const boss = bossFor(c.day);
-    this.toSpawn.push({ id: boss.id, at: t + 800 + ids.length * 900 + 1500, boost, boss });
+    this.toSpawn.push({ id: boss.id, at: t + spawnTime(ids.length, c.day) + 1500, boost, boss });
     bus.emit('toast', `Night ${c.day}: the ${boss.title} leads the monsters to the Ancient Core!`);
     this.scene.cameras.main.flash(500, 40, 20, 80);
   }
@@ -131,7 +141,9 @@ export class WaveSystem {
       give('stone', stone);
       bus.emit('toast', `Night ${c.day} survived! +${gold} gold, +${wood} wood, +${stone} stone`);
     }
-    c.day++;
+    // A lost night is played again the next evening (not a harder one), so a fall can be won back.
+    if (won) c.day++;
+    else bus.emit('toast', `The Core fell. Night ${c.day} will come again: build up and try once more.`);
     c.phase = 'day';
     c.left = DAY_MS;
     this.town.repairAll();
@@ -197,9 +209,9 @@ export class WaveSystem {
 
   private coreFallen() {
     if (state.cycle.phase !== 'night') return;
-    // The raiders loot a quarter of the town's stores and slip away into the dark.
+    // The raiders loot some of the town's stores and slip away into the dark.
     const t = state.town, ps = state.player!;
-    const lost = { gold: Math.floor(ps.gold * 0.25), wood: Math.floor(t.wood * 0.25), stone: Math.floor(t.stone * 0.25) };
+    const lost = { gold: Math.floor(ps.gold * LOOT), wood: Math.floor(t.wood * LOOT), stone: Math.floor(t.stone * LOOT) };
     give('gold', -lost.gold);
     give('wood', -lost.wood);
     give('stone', -lost.stone);
