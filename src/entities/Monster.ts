@@ -28,10 +28,11 @@ export class Monster extends Actor {
   private nextThink = 0;
   private knockback = new Phaser.Math.Vector2();
   lastHitAt = 0;
+  private animTime = 0;
   dead = false;
 
   constructor(scene: Phaser.Scene, x: number, y: number, readonly def: MonsterDef, readonly home: { x: number; y: number }) {
-    super(scene, x, y, def.id);
+    super(scene, x, y, `${def.id}_0`);
     this.hp = def.hp;
     this.hpBar = scene.add.graphics().setDepth(100000);
     this.drawHp();
@@ -75,7 +76,10 @@ export class Monster extends Actor {
     if (map.walkable(this.x + mx, this.y)) this.x += mx;
     if (map.walkable(this.x, this.y + my)) this.y += my;
     if (Math.abs(mx) > 0.01) this.sprite.setFlipX(this.def.id === 'wolf' ? mx < 0 : false);
-    if (len > 1) this.bob += dtMs / (this.def.id === 'slime' ? 120 : 60);
+    if (len > 1) {
+      this.animTime += dtMs;
+      this.setTexture(`${this.def.id}_${Math.floor(this.animTime / (this.def.id === 'slime' ? 260 : 150)) % 2}`);
+    }
     this.sync();
     this.drawHp();
   }

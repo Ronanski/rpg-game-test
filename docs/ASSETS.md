@@ -1,5 +1,10 @@
 # Art Asset List (AI-generated)
 
+> **Status:** the game no longer depends on this list. All world art is now produced by the
+> procedural pixel-art pipeline in `tools/art/` (see `docs/ART_PIPELINE.md`), run by Claude.
+> This list is kept only as an optional route for hand-made or AI-made art (for example
+> detailed character portraits), if you ever want to supply some.
+
 Style target: the reference images. That means rich 16-bit/32-bit pixel art, an isometric 3/4 view, warm torch lighting, detailed textures, and a medieval fantasy setting.
 
 ## How to deliver

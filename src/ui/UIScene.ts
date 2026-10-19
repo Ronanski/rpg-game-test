@@ -33,7 +33,7 @@ export class UIScene extends Phaser.Scene {
     this.input.addPointer(2);
 
     this.status = this.add.graphics();
-    this.portrait = this.add.image(0, 0, 'hero').setScale(3.2);
+    this.portrait = this.add.image(0, 0, 'hero_front_0').setScale(3);
     this.statusText = this.add.text(0, 0, '', { ...FONT, fontSize: '14px', lineSpacing: 6 });
     this.questText = this.add.text(0, 0, '', { ...FONT, fontSize: '13px', backgroundColor: '#15122acc', padding: { x: 10, y: 8 }, lineSpacing: 4 }).setOrigin(1, 0);
 
