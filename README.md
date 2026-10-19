@@ -1,12 +1,13 @@
 # Echoes of the Core
 
 Isometric pixel-art action RPG with base building, tower defense, free job switching, and a dark mystery.
-Runs on PC (web) and Android, with iOS planned.
+Web-first: developed and played in the browser (PC and phone). The Android APK will be built
+once the game is feature-complete (the Capacitor project in `android/` is kept ready).
 
 - **Play on the web:** https://ronanski.github.io/rpg-game-test/
-- **Android APK:** see [Releases](https://github.com/Ronanski/rpg-game-test/releases)
+- **Android APK (paused):** older test builds are on [Releases](https://github.com/Ronanski/rpg-game-test/releases)
 - **Architecture and database:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- **Art asset list:** [docs/ASSETS.md](docs/ASSETS.md)
+- **Art pipeline:** [docs/ART_PIPELINE.md](docs/ART_PIPELINE.md)
 
 ## Dev
 
@@ -28,4 +29,4 @@ Copy `.env.example` to `.env.local` and fill in your Supabase keys to save progr
 - [ ] Starter hero selection (race, faction, origin)
 - [ ] Base building mode (day) and wave defense (night)
 - [ ] Job change menu and sub-classes, inventory and equipment UI
-- [ ] Real pixel art and Tiled maps
+- [~] Pixel art: procedural pipeline (`tools/art/`) for ground, river, bridge, trees, rocks, houses and characters. Not yet at reference quality (see docs/ART_PIPELINE.md)

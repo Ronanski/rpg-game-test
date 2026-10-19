@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { createTextures } from '../assets/textures';
+import { preloadArt } from '../assets/art';
 import { ensureSession } from '../services/supabase';
 import { api } from '../services/api';
 import { state } from '../core/GameState';
@@ -9,6 +10,10 @@ import { computeStats, expToNext } from '../systems/combat/ClassSystem';
 export class BootScene extends Phaser.Scene {
   constructor() {
     super('Boot');
+  }
+
+  preload() {
+    preloadArt(this);
   }
 
   async create() {
