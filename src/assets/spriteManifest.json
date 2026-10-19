@@ -556,10 +556,24 @@
   "scale": 2
  },
  {
+  "key": "icon_codex",
+  "w": 42,
+  "h": 48,
+  "scale": 1,
+  "imported": true
+ },
+ {
   "key": "icon_coin",
   "w": 10,
   "h": 10,
   "scale": 2
+ },
+ {
+  "key": "icon_crafting",
+  "w": 41,
+  "h": 48,
+  "scale": 1,
+  "imported": true
  },
  {
   "key": "icon_dodge",
@@ -568,10 +582,52 @@
   "scale": 2
  },
  {
+  "key": "icon_equipment",
+  "w": 41,
+  "h": 48,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "icon_items",
+  "w": 41,
+  "h": 48,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "icon_map",
+  "w": 41,
+  "h": 48,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "icon_party",
+  "w": 41,
+  "h": 48,
+  "scale": 1,
+  "imported": true
+ },
+ {
   "key": "icon_potion",
   "w": 11,
   "h": 12,
   "scale": 2
+ },
+ {
+  "key": "icon_quests",
+  "w": 42,
+  "h": 48,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "icon_save",
+  "w": 41,
+  "h": 48,
+  "scale": 1,
+  "imported": true
  },
  {
   "key": "icon_scroll",
@@ -580,16 +636,44 @@
   "scale": 2
  },
  {
+  "key": "icon_settings",
+  "w": 42,
+  "h": 48,
+  "scale": 1,
+  "imported": true
+ },
+ {
   "key": "icon_skill",
   "w": 13,
   "h": 11,
   "scale": 2
  },
  {
+  "key": "icon_skills",
+  "w": 42,
+  "h": 48,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "icon_status",
+  "w": 42,
+  "h": 48,
+  "scale": 1,
+  "imported": true
+ },
+ {
   "key": "icon_sword",
   "w": 13,
   "h": 13,
   "scale": 2
+ },
+ {
+  "key": "icon_system",
+  "w": 41,
+  "h": 48,
+  "scale": 1,
+  "imported": true
  },
  {
   "key": "icon_talk",
@@ -992,6 +1076,55 @@
   "manim": true
  },
  {
+  "key": "pin_grey",
+  "w": 18,
+  "h": 26,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "pin_location",
+  "w": 18,
+  "h": 26,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "pin_purple",
+  "w": 18,
+  "h": 26,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "pin_quest",
+  "w": 18,
+  "h": 26,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "pin_side",
+  "w": 18,
+  "h": 26,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "pin_star",
+  "w": 21,
+  "h": 26,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "pin_turnin",
+  "w": 18,
+  "h": 26,
+  "scale": 1,
+  "imported": true
+ },
+ {
   "key": "pine",
   "w": 156,
   "h": 120,
@@ -1238,6 +1371,27 @@
   "frameWidth": 98
  },
  {
+  "key": "ui_btn_expand",
+  "w": 42,
+  "h": 40,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "ui_btn_minus",
+  "w": 41,
+  "h": 40,
+  "scale": 1,
+  "imported": true
+ },
+ {
+  "key": "ui_btn_plus",
+  "w": 43,
+  "h": 40,
+  "scale": 1,
+  "imported": true
+ },
+ {
   "key": "ui_button",
   "w": 16,
   "h": 16,
@@ -1248,6 +1402,13 @@
   "w": 16,
   "h": 16,
   "scale": 2
+ },
+ {
+  "key": "ui_minimap_ring",
+  "w": 132,
+  "h": 132,
+  "scale": 1,
+  "imported": true
  },
  {
   "key": "ui_panel",
