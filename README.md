@@ -17,12 +17,14 @@ npm run build
 
 Copy `.env.example` to `.env.local` and fill in your Supabase keys to save progress. Without them, the game runs in offline mode.
 
-## Status (v0.0.1, foundation)
+## Status (v0.1.0)
 
-- [x] Supabase schema, RLS, and server-side game functions (tested)
-- [x] Isometric town grid: pan, pinch-zoom, tap to build
-- [x] GitHub Pages and APK release pipelines
+- [x] Supabase schema: players, heroes, jobs and sub-classes, town buildings, factions and diplomacy, quests, items and inventory. Includes RLS and server-side game functions (tested)
+- [x] Free-roam isometric world: village, roads, river, forest
+- [x] NPC dialogue with quests (Elder Maren, Toma the Smith, Hooded Stranger)
+- [x] Real-time combat: slimes and wolves, EXP, level up, gold, loot, respawn
+- [x] Touch controls (virtual stick, ATK, TALK) and keyboard; landscape-only Android APK
+- [ ] Starter hero selection (race, faction, origin)
+- [ ] Base building mode (day) and wave defense (night)
+- [ ] Job change menu and sub-classes, inventory and equipment UI
 - [ ] Real pixel art and Tiled maps
-- [ ] Starter hero selection, field exploration and combat
-- [ ] Wave defense mode
-- [ ] Job and quest UI
