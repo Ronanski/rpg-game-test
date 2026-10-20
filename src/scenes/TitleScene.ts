@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { panel, text, title, COLORS } from '../ui/theme';
 import { applySave, loadSave, type SaveData } from '../core/SaveGame';
-import { applyUpdate, BUILD_ID, checkForUpdate, isPhoneApp, onUpdateReady, readyUpdate, updateStatus } from '../core/Updater';
+import { applyUpdate, APP_VERSION, BUILD_ID, IS_BETA, checkForUpdate, isPhoneApp, onUpdateReady, readyUpdate, updateStatus } from '../core/Updater';
 import { fitCamera, view } from '../core/Screen';
 
 /**
@@ -67,7 +67,7 @@ export class TitleScene extends Phaser.Scene {
     if (readyUpdate) {
       button('UPDATE READY', 'Tap to restart with the new version', false, '#8fd18a', () => applyUpdate());
     }
-    add(this.add.text(width / 2, height - 14, `Progress is saved on this device. · build ${BUILD_ID.slice(0, 7)}`, text(11, COLORS.dim)).setOrigin(0.5, 1));
+    add(this.add.text(width / 2, height - 14, `Progress is saved on this device. · ${IS_BETA ? 'BETA ' : 'v'}${APP_VERSION} · build ${BUILD_ID.slice(0, 7)}`, text(11, COLORS.dim)).setOrigin(0.5, 1));
     // Phone app: what the updater is doing, and a button to check again.
     if (isPhoneApp()) {
       add(this.add.text(width / 2, height - 34, updateStatus, { ...text(12, readyUpdate ? '#8fd18a' : COLORS.text), align: 'center', wordWrap: { width: width - 200 } }).setOrigin(0.5, 1));
