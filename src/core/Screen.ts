@@ -20,3 +20,20 @@ export function fitCamera(scene: Phaser.Scene) {
 
 /** Canvas size in real pixels for a window size. */
 export const pixels = (w: number, h: number) => ({ width: Math.round(w * DPR), height: Math.round(h * DPR) });
+
+/**
+ * Room to leave for a phone's notch, camera hole or rounded corners (CSS env(safe-area-inset-*);
+ * the page uses viewport-fit=cover). All zero on screens without them.
+ */
+export function safeArea() {
+  const probe = document.createElement('div');
+  probe.style.cssText =
+    'position:fixed;visibility:hidden;pointer-events:none;' +
+    'padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
+  document.body.appendChild(probe);
+  const cs = getComputedStyle(probe);
+  const px = (v: string) => parseFloat(v) || 0;
+  const r = { l: px(cs.paddingLeft), r: px(cs.paddingRight), t: px(cs.paddingTop), b: px(cs.paddingBottom) };
+  probe.remove();
+  return r;
+}

@@ -150,6 +150,19 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 | R5 | Beta | Beta APK for other testers | GO BETA |
 | R6 | Stable | official release | GO STABLE |
 
+## UI and asset audit ✅
+Measured on 8 screen sizes (568x320 old phone up to 1280x720) with a script that checks every HUD piece for overlap, off-screen and touch size:
+- [x] One layout rule: the same 10 px margin on every edge, plus the phone's notch / rounded corners (safe area)
+- [x] The HUD shrinks a little more on narrow phones so the top panels never meet (they overlapped before on 568-844 px wide screens)
+- [x] The row under the hero panel lines up with it edge to edge: gold and resources in four equal slots, then JOB, BAG, BUILD, AUTO with icons
+- [x] Every button is at least 44 px to touch (iOS / Android standard), even when it is drawn smaller (gear, zoom, START NIGHT, close)
+- [x] Action buttons use the owner's painted icons (ATTACK sword-and-shield, SKILL star) and all icons fill the same box
+- [x] Zoom + / − sit centred beside the mini-map; tap the mini-map for the big map
+- [x] Guide arrow label on a dark chip so it reads over the ground; NPC roles ("Potions") only show up close, so fewer labels pile up
+- [x] Tutorial tip fits between the joystick and the buttons on every size
+- [x] Assets: 205 sprites, none missing, none mismatched, no pink, 1.6 MB in total; 21 old unused ones are kept for later
+- [x] Removed dead code (an unused HUD label); ESC no longer cancels placing twice
+
 ## Playtest 6: UI polish ✅
 - [x] Build mode and placing buttons (SHOP, DONE, PLACE, CANCEL) use the black-and-gold frame like the rest of the game
 - [x] MENU and building panels are only as big as what they show

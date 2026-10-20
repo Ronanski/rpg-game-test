@@ -64,6 +64,21 @@ export function bigButton(scene: Phaser.Scene, x: number, y: number, w: number, 
 /** Label colors for bigButton. */
 export const ACTION = { ok: '#8fd18a', cancel: '#ff8a7a', normal: COLORS.gold };
 
+/** Smallest comfortable touch target, in screen (CSS) px. */
+export const MIN_TOUCH = 44;
+
+/**
+ * Makes `o` tappable over at least MIN_TOUCH x MIN_TOUCH screen px (centred on it), even when it
+ * is drawn smaller. `scale` is the smallest scale its parent is shown at.
+ */
+export function touchable<T extends Phaser.GameObjects.Image | Phaser.GameObjects.NineSlice | Phaser.GameObjects.Text>(o: T, scale = 1, min = MIN_TOUCH): T {
+  const sx = Math.abs(o.scaleX) * scale, sy = Math.abs(o.scaleY) * scale;
+  const w = o.width, h = o.height;
+  const W = Math.max(w, min / sx), H = Math.max(h, min / sy);
+  o.setInteractive({ hitArea: new Phaser.Geom.Rectangle((w - W) / 2, (h - H) / 2, W, H), hitAreaCallback: Phaser.Geom.Rectangle.Contains, useHandCursor: true });
+  return o;
+}
+
 /** Resizes a panel made with panel(). */
 export function resizePanel(p: Phaser.GameObjects.NineSlice, w: number, h: number) {
   p.setSize(Math.round(w / 2), Math.round(h / 2));

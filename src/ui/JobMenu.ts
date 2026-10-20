@@ -2,8 +2,8 @@ import Phaser from 'phaser';
 import { state } from '../core/GameState';
 import { JOBS } from '../systems/combat/ClassSystem';
 import { JOB_LIST, changeJob, isUnlocked, progressOf } from '../systems/combat/JobSystem';
-import { panel, text, COLORS } from './theme';
-import { view } from '../core/Screen';
+import { panel, text, touchable, COLORS } from './theme';
+import { safeArea, view } from '../core/Screen';
 
 /** Full-screen JOBS menu: every job with its skill, how to earn it, and a CHANGE button once earned. */
 export class JobMenu {
@@ -43,13 +43,15 @@ export class JobMenu {
     const add = <T extends Phaser.GameObjects.GameObject>(o: T) => (this.root.add(o), o);
     const compact = height < 450;
     const rowH = compact ? 50 : 62;
-    const w = Math.min(640, width - 24), h = Math.min(height - 16, 70 + rowH * JOB_LIST.length);
-    const x = (width - w) / 2, y = (height - h) / 2;
+    // Centred inside the notch-safe area, like the other menus.
+    const sa = safeArea(), aw = width - sa.l - sa.r, ah = height - sa.t - sa.b;
+    const w = Math.min(640, aw - 24), h = Math.min(ah - 16, 70 + rowH * JOB_LIST.length);
+    const x = sa.l + (aw - w) / 2, y = sa.t + (ah - h) / 2;
     add(panel(s, x, y, w, h, true));
     add(s.add.text(x + 20, y + 14, 'JOBS', text(20, COLORS.gold)));
     add(s.add.text(x + 90, y + 18, 'Earn jobs by how you play. Change anytime.', text(12, COLORS.dim)));
     const closeBtn = add(s.add.text(x + w - 18, y + 12, '✕', text(22)).setOrigin(1, 0));
-    closeBtn.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.close());
+    touchable(closeBtn).on('pointerdown', () => this.close());
 
     const current = state.player!.jobId;
     JOB_LIST.forEach((j, i) => {
