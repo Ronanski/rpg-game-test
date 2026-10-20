@@ -150,6 +150,13 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 | R5 | Beta ✅ | Beta APK for other testers (0.4.0-beta.1) | GO BETA (given) |
 | R6 | Stable | official release | GO STABLE |
 
+## Visuals: HD-2D pass (owner's reference village) 🔄
+- [x] One seamless meadow: new lush grass painted in code (tools/art/ground.py), no tile grid; grass spills over the edges of paths, the plaza and river banks
+- [x] Long afternoon sun shadows for every building, tree, prop and character
+- [x] Warmer stone and earth; a light sunny color grade
+- [x] Livelier village: flowers, bushes, barrels and crates by every house, four more townsfolk, smoke from the forge, a sparkling fountain
+- [ ] More from the reference: bigger two-storey houses with vines and hanging signs, benches, cats, market carts (needs art)
+
 ## R5: Beta 0.4.0-beta.1 ✅
 - [x] Full check before release: Chapter 1 and 2 scripted runs, tutorial, every button by real tap, layout on 8 screen sizes, 10 simulated nights (nights 1-9 held, 10 hard). No script errors
 - [x] Version 0.4.0-beta.1; the title screen shows "BETA 0.4.0-beta.1 · build …"

@@ -216,6 +216,23 @@ export function buildWorld(): WorldData {
   for (const [fx, fy, f] of [[12, 28, 0], [13, 27, 1], [15, 25, 0], [16, 24, 1]]) deco('fence', fx, fy, true, { frame: f });
   deco('gate', 14, 26);
 
+  // Life around every house: flowers, flower boxes, bushes, barrels and crates by the walls
+  // (kept off doorways and roads), so the village looks lived in.
+  const doorways = [[20, 21], [20, 28], [24, 60]];
+  const LIFE: [string, boolean, number][] = [['flowers', false, 4], ['flowerbed', false, 1], ['bush', false, 3], ['barrel', true, 1], ['crate', true, 1], ['flowers', false, 4]];
+  for (const [hx, hy] of buildings) {
+    let placed = 0;
+    for (let i = 0; i < 14 && placed < 3; i++) {
+      const x = hx - 1 + rnd.between(0, 3), y = hy - 1 + rnd.between(0, 3);
+      if (x >= hx && x <= hx + 1 && y >= hy && y <= hy + 1) continue;
+      if (!free(x, y) || doorways.some(([dx, dy]) => Math.abs(dx - x) <= 1 && Math.abs(dy - y) <= 1)) continue;
+      if (props.some((p) => p.x === x && p.y === y)) continue;
+      const [texture, solid, frames] = LIFE[rnd.between(0, LIFE.length - 1)];
+      deco(texture, x, y, solid, { frame: rnd.between(0, frames - 1) });
+      placed++;
+    }
+  }
+
   // The cave at the end of the north road (the way to the dungeon, later).
   props.push({ kind: 'building', texture: 'cave', x: 22, y: 1 });
   for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) blocked[1 + dy][22 + dx] = true;
@@ -286,6 +303,11 @@ export function buildWorld(): WorldData {
     { id: 'farmer', name: 'Jory', texture: 'npcanim_farmer', x: 15, y: 29 },
     { id: 'child', name: 'Pip', texture: 'npc_child', x: 25, y: 27 },
     { id: 'bard', name: 'Finn', texture: 'npc_bard', x: 22, y: 20, role: 'Bard' },
+    // More townsfolk going about their day around the plaza.
+    { id: 'towns1', name: 'Mira', texture: 'npcanim_villager_f', x: 27, y: 21 },
+    { id: 'towns2', name: 'Bram', texture: 'npcanim_villager_m', x: 20, y: 24 },
+    { id: 'towns3', name: 'Tilda', texture: 'npcanim_farmer', x: 26, y: 26 },
+    { id: 'towns4', name: 'Oswin', texture: 'npcanim_villager_m', x: 29, y: 23 },
   ];
   const playerStart = { x: 24, y: 25 };
 
