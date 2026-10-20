@@ -18,6 +18,9 @@ export let readyUpdate: { id: string } | null = null;
 /** What the updater is doing, shown on the title screen (empty in the browser). */
 export let updateStatus = '';
 let busy = false;
+/** When the last check finished (checks on return to the app are spaced out). */
+let lastCheck = 0;
+const RECHECK_MS = 60_000;
 
 const listeners: (() => void)[] = [];
 /** Called whenever the update status changes (and right away). */
@@ -40,8 +43,8 @@ function status(s: string) {
  * - No internet: the game plays as is.
  * Every step is shown on the title screen, so a failure can be seen and reported.
  */
-export async function checkForUpdate() {
-  if (!Capacitor.isNativePlatform() || busy) return;
+export async function checkForUpdate(now = false) {
+  if (!Capacitor.isNativePlatform() || busy || readyUpdate || (!now && Date.now() - lastCheck < RECHECK_MS)) return;
   busy = true;
   let step = 'starting';
   try {
@@ -67,12 +70,16 @@ export async function checkForUpdate() {
     step = 'preparing the update';
     await withTimeout(CapacitorUpdater.next({ id: bundle.id }), 8000, step);
     readyUpdate = { id: bundle.id };
-    status('Update ready! Tap UPDATE READY, or reopen the game.');
+    status(autoApply ? 'Update ready! Installing it now…' : 'Update ready! It installs when you switch away from the game, or tap UPDATE READY.');
+    // Applied at once while nobody is playing (title screen); otherwise when the game goes to the
+    // background (switching apps), or by tapping UPDATE READY.
+    autoApply?.();
   } catch (e) {
     console.warn('Update check failed', e);
     status(`Update failed while ${step}: ${errText(e)}`);
   } finally {
     busy = false;
+    lastCheck = Date.now();
   }
 }
 
@@ -102,6 +109,12 @@ function withTimeout<T>(p: Promise<T>, ms: number, what: string): Promise<T> {
 
 function errText(e: unknown) {
   return (e instanceof Error ? e.message : String(e)).slice(0, 80);
+}
+
+/** Set by the title screen: applies a ready update right away while it is showing. */
+export let autoApply: (() => void) | null = null;
+export function setAutoApply(fn: (() => void) | null) {
+  autoApply = fn;
 }
 
 export async function applyUpdate() {
