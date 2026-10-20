@@ -15,7 +15,7 @@ import { BUILDINGS } from '../systems/town/Buildings';
 import { JOBS } from '../systems/combat/ClassSystem';
 import { weaponType } from '../systems/items/Items';
 import { ARCHER } from '../systems/combat/CombatSystem';
-import { panel, resizePanel, text, applyPortrait, COLORS } from './theme';
+import { panel, resizePanel, text, applyPortrait, bigButton, ACTION, COLORS } from './theme';
 import type { Conversation } from '../systems/dialogue/DialogueSystem';
 import type { QuestTracker } from '../systems/quest/QuestTracker';
 import { DPR, fitCamera, view } from '../core/Screen';
@@ -212,13 +212,8 @@ export class UIScene extends Phaser.Scene {
     });
     // Build mode bar: builders free, SHOP and DONE.
     const bbText = this.add.text(0, 0, '', { ...text(15), backgroundColor: '#15120ee6', padding: { x: 12, y: 6 } }).setOrigin(0.5, 0);
-    const mkBtn = (label: string, color: number, on: () => void) => {
-      const r = this.add.rectangle(0, 0, 120, 48, color).setStrokeStyle(3, 0xf4ead0).setInteractive({ useHandCursor: true }).on('pointerdown', on);
-      const t = this.add.text(0, 0, label, text(17)).setOrigin(0.5);
-      return this.add.container(0, 0, [r, t]);
-    };
-    const shopBtn = mkBtn('SHOP', 0x2b4f8a, () => (this.buildBar.setVisible(false), this.buildMenu.open()));
-    const doneBtn = mkBtn('DONE', 0x2b7a3f, () => bus.emit('build-mode', false));
+    const shopBtn = bigButton(this, 0, 0, 120, 48, 'SHOP', ACTION.normal, () => (this.buildBar.setVisible(false), this.buildMenu.open()));
+    const doneBtn = bigButton(this, 0, 0, 120, 48, 'DONE', ACTION.ok, () => bus.emit('build-mode', false), true);
     this.buildBar = this.add.container(0, 0, [bbText, shopBtn, doneBtn]).setDepth(55).setVisible(false);
     this.buildBarText = bbText;
     this.buildBarBtns = [shopBtn, doneBtn];
@@ -405,7 +400,7 @@ export class UIScene extends Phaser.Scene {
 
   /** Points the guide arrow at the next goal (hidden when it's already on screen). */
   private drawObjective(o: { sx: number; sy: number; label: string; onScreen: boolean } | null) {
-    if (!o || state.inMenu || state.buildMode) return void this.objArrow.setVisible(false);
+    if (!o || state.inMenu || state.inDialogue || state.buildMode) return void this.objArrow.setVisible(false);
     const { width, height } = view(this);
     if (o.onScreen) {
       // Bob just above the goal itself.
@@ -418,7 +413,8 @@ export class UIScene extends Phaser.Scene {
     // Kept inside the clear middle of the screen: below the top HUD, above the buttons, and away
     // from the mini-map and the action buttons on the right.
     const k = this.k;
-    const box = { l: 80 * k, r: width - 200 * this.kb, t: 185 * k, b: height - 110 * this.kb };
+    // Right edge: left of the mini-map column and the action buttons. Bottom: above the tutorial tip.
+    const box = { l: 80 * k, r: width - 330 * this.kb, t: 185 * k, b: height - 72 * k };
     const bx = (box.l + box.r) / 2, by = (box.t + box.b) / 2;
     const ang = Math.atan2(o.sy - by, o.sx - bx);
     const t = Math.min((box.r - box.l) / 2 / Math.abs(Math.cos(ang) || 1e-6), (box.b - box.t) / 2 / Math.abs(Math.sin(ang) || 1e-6));
