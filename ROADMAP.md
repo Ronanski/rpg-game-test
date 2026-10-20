@@ -156,6 +156,7 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 - [x] BAG: the equipped item's icon no longer covers its slot name
 - [x] The yellow guide arrow stays clear of the mini-map and the action buttons, and hides while you talk
 - [x] Job texts updated (the archer's SKILL is Multi Shot)
+- [x] Action buttons in one thumb arc around ATTACK: DODGE, SKILL, POTION close in; TALK and RAIN on the outer ring (no more floating buttons); AUTO is now an ON/OFF toggle next to BUILD
 
 ## R4: Chapter 2, The Sylvan Seal ✅
 - [x] **The Sylvan Wood**, a new forest area at the end of the south road (opens after Chapter 1): the elves' camp, the Blight Glen, the Moonwell, the Hollow, and the Heart Grove; thick trees you can brush past, a solid forest wall behind them

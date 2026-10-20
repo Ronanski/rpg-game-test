@@ -39,7 +39,8 @@ export class UIScene extends Phaser.Scene {
   private pauseMenu!: PauseMenu;
   private menuBtn!: Phaser.GameObjects.Container;
   private zoomBox!: Phaser.GameObjects.Container;
-  private autoBtn!: ActionButton;
+  /** AUTO toggle in the top-left button row (gold label + check when on). */
+  private autoText!: Phaser.GameObjects.Text;
   private rainBtn!: ActionButton;
   private controlsOn = true;
   private minimap!: MinimapView;
@@ -124,12 +125,25 @@ export class UIScene extends Phaser.Scene {
     const buildIcon = this.add.image(x + 280, y + STATUS_H + 48, 'icon_crafting').setScale(0.55);
     const buildText = this.add.text(x + 294, y + STATUS_H + 48, 'BUILD', text(14)).setOrigin(0, 0.5);
     buildPanel.setInteractive({ useHandCursor: true }).on('pointerdown', () => bus.emit('build-mode', true));
+    // AUTO toggle: attack the nearest monster without pressing ATTACK. It sits with the menu
+    // buttons (set once, rarely changed) so the thumb buttons stay together around ATTACK.
+    const autoPanel = panel(this, x + 360, y + STATUS_H + 32, 104, 32);
+    const autoIcon = this.add.image(x + 376, y + STATUS_H + 48, 'pin_star').setScale(0.45);
+    this.autoText = this.add.text(x + 390, y + STATUS_H + 48, '', text(14)).setOrigin(0, 0.5);
+    autoPanel.setInteractive({ useHandCursor: true }).on('pointerdown', () => {
+      state.autoAttack = !state.autoAttack;
+      try {
+        localStorage.setItem('aethelgard.auto', state.autoAttack ? '1' : '0');
+      } catch {
+        // No storage: the choice lasts until the game closes.
+      }
+    });
     // Town resources next to the gold.
     const resIcons = ['res_wood', 'res_stone', 'res_mana'].map((k, i) => this.add.image(x + 96 + i * 70, y + STATUS_H + 18, k).setScale(2));
     this.resTexts = resIcons.map((_, i) => this.add.text(x + 110 + i * 70, y + STATUS_H + 9, '', text(16)));
     this.jobText = this.add.text(x + 12, y + STATUS_H + 48, '', text(14)).setOrigin(0, 0.5);
     jobPanel.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.toggleJobs());
-    this.statusBox = this.add.container(0, 0, [statusPanel, portraitPanel, portrait, this.nameText, this.levelText, this.barLabels, ...this.barTags, this.bars, coin, this.goldText, jobPanel, this.jobText, bagPanel, bagIcon, bagText, buildPanel, buildIcon, buildText, ...resIcons, ...this.resTexts]);
+    this.statusBox = this.add.container(0, 0, [statusPanel, portraitPanel, portrait, this.nameText, this.levelText, this.barLabels, ...this.barTags, this.bars, coin, this.goldText, jobPanel, this.jobText, bagPanel, bagIcon, bagText, buildPanel, buildIcon, buildText, autoPanel, autoIcon, this.autoText, ...resIcons, ...this.resTexts]);
 
     // Quest tracker (top-right).
     this.questPanel = panel(this, 0, 10, 200, 60);
@@ -170,23 +184,12 @@ export class UIScene extends Phaser.Scene {
     // Touch controls (bottom). They also show on desktop, where keys work too.
     this.stick = new VirtualJoystick(this);
     this.attackBtn = new ActionButton(this, 'ATTACK', 'icon_sword', 84, () => (state.controls.attack = true));
-    this.talkBtn = new ActionButton(this, 'TALK', 'icon_talk', 68, () => (state.controls.talk = true)).setVisible(false);
+    this.talkBtn = new ActionButton(this, 'TALK', 'icon_talk', 60, () => (state.controls.talk = true)).setVisible(false);
     this.potionBtn = new ActionButton(this, 'POTION', 'item_health_potion', 64, () => (state.controls.potion = true));
     this.skillBtn = new ActionButton(this, 'SKILL', 'icon_skill', 64, () => (state.controls.skill = true));
     this.dodgeBtn = new ActionButton(this, 'DODGE', 'icon_dodge', 64, () => (state.controls.dodge = true));
     // RAIN: the archer's Rain of Arrows (shown from level 5 with a bow).
     this.rainBtn = new ActionButton(this, 'RAIN', 'item_bow', 56, () => (state.controls.rain = true));
-    // AUTO: attack the nearest monster without pressing ATTACK.
-    this.autoBtn = new ActionButton(this, 'AUTO', 'pin_star', 56, () => {
-      state.autoAttack = !state.autoAttack;
-      try {
-        localStorage.setItem('aethelgard.auto', state.autoAttack ? '1' : '0');
-      } catch {
-        // No storage: the choice lasts until the game closes.
-      }
-      this.autoBtn.setOn(state.autoAttack, state.autoAttack ? 'AUTO ON' : 'AUTO');
-    });
-    this.autoBtn.setOn(state.autoAttack, state.autoAttack ? 'AUTO ON' : 'AUTO');
     this.potionCount = this.add.text(0, 0, '', text(15, COLORS.gold)).setOrigin(1, 0).setDepth(12);
     this.dialogue = new DialogueBox(this);
     this.jobMenu = new JobMenu(this, () => this.setControlsVisible(true));
@@ -312,7 +315,7 @@ export class UIScene extends Phaser.Scene {
     const ps = state.player;
     const canRain = !!ps && ps.level >= ARCHER.rain.level && weaponType() === 'bow';
     this.rainBtn.setVisible(this.controlsOn && canRain);
-    this.autoBtn.setOn(state.autoAttack, state.autoAttack ? 'AUTO ON' : 'AUTO');
+    this.autoText.setText(state.autoAttack ? 'AUTO ON' : 'AUTO OFF').setColor(state.autoAttack ? '#8fd18a' : COLORS.dim);
     this.dodgeBtn.setCooldown((cd.dodgeReady - now) / cd.dodgeTotal);
     if (!state.inDialogue && !state.inMenu) {
       state.controls.moveX = this.stick.value.x;
@@ -386,7 +389,6 @@ export class UIScene extends Phaser.Scene {
     this.potionBtn.setVisible(on);
     this.skillBtn.setVisible(on);
     this.dodgeBtn.setVisible(on);
-    this.autoBtn.setVisible(on);
     this.controlsOn = on;
     this.potionCount.setVisible(on);
     if (!on) this.talkBtn.setVisible(false);
@@ -438,19 +440,19 @@ export class UIScene extends Phaser.Scene {
     // Right column under the quest panel: mini-map, and + / − / MAP to its left.
     this.minimap.root.setScale(k);
     this.zoomBox.setScale(k);
-    for (const b of [this.attackBtn, this.talkBtn, this.potionBtn, this.skillBtn, this.dodgeBtn, this.autoBtn, this.rainBtn]) b.setScale((b.baseScale = kb));
-    // RAIN above AUTO (clear of the mini-map).
-    this.rainBtn.setPosition(width - 252 * kb, height - 222 * kb);
-    // AUTO sits left of SKILL, above TALK.
-    this.autoBtn.setPosition(width - 252 * kb, height - 140 * kb);
-    this.potionCount.setScale(kb);
-    this.attackBtn.setPosition(width - 62 * kb, height - 62 * kb);
-    // Thumb arc around ATTACK: SKILL above-left, DODGE left, POTION above.
-    this.skillBtn.setPosition(width - 150 * kb, height - 140 * kb);
-    this.dodgeBtn.setPosition(width - 168 * kb, height - 52 * kb);
-    this.talkBtn.setPosition(width - 252 * kb, height - 52 * kb);
-    this.potionBtn.setPosition(width - 62 * kb, height - 164 * kb);
-    this.potionCount.setPosition(width - 34 * kb, height - 194 * kb);
+    for (const b of [this.attackBtn, this.talkBtn, this.potionBtn, this.skillBtn, this.dodgeBtn, this.rainBtn]) b.setScale((b.baseScale = kb));
+    // Thumb arc around ATTACK (bottom-right corner): DODGE, SKILL and POTION on the inner ring
+    // (left, up-left, up), TALK and RAIN on the outer ring, left of them.
+    const ax = width - 60 * kb, ay = height - 60 * kb;
+    const ring = (b: Phaser.GameObjects.Container, r: number, deg: number) =>
+      b.setPosition(ax + Math.cos((deg * Math.PI) / 180) * r * kb, ay - Math.sin((deg * Math.PI) / 180) * r * kb);
+    this.attackBtn.setPosition(ax, ay);
+    ring(this.dodgeBtn, 100, 180);
+    ring(this.skillBtn, 100, 135);
+    ring(this.potionBtn, 100, 90);
+    ring(this.talkBtn, 180, 180);
+    ring(this.rainBtn, 178, 145);
+    this.potionCount.setScale(kb).setPosition(this.potionBtn.x + 30 * kb, this.potionBtn.y - 32 * kb);
     this.stick.resetPosition();
     this.dialogue.layout();
     this.jobMenu.draw();
