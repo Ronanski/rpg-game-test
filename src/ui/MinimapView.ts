@@ -167,4 +167,4 @@ export class BigMap {
   }
 }
 
-const AREA_TITLES: Record<string, string> = { overworld: 'OAKHAVEN', cave: 'THE OLD CAVE', tavern: 'THE SLEEPING FOX', smithy: "GROM'S SMITHY" };
+const AREA_TITLES: Record<string, string> = { overworld: 'OAKHAVEN', cave: 'THE OLD CAVE', tavern: 'THE SLEEPING FOX', smithy: "GROM'S SMITHY", sylvan: 'THE SYLVAN WOOD' };

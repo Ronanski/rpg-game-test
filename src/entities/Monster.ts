@@ -24,7 +24,11 @@ function safeAt(x: number, y: number) {
 }
 
 export interface MonsterDef {
-  id: 'slime' | 'slime_blue' | 'slime_red' | 'wolf' | 'goblin' | 'orc' | 'skeleton' | 'zombie' | 'bat' | 'spider' | 'slime_king' | 'dragon';
+  id: 'slime' | 'slime_blue' | 'slime_red' | 'wolf' | 'goblin' | 'orc' | 'skeleton' | 'zombie' | 'bat' | 'spider' | 'slime_king' | 'dragon'
+    | 'slime_purple' | 'blight_wolf' | 'husk' | 'thorn_spider';
+  /** Sprite to use when it isn't the id (blighted kin of a known monster), and its color. */
+  texture?: string;
+  tint?: number;
   name: string;
   hp: number;
   atk: number;
@@ -59,6 +63,17 @@ export const MONSTERS: Record<MonsterDef['id'], MonsterDef> = {
   slime_king: { id: 'slime_king', name: 'King Slime', hp: 160, atk: 14, def: 4, speed: 50, aggroRange: 200, exp: 60, gold: 25, drop: { item: 'slime_gel', chance: 1 }, extra: [{ item: 'health_potion', chance: 0.6 }] },
   dragon: { id: 'dragon', name: 'Dragon', hp: 220, atk: 18, def: 8, speed: 55, aggroRange: 240, exp: 150, gold: 80, drop: { item: 'health_potion', chance: 1 }, extra: [{ item: 'iron_sword', chance: 0.3 }], size: 0.6 },
   wolf: { id: 'wolf', name: 'Wolf', hp: 60, atk: 12, def: 3, speed: 105, aggroRange: 230, exp: 28, gold: 8, drop: { item: 'wolf_pelt', chance: 0.5 } },
+  // Chapter 2, the Sylvan Wood: creatures twisted by the Core's blight (stronger, level 6 and up).
+  slime_purple: { id: 'slime_purple', name: 'Blight Slime', hp: 90, atk: 16, def: 4, speed: 62, aggroRange: 190, exp: 38, gold: 10, drop: { item: 'slime_gel', chance: 0.7 }, extra: [{ item: 'mana_potion', chance: 0.15 }] },
+  thorn_spider: { id: 'thorn_spider', name: 'Thorn Spider', texture: 'spider', tint: 0xa8e08a, hp: 85, atk: 18, def: 4, speed: 100, aggroRange: 210, exp: 42, gold: 12, drop: { item: 'health_potion', chance: 0.15 } },
+  blight_wolf: { id: 'blight_wolf', name: 'Blightfang', texture: 'wolf', tint: 0xb59cff, hp: 120, atk: 20, def: 6, speed: 110, aggroRange: 240, exp: 55, gold: 15, drop: { item: 'wolf_pelt', chance: 0.6 }, extra: [{ item: 'elven_bow', chance: 0.02 }] },
+  husk: { id: 'husk', name: 'Rotwood Husk', texture: 'zombie', tint: 0xb8d090, hp: 170, atk: 22, def: 7, speed: 48, aggroRange: 190, exp: 65, gold: 18, drop: { item: 'health_potion', chance: 0.3 }, extra: [{ item: 'leaf_mail', chance: 0.03 }] },
+};
+
+/** The boss in the Heart Grove of the Sylvan Wood (Chapter 2): the elves' old guardian, blighted. */
+export const VYRNAX: MonsterDef = {
+  ...MONSTERS.dragon, name: 'Vyrnax', boss: 'Vyrnax the Blighted', tag: 'vyrnax', tint: 0xc0a8ff, hp: 1400, atk: 26, def: 9, speed: 50,
+  aggroRange: 280, exp: 700, gold: 300, size: 0.75, drop: { item: 'health_potion', chance: 1 }, extra: [{ item: 'mana_potion', chance: 1 }],
 };
 
 /** The boss at the bottom of the Old Cave (Chapter 1). */
@@ -97,8 +112,9 @@ export class Monster extends Actor {
   private sidestep = new Phaser.Math.Vector2();
 
   constructor(scene: Phaser.Scene, x: number, y: number, readonly def: MonsterDef, readonly home: { x: number; y: number }) {
-    super(scene, x, y, def.id);
-    this.animated = isMonsterAnim(def.id);
+    super(scene, x, y, def.texture ?? def.id);
+    this.animated = isMonsterAnim(def.texture ?? def.id);
+    this.restoreTint();
     this.hp = def.hp;
     if (def.size) (this.baseScale *= def.size), this.sprite.setScale(this.baseScale);
     this.hpBar = scene.add.graphics().setDepth(100000);
@@ -154,7 +170,7 @@ export class Monster extends Actor {
 
     const len = Math.hypot(vx, vy);
     const chilled = this.scene.time.now < this.slowUntil;
-    if (!chilled && this.slowBy !== 1) (this.slowBy = 1), this.sprite.clearTint();
+    if (!chilled && this.slowBy !== 1) (this.slowBy = 1), this.restoreTint();
     const speed = (this.wanderTarget ? this.def.speed * 0.4 : this.def.speed) * (chilled ? this.slowBy : 1);
     let mx = len > 1 ? (vx / len) * speed * dt : 0;
     let my = len > 1 ? (vy / len) * speed * dt : 0;
@@ -174,8 +190,9 @@ export class Monster extends Actor {
     this.stuck = len > 1 && Math.hypot(this.x - ox, this.y - oy) < 0.05 * Math.hypot(mx, my) + 0.01;
     this.stuckMs = this.stuck ? this.stuckMs + dtMs : 0;
     if (Math.abs(mx) > 0.01) {
-      if (FACES_LEFT.has(this.def.id)) this.sprite.setFlipX(mx > 0);
-      else if (FACES_RIGHT.has(this.def.id)) this.sprite.setFlipX(mx < 0);
+      const art = this.def.texture ?? this.def.id;
+      if (FACES_LEFT.has(art)) this.sprite.setFlipX(mx > 0);
+      else if (FACES_RIGHT.has(art)) this.sprite.setFlipX(mx < 0);
     }
     if (len > 1) this.bob += dtMs / (this.def.id.startsWith('slime') ? 120 : 60);
     // Drawn monsters step between their two idle poses (faster while moving).
@@ -191,6 +208,12 @@ export class Monster extends Actor {
     this.slowBy = factor;
     this.slowUntil = this.scene.time.now + ms;
     this.sprite.setTint(0x9fd8ff);
+  }
+
+  /** Back to the monster's own color (blighted kin are tinted) after a hit flash or a slow. */
+  private restoreTint() {
+    if (this.def.tint) this.sprite.setTint(this.def.tint);
+    else this.sprite.clearTint();
   }
 
   /** Wind-up then strike (when it bites the hero or hits a building). */
@@ -216,10 +239,11 @@ export class Monster extends Actor {
       this.sprite.setFrame(4);
     }
     this.hp = Math.max(0, this.hp - dmg);
-    const away = new Phaser.Math.Vector2(this.x - from.x, this.y - from.y).normalize().scale(420);
+    // Story bosses are too heavy to be pushed around (otherwise steady arrows pin them in place).
+    const away = new Phaser.Math.Vector2(this.x - from.x, this.y - from.y).normalize().scale(this.def.tag ? 140 : 420);
     this.knockback.copy(away);
     this.sprite.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
-    this.scene.time.delayedCall(80, () => this.sprite.clearTint().setTintMode(Phaser.TintModes.MULTIPLY));
+    this.scene.time.delayedCall(80, () => (this.sprite.setTintMode(Phaser.TintModes.MULTIPLY), this.restoreTint()));
     this.drawHp();
   }
 

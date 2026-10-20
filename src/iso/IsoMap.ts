@@ -30,7 +30,7 @@ export class IsoMap {
   private soft = new Set<string>();
 
   constructor(private scene: Phaser.Scene, private world: WorldData) {
-    for (const p of world.props) if (p.kind !== 'building') this.soft.add(`${p.x},${p.y}`);
+    for (const p of world.props) if (p.kind !== 'building' && !p.hard) this.soft.add(`${p.x},${p.y}`);
   }
 
   render() {

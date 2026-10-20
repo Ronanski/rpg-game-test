@@ -35,6 +35,8 @@ export interface Prop {
   frame?: number;
   flip?: boolean;
   light?: boolean; // casts a warm glow (torches)
+  /** Blocks its whole tile (deep forest), instead of only its middle. */
+  hard?: boolean;
 }
 
 export interface NpcDef {
@@ -61,7 +63,7 @@ export interface SpawnZone {
 }
 
 /** Separate maps: the open world, and places you walk into (cave, tavern). */
-export type AreaId = 'overworld' | 'cave' | 'tavern' | 'smithy';
+export type AreaId = 'overworld' | 'cave' | 'tavern' | 'smithy' | 'sylvan';
 
 /** Step on it to go to another area; you arrive at `at` (grid) there. */
 export interface Door {
@@ -70,6 +72,9 @@ export interface Door {
   to: AreaId;
   at: { x: number; y: number };
   label: string;
+  /** Closed until this story flag is set; `closed` is what the hero is told meanwhile. */
+  requires?: string;
+  closed?: string;
 }
 
 export interface WorldData {
@@ -96,6 +101,8 @@ export const SMITHY_ENTRY = { x: 5, y: 7 };
 export const OUTSIDE_CAVE = { x: 24.6, y: 4.4 };
 export const OUTSIDE_TAVERN = { x: 19.4, y: 22.6 };
 export const OUTSIDE_SMITHY = { x: 19.4, y: 29.6 };
+export const SYLVAN_ENTRY = { x: 18, y: 4.6 };
+export const OUTSIDE_SYLVAN = { x: 23.6, y: 58.6 };
 
 const VILLAGE = { x0: 18, y0: 18, x1: 29, y1: 29 };
 /** Town grounds south-east of the village, across the bridge: the Ancient Core and the land around it. */
@@ -144,7 +151,7 @@ export function buildWorld(): WorldData {
 
   // Roads: east to the bridge, south and north out of the village.
   for (let x = VILLAGE.x1; x < MAP_W - 3; x++) set(x, 23, Tile.Path), set(x, 24, Tile.Path);
-  for (let y = VILLAGE.y1; y < MAP_H - 3; y++) set(23, y, Tile.Path), set(24, y, Tile.Path);
+  for (let y = VILLAGE.y1; y < MAP_H - 2; y++) set(23, y, Tile.Path), set(24, y, Tile.Path);
   for (let y = 3; y < VILLAGE.y0; y++) set(23, y, Tile.Path);
   // Road from the east road down to the town grounds.
   for (let y = 24; y < TOWN.coreY - 2; y++) set(47, y, Tile.Path), set(48, y, Tile.Path);
@@ -202,6 +209,9 @@ export function buildWorld(): WorldData {
   deco('signpost', 31, 22);
   deco('signpost', 25, 31);
   deco('signpost', 22, 16);
+  // The south road ends at the edge of the Sylvan Wood (Chapter 2).
+  deco('signpost', 25, 58);
+  deco('lamp', 22, 59, true, { light: true });
   // A little fenced pen west of the village.
   for (const [fx, fy, f] of [[12, 28, 0], [13, 27, 1], [15, 25, 0], [16, 24, 1]]) deco('fence', fx, fy, true, { frame: f });
   deco('gate', 14, 26);
@@ -284,7 +294,9 @@ export function buildWorld(): WorldData {
   const caveArea = [[21, 1], [22, 0], [23, 0], [24, 1], [24, 2], [21, 2], [21, 3], [24, 3]].map(([x, y]) => ({ x, y }));
   // And keep trees from hiding the buildings (most of all in front of them).
   const buildingArea = buildings.flatMap(([bx, by]) => [[bx + 2, by + 2], [bx + 2, by + 1], [bx + 1, by + 2], [bx + 3, by + 3]].map(([x, y]) => ({ x, y })));
-  const keepClear = [...npcs, playerStart, ...caveArea, ...buildingArea];
+  // The way into the Sylvan Wood at the end of the south road.
+  const woodGate = [[23, 60], [24, 60], [23, 61], [24, 61], [23, 62], [24, 62]].map(([x, y]) => ({ x, y }));
+  const keepClear = [...npcs, playerStart, ...caveArea, ...buildingArea, ...woodGate];
   const near = (p: Prop) => keepClear.some((c) => Math.abs(c.x - p.x) <= 1 && Math.abs(c.y - p.y) <= 1);
   const kept = props.filter((p) => !['tree', 'pine', 'bush', 'rock'].includes(p.texture) || !near(p));
   for (const p of props) if (!kept.includes(p)) blocked[p.y][p.x] = false;
@@ -297,6 +309,10 @@ export function buildWorld(): WorldData {
       { x: 24.2, y: 3.2, to: 'cave', at: CAVE_ENTRY, label: 'Old Cave' },
       { x: 19.8, y: 21.1, to: 'tavern', at: TAVERN_ENTRY, label: 'Tavern' },
       { x: 19.8, y: 28.1, to: 'smithy', at: SMITHY_ENTRY, label: 'Smithy' },
+      {
+        x: 23.6, y: 61.2, to: 'sylvan', at: SYLVAN_ENTRY, label: 'Sylvan Wood',
+        requires: 'chapter1_done', closed: 'Thorns block the way into the Sylvan Wood. (Finish Chapter 1 first.)',
+      },
     ],
     tiles,
     props: kept,

@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import {
-  buildWorld, CAVE_ENTRY, OUTSIDE_CAVE, OUTSIDE_SMITHY, OUTSIDE_TAVERN, SMITHY_ENTRY, TAVERN_ENTRY, Tile,
+  buildWorld, CAVE_ENTRY, OUTSIDE_CAVE, OUTSIDE_SMITHY, OUTSIDE_SYLVAN, OUTSIDE_TAVERN, SMITHY_ENTRY, SYLVAN_ENTRY, TAVERN_ENTRY, Tile,
   type AreaId, type NpcDef, type Prop, type WorldData,
 } from './worldData';
 
@@ -9,6 +9,7 @@ export function buildArea(id: AreaId): WorldData {
   if (id === 'cave') return buildCave();
   if (id === 'tavern') return buildTavern();
   if (id === 'smithy') return buildSmithy();
+  if (id === 'sylvan') return buildSylvan();
   return buildWorld();
 }
 
@@ -165,5 +166,120 @@ function buildSmithy(): WorldData {
     playerStart: SMITHY_ENTRY,
     npcs,
     spawns: [],
+  };
+}
+
+// The Sylvan Wood, south of Oakhaven (Chapter 2): the elves' camp under the old trees, the Blight
+// Glen, the Moonwell, the Hollow where the husks walk, and the Heart Grove where Vyrnax sleeps.
+const SYL_W = 36, SYL_H = 46;
+const CAMP = { x: 18, y: 9, r: 4 };
+const GLEN = { x: 9, y: 20, r: 5 };
+const MOONWELL = { x: 27, y: 20, r: 4 };
+const HOLLOW = { x: 12, y: 32, r: 5 };
+export const HEART = { x: 23, y: 39, r: 5 };
+
+function buildSylvan(): WorldData {
+  const rnd = new Phaser.Math.RandomDataGenerator(['sylvan-wood']);
+  const { tiles, blocked, floor } = blank(SYL_W, SYL_H);
+  const room = (c: { x: number; y: number; r: number }) => {
+    for (let y = c.y - c.r - 1; y <= c.y + c.r + 1; y++)
+      for (let x = c.x - c.r - 1; x <= c.x + c.r + 1; x++)
+        if (Math.hypot(x - c.x, y - c.y) <= c.r + rnd.frac() * 0.8) floor(x, y, rnd.frac() < 0.12 ? Tile.Flowers : rnd.frac() < 0.5 ? Tile.Grass2 : Tile.Grass);
+  };
+  // Forest trails: two tiles wide, winding a little.
+  const trail = (a: { x: number; y: number }, b: { x: number; y: number }) => {
+    const n = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) * 2);
+    for (let i = 0; i <= n; i++) {
+      const t = i / n, bend = Math.round(Math.sin(t * Math.PI) * 2);
+      const x = Math.round(a.x + (b.x - a.x) * t + bend), y = Math.round(a.y + (b.y - a.y) * t);
+      for (const [dx, dy] of [[0, 0], [1, 0], [0, 1]]) floor(x + dx, y + dy, Tile.Path);
+    }
+  };
+  [CAMP, GLEN, MOONWELL, HOLLOW, HEART].forEach(room);
+  trail({ x: SYLVAN_ENTRY.x, y: 1 }, CAMP);
+  trail(CAMP, GLEN);
+  trail(CAMP, MOONWELL);
+  trail(GLEN, HOLLOW);
+  trail(MOONWELL, HEART);
+  trail(HOLLOW, HEART);
+
+  const props: Prop[] = [];
+  const put = (texture: string, x: number, y: number, solid = true, extra: Partial<Prop> = {}) => {
+    props.push({ kind: 'deco', texture, x, y, ...extra });
+    if (solid) blocked[y][x] = true;
+  };
+  // Trees: the first row around every clearing can be brushed past (soft), the ones behind are
+  // a solid wall, and deeper than that is dark canopy (not drawn, like cave rock).
+  const dist = (x: number, y: number) => {
+    let d = 9;
+    for (let dy = -3; dy <= 3; dy++)
+      for (let dx = -3; dx <= 3; dx++) if (!blocked[y + dy]?.[x + dx]) d = Math.min(d, Math.max(Math.abs(dx), Math.abs(dy)));
+    return d;
+  };
+  const ring: [number, number, number][] = [];
+  for (let y = 0; y < SYL_H; y++) for (let x = 0; x < SYL_W; x++) if (blocked[y][x]) ring.push([x, y, dist(x, y)]);
+  for (const [x, y, d] of ring) {
+    if (d > 3) continue;
+    tiles[y][x] = Tile.Grass2;
+    if (d === 1 || rnd.frac() < 0.75) {
+      const pine = rnd.frac() < 0.55;
+      props.push({ kind: 'tree', texture: pine ? 'pine' : 'tree', frame: rnd.between(0, pine ? 1 : 2), x, y, hard: d > 1 });
+    }
+  }
+  // Undergrowth on the clearings (walk-through), a few rocks.
+  for (let y = 1; y < SYL_H - 1; y++)
+    for (let x = 1; x < SYL_W - 1; x++) {
+      if (blocked[y][x] || tiles[y][x] === Tile.Path) continue;
+      const r = rnd.frac();
+      if (r < 0.05) props.push({ kind: 'deco', texture: 'mushroom', frame: rnd.between(0, 1), x, y });
+      else if (r < 0.09) props.push({ kind: 'deco', texture: 'bush', frame: rnd.between(0, 2), x, y });
+      else if (r < 0.12) props.push({ kind: 'deco', texture: 'flowers', frame: rnd.between(0, 3), x, y });
+    }
+  const clear = (x: number, y: number) => {
+    for (let i = props.length - 1; i >= 0; i--) if (props[i].x === x && props[i].y === y) props.splice(i, 1);
+  };
+  const place = (texture: string, x: number, y: number, solid = true, extra: Partial<Prop> = {}) => (clear(x, y), put(texture, x, y, solid, extra));
+  // The elves' camp: tents, a fire, lanterns.
+  props.push({ kind: 'building', texture: 'tent', x: CAMP.x + 2, y: CAMP.y - 3 });
+  for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) (clear(CAMP.x + 2 + dx, CAMP.y - 3 + dy), (blocked[CAMP.y - 3 + dy][CAMP.x + 2 + dx] = true));
+  place('campfire', CAMP.x, CAMP.y + 1, true, { light: true });
+  place('lamp', CAMP.x - 3, CAMP.y - 1, true, { light: true });
+  place('lamp', CAMP.x + 3, CAMP.y + 2, true, { light: true });
+  place('crate', CAMP.x + 4, CAMP.y);
+  place('barrel', CAMP.x - 3, CAMP.y + 2);
+  // The Moonwell: an old well that still glows.
+  place('well', MOONWELL.x, MOONWELL.y, true, { light: true });
+  place('crystal', MOONWELL.x + 2, MOONWELL.y - 2);
+  // The Hollow: graves of the ones who walked in and never left.
+  [[HOLLOW.x - 2, HOLLOW.y - 1], [HOLLOW.x + 1, HOLLOW.y - 3], [HOLLOW.x + 3, HOLLOW.y + 1]].forEach(([x, y]) => place('grave', x, y));
+  [[HOLLOW.x, HOLLOW.y + 2], [HOLLOW.x - 3, HOLLOW.y + 2]].forEach(([x, y]) => place('bone_pile', x, y, false));
+  place('stump', HOLLOW.x + 1, HOLLOW.y + 3);
+  // The Heart Grove: Core crystals grown through the roots, and torches the elves left burning.
+  [[HEART.x - 3, HEART.y - 2], [HEART.x + 3, HEART.y - 3], [HEART.x - 2, HEART.y + 3], [HEART.x + 4, HEART.y + 2]].forEach(([x, y]) => place('crystal', x, y));
+  [[HEART.x - 4, HEART.y], [HEART.x + 4, HEART.y - 1]].forEach(([x, y]) => place('torch', x, y, true, { light: true }));
+  place('chest', HEART.x, HEART.y + 4);
+  place('signpost', SYLVAN_ENTRY.x + 2, Math.round(SYLVAN_ENTRY.y));
+
+  const npcs: NpcDef[] = [
+    { id: 'warden', name: 'Vaelen', texture: 'npc_vaelen', x: CAMP.x - 1, y: CAMP.y - 1, role: 'Elf Warden', mark: 'quest', quest: 'main_07_blight' },
+    { id: 'herbalist', name: 'Lyra', texture: 'npc_lyra', x: CAMP.x + 2, y: CAMP.y + 2, role: 'Elven Goods', mark: 'shop' },
+  ];
+  for (const n of npcs) clear(n.x, n.y);
+  return {
+    id: 'sylvan', w: SYL_W, h: SYL_H,
+    // Green, dim light under the leaves.
+    ambient: { color: 0x3d6a4a, alpha: 0.32 },
+    bg: 0x08110b,
+    doors: [{ x: SYLVAN_ENTRY.x + 0.4, y: 1.4, to: 'overworld', at: OUTSIDE_SYLVAN, label: 'Oakhaven' }],
+    tiles, blocked, props,
+    playerStart: SYLVAN_ENTRY,
+    npcs,
+    spawns: [
+      { monster: 'slime_purple', x0: GLEN.x - 3, y0: GLEN.y - 3, x1: GLEN.x + 3, y1: GLEN.y + 3, count: 5 },
+      { monster: 'thorn_spider', x0: GLEN.x - 3, y0: GLEN.y - 2, x1: GLEN.x + 3, y1: GLEN.y + 3, count: 2 },
+      { monster: 'blight_wolf', x0: MOONWELL.x - 3, y0: MOONWELL.y - 3, x1: MOONWELL.x + 3, y1: MOONWELL.y + 3, count: 3 },
+      { monster: 'husk', x0: HOLLOW.x - 3, y0: HOLLOW.y - 3, x1: HOLLOW.x + 3, y1: HOLLOW.y + 3, count: 4 },
+      { monster: 'thorn_spider', x0: HEART.x - 4, y0: HEART.y - 4, x1: HEART.x - 1, y1: HEART.y - 1, count: 2 },
+    ],
   };
 }
