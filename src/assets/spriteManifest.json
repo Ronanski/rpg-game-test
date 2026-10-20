@@ -473,6 +473,22 @@
   "imported": true
  },
  {
+  "key": "ground_edge",
+  "w": 8192,
+  "h": 32,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 64
+ },
+ {
+  "key": "ground_grass",
+  "w": 2048,
+  "h": 32,
+  "scale": 1,
+  "imported": true,
+  "frameWidth": 64
+ },
+ {
   "key": "hay_cart",
   "w": 39,
   "h": 44,

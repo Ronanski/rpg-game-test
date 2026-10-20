@@ -21,6 +21,7 @@ import import_buildings  # noqa: E402
 import import_npcs  # noqa: E402
 import import_effects  # noqa: E402
 import import_ui  # noqa: E402
+import ground  # noqa: E402
 from pix import hstack  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -43,6 +44,7 @@ def main():
     imported.update(import_buildings.building_levels())
     imported.update(import_effects.effects())
     imported.update(import_ui.ui_parts())
+    imported.update(ground.ground())
     npcs = import_npcs.npc_anims()
     imported.update(npcs)
     sprites.update(imported)

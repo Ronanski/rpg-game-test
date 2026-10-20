@@ -267,6 +267,14 @@ export class DialogueSystem {
         return { lines: say('Slimes ate half my cabbages again!', 'They only come at night now. And there are more of them every week.') };
       case 'drunk':
         return { lines: say('*hic* The cave up north... it sings at night, you know.', 'My cousin went in to listen. Came out green and wobbly. *hic*', '...I am not joking.') };
+      case 'towns1':
+        return { lines: say('The bakery smells wonderful today. Have you tried the honey bread?') };
+      case 'towns2':
+        return { lines: say('Grom has been hammering since dawn. Something big is coming, he says.') };
+      case 'towns3':
+        return { lines: say('Turnips, carrots, cabbages... the slimes leave nothing for the market!') };
+      case 'towns4':
+        return { lines: say('I sit by the fountain every evening. The Core hums like a lullaby.', 'Creepy, if you think about it.') };
       case 'villager3':
         return { lines: say('The windmill west of here has been creaking all night.', 'Nobody has been inside it for years.') };
       case 'villager2':
