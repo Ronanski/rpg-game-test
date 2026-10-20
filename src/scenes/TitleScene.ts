@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { panel, text, title, COLORS } from '../ui/theme';
 import { applySave, loadSave, type SaveData } from '../core/SaveGame';
-import { applyUpdate, APP_VERSION, BUILD_ID, IS_BETA, checkForUpdate, isPhoneApp, onUpdateReady, readyUpdate, updateStatus } from '../core/Updater';
+import { applyUpdate, setAutoApply, APP_VERSION, BUILD_ID, IS_BETA, checkForUpdate, isPhoneApp, onUpdateReady, readyUpdate, updateStatus } from '../core/Updater';
 import { fitCamera, view } from '../core/Screen';
 
 /**
@@ -25,7 +25,11 @@ export class TitleScene extends Phaser.Scene {
     this.layout();
     this.scale.on('resize', this.layout, this);
     const stop = onUpdateReady(() => this.scene.isActive() && this.layout());
-    this.events.once('shutdown', stop);
+    // While the title screen is up nobody is playing: a downloaded update is applied right away
+    // (the game is saved; this only reloads the game files).
+    setAutoApply(() => applyUpdate());
+    if (readyUpdate) applyUpdate();
+    this.events.once('shutdown', () => (stop(), setAutoApply(null)));
     this.events.once('shutdown', () => this.scale.off('resize', this.layout, this));
     const kb = this.input.keyboard;
     kb?.on('keydown-C', () => this.continueGame());
@@ -73,7 +77,7 @@ export class TitleScene extends Phaser.Scene {
       add(this.add.text(width / 2, height - 34, updateStatus, { ...text(12, readyUpdate ? '#8fd18a' : COLORS.text), align: 'center', wordWrap: { width: width - 200 } }).setOrigin(0.5, 1));
       if (!readyUpdate && /date|fail|Could not/.test(updateStatus)) {
         add(this.add.text(width - 14, height - 14, 'CHECK FOR UPDATE', text(12, COLORS.gold)).setOrigin(1, 1))
-          .setInteractive({ useHandCursor: true }).on('pointerdown', () => checkForUpdate());
+          .setInteractive({ useHandCursor: true }).on('pointerdown', () => checkForUpdate(true));
       }
     }
   }

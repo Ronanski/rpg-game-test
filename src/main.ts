@@ -10,8 +10,11 @@ import { DPR, pixels } from './core/Screen';
 // Text uses the device's own UI font (see ui/theme.ts), so there is nothing to load first.
 startGame();
 
-// Phone app: fetch the newest version in the background.
+// Phone app: fetch the newest version in the background, at start and every time the game comes
+// back to the screen (Android keeps apps alive in the background, so a "reopen" is often not a
+// fresh start and would otherwise never look for updates).
 checkForUpdate();
+document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && checkForUpdate());
 
 function startGame() {
   const game = new Phaser.Game({
