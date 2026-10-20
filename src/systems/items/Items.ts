@@ -35,6 +35,10 @@ export const ITEMS: Record<string, ItemDef> = {
   yew_bow: { id: 'yew_bow', name: 'Yew Bow', type: 'weapon', weapon: 'bow', stats: { atk: 9 }, buy: 280, sell: 70, icon: 'item_bow', tint: 0xe0b070, desc: 'A strong bow of old yew.' },
   crystal_staff: { id: 'crystal_staff', name: 'Crystal Staff', type: 'weapon', weapon: 'staff', stats: { atk: 6, mp: 35 }, buy: 300, sell: 75, icon: 'item_staff', tint: 0x9fe3ff, desc: 'Topped with a Core crystal. It hums.' },
   chain_mail: { id: 'chain_mail', name: 'Chain Mail', type: 'armor', stats: { def: 10 }, buy: 240, sell: 60, icon: 'item_shield', tint: 0xcfe0f0, desc: 'Heavy, but it stops a goblin blade.' },
+  // Lyra's stall in the Sylvan Wood (Chapter 2), and Vaelen's gift.
+  elven_bow: { id: 'elven_bow', name: 'Elven Bow', type: 'weapon', weapon: 'bow', stats: { atk: 13, spd: 1 }, buy: 560, sell: 140, icon: 'item_bow', tint: 0xb8f0a0, desc: 'Light as a leaf, strung with spider silk.' },
+  leaf_mail: { id: 'leaf_mail', name: 'Leafweave Mail', type: 'armor', stats: { def: 15 }, buy: 520, sell: 130, icon: 'item_shield', tint: 0x9fd88a, desc: 'Woven bark and leaves, harder than steel.' },
+  sylvan_longbow: { id: 'sylvan_longbow', name: 'Sylvan Longbow', type: 'weapon', weapon: 'bow', stats: { atk: 18, spd: 2 }, sell: 300, icon: 'item_bow', tint: 0xd0b8ff, desc: 'The Warden\'s own bow. It remembers every arrow.' },
   leather_armor: { id: 'leather_armor', name: 'Leather Armor', type: 'armor', stats: { def: 5 }, buy: 70, sell: 15, icon: 'item_shield', desc: 'Light protection.' },
   core_shard: { id: 'core_shard', name: 'Core Shard', type: 'accessory', stats: { mp: 20 }, sell: 100, icon: 'item_core_shard', desc: 'It hums faintly. Warm to the touch.' },
   health_potion: { id: 'health_potion', name: 'Health Potion', type: 'consumable', heal: { hp: 50 }, buy: 25, sell: 5, icon: 'item_health_potion', desc: 'Restores 50 HP.' },

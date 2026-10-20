@@ -146,9 +146,18 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 | R1 | Archer kit ✅ | Multi Shot, Piercing (Lv3), Rain of Arrows (Lv5), Fire Arrows (Lv7) | no |
 | R2 | Balance and bug pass ✅ | long automated runs (10 nights), difficulty, prices, EXP, gold | no |
 | R3 | Tutorial ✅ | short guide on the first play: walk, AUTO, quests, build, night | no |
-| R4 | Chapter 2: Sylvan | new region, monsters, boss, story after the Core's secret | no |
+| R4 | Chapter 2: Sylvan ✅ | new region, monsters, boss, story after the Core's secret | no |
 | R5 | Beta | Beta APK for other testers | GO BETA |
 | R6 | Stable | official release | GO STABLE |
+
+## R4: Chapter 2, The Sylvan Seal ✅
+- [x] **The Sylvan Wood**, a new forest area at the end of the south road (opens after Chapter 1): the elves' camp, the Blight Glen, the Moonwell, the Hollow, and the Heart Grove; thick trees you can brush past, a solid forest wall behind them
+- [x] New people: **Vaelen**, the elf Warden (quests), and **Lyra** (shop: Elven Bow, Leafweave Mail, potions)
+- [x] New monsters (stronger, for level 6+): Blight Slime, Thorn Spider, Blightfang (wolf), Rotwood Husk
+- [x] Boss: **Vyrnax the Blighted**, the elves' old guardian dragon, in the Heart Grove (story bosses are no longer pushed back by every arrow, so they fight properly)
+- [x] Five main quests: The Ones Who Remember, Blight in the Glen, The Hollow Ones, Heart of the Wood (reward: Sylvan Longbow), What the Elder Knew (ends with Martha's confession)
+- [x] The guide arrow leads to other areas' doors when the goal is there
+- [ ] Owner's art for an elf camp, forest ground and a treant/dragon boss would make it look less like Oakhaven
 
 ## Playtest 5: smaller, sharper HUD ✅
 - [x] Sharp on phones: the game now draws at the screen's real pixels (up to 2x) instead of a low-resolution picture the phone blows up; text and art stay crisp

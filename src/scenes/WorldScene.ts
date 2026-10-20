@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { setActiveArea, type AreaId, type Door } from '../world/worldData';
-import { buildArea, PIT } from '../world/areas';
-import { GRAVEMAW } from '../entities/Monster';
+import { buildArea, HEART, PIT } from '../world/areas';
+import { GRAVEMAW, VYRNAX } from '../entities/Monster';
 import { Companion } from '../entities/Companion';
 import { buildMapTexture } from '../world/Minimap';
 import { IsoMap } from '../iso/IsoMap';
@@ -25,7 +25,15 @@ import { DPR, view } from '../core/Screen';
 
 const TALK_RANGE = 70;
 /** Names shown when you walk into a place, and on the clock while inside. */
-const AREA_NAMES: Partial<Record<AreaId, string>> = { cave: 'The Old Cave', tavern: 'The Sleeping Fox', smithy: "Grom's Smithy" };
+const AREA_NAMES: Partial<Record<AreaId, string>> = { cave: 'The Old Cave', tavern: 'The Sleeping Fox', smithy: "Grom's Smithy", sylvan: 'The Sylvan Wood' };
+/** Story bosses and people who live in another area: the guide arrow points to that area's door. */
+const WHERE: Record<string, { area: AreaId; name: string; boss?: boolean }> = {
+  gravemaw: { area: 'cave', name: 'Gravemaw', boss: true },
+  vyrnax: { area: 'sylvan', name: 'Vyrnax', boss: true },
+  warden: { area: 'sylvan', name: 'Vaelen' },
+  slime_purple: { area: 'sylvan', name: 'Blight Slimes' },
+  husk: { area: 'sylvan', name: 'Rotwood Husks' },
+};
 const AUTOSAVE_MS = 5000;
 
 /** Free-roam field: the hero explores, talks to NPCs and fights monsters. */
@@ -112,6 +120,11 @@ export class WorldScene extends Phaser.Scene {
     if (this.area === 'cave' && quests.statusOf('main_04_cave') === 'active' && !state.storyFlags.has('gravemaw_down')) {
       const p = gridToScreen(PIT.x, PIT.y);
       this.combat.spawnBoss(GRAVEMAW, p.x, p.y);
+    }
+    // Vyrnax sleeps in the Heart Grove once Vaelen sends you there.
+    if (this.area === 'sylvan' && quests.statusOf('main_09_vyrnax') === 'active' && !state.storyFlags.has('vyrnax_down')) {
+      const p = gridToScreen(HEART.x, HEART.y);
+      this.combat.spawnBoss(VYRNAX, p.x, p.y);
     }
 
     if (this.area === 'overworld') {
@@ -211,6 +224,12 @@ export class WorldScene extends Phaser.Scene {
     }
     if (!hit) return;
     const door = hit;
+    if (door.requires && !state.storyFlags.has(door.requires)) {
+      // Closed for now: say why once, then wait until the hero steps away and comes back.
+      this.doorArmed = false;
+      bus.emit('toast', door.closed ?? 'The way is closed.');
+      return;
+    }
     this.leaving = true;
     const quests = this.quests.exportState();
     saveGame();
@@ -330,19 +349,34 @@ export class WorldScene extends Phaser.Scene {
     const active = [...q.active()].sort((a, b) => Number(b.id.startsWith('main')) - Number(a.id.startsWith('main')));
     for (const quest of active) {
       const o = quest.objective;
+      // Someone or something in another area: point at the way there.
+      const away = WHERE[o.target];
+      const elsewhere = (q.isDone(quest.id) ? null : away) ?? null;
+      if (elsewhere && elsewhere.area !== this.area) {
+        const door = this.doors.find((d) => d.to === elsewhere.area);
+        if (door) return { ...gridToScreen(door.x, door.y), label: door.label };
+        if (this.area !== 'overworld') return exitGoal('Leave');
+        continue;
+      }
       if (o.type === 'talk') {
         const n = at(o.target);
-        return n ? { x: n.x, y: n.y - 30, label: `Talk to ${n.def.name}` } : exitGoal('Leave');
+        if (n) return { x: n.x, y: n.y - 30, label: `Talk to ${n.def.name}` };
+        if (this.area !== 'overworld') return exitGoal('Leave');
+        continue;
       }
       if (q.isDone(quest.id)) {
         const n = at(quest.giver);
-        return n ? { x: n.x, y: n.y - 30, label: `Report to ${n.def.name}` } : exitGoal('Leave');
+        if (n) return { x: n.x, y: n.y - 30, label: `Report to ${n.def.name}` };
+        // The giver lives in another area (Vaelen in the wood): head for its door, or out.
+        const home = WHERE[quest.giver];
+        const door = home && this.doors.find((d) => d.to === home.area);
+        if (door) return { ...gridToScreen(door.x, door.y), label: door.label };
+        if (this.area !== 'overworld') return exitGoal('Leave');
+        continue;
       }
-      if (o.target === 'gravemaw') {
-        const boss = this.combat.liveMonsters.find((m) => m.def.tag === 'gravemaw' && !m.dead);
-        if (boss) return { x: boss.x, y: boss.y - 30, label: 'Gravemaw' };
-        const cave = this.doors.find((d) => d.to === 'cave');
-        if (cave) return { ...gridToScreen(cave.x, cave.y), label: 'Old Cave' };
+      if (away?.boss) {
+        const boss = this.combat.liveMonsters.find((m) => m.def.tag === o.target && !m.dead);
+        if (boss) return { x: boss.x, y: boss.y - 30, label: away.name };
         continue;
       }
       const want = o.type === 'collect' && o.target === 'wolf_pelt' ? 'wolf' : o.target;

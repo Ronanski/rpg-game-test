@@ -29,6 +29,18 @@ const TALK_LINES: Record<string, string[]> = {
     'He went to the mountain last spring to look for work. He never came back.',
     'Inside a slime? No. No, that can\'t be... can it?',
   ],
+  main_06_sylvan: [
+    'An archer of Oakhaven, in our wood? And an elf, at that. You have been away from your people a long time.',
+    'The Core is waking, you say. We know. Its blight already creeps under our roots.',
+    'Help us cleanse the wood, and I will tell you what Oakhaven has chosen to forget.',
+  ],
+  main_10_martha: [
+    'So. The elves told you.',
+    'Do you know what Oakhaven was before the Core? A village of graves. Wolves at every door, orcs every winter.',
+    'The Core keeps the night away. It only asks for one of us, now and then. One, to save hundreds.',
+    'Rowan understood. In the end.',
+    '...Go, then. Tell them all. And see how long the Core keeps its light without me.',
+  ],
 };
 
 /** Picks what an NPC says based on quest state and story flags. */
@@ -42,6 +54,9 @@ export class DialogueSystem {
     if (tq) return { lines: say(...TALK_LINES[tq.id]), onEnd: () => this.finishTalk(tq.id) };
     switch (npcId) {
       case 'elder':
+        if (state.storyFlags.has('chapter2_done')) {
+          return { lines: say('Do not look at me like that.', 'Every night the Core shines, you are alive because of what I did.') };
+        }
         if (this.quests.statusOf('main_01_slimes') === 'completed') {
           return this.chain([
             {
@@ -102,6 +117,15 @@ export class DialogueSystem {
               ),
               busy: say('Show the locket to Hana. She is in the village, by the south houses.'),
             },
+            {
+              id: 'main_06_sylvan',
+              offer: say(
+                'Hana will be safer with you than in that village.',
+                'The Core was not made by Oakhaven. The elves of the Sylvan Wood sealed it long ago, and they still keep watch.',
+                'Take the south road to its end. Find their Warden, Vaelen. Tell him the Core is waking.',
+              ),
+              busy: say('The Sylvan Wood is at the end of the south road. Find Vaelen.'),
+            },
           ], say('...'), say(
             'Now you know. The Core does not protect Oakhaven. It feeds on it.',
             'Every slime you cut down was someone, once. Your Elder knows. She has always known.',
@@ -119,6 +143,62 @@ export class DialogueSystem {
           onEnd: () => state.storyFlags.add('met_stranger'),
         };
       }
+      case 'warden':
+        if (this.quests.statusOf('main_06_sylvan') !== 'completed') {
+          return { lines: say('Turn back, traveller. The wood is not safe, and we do not know you.') };
+        }
+        return this.chain([
+          {
+            id: 'main_07_blight',
+            offer: say(
+              'The Blight Slimes in the Glen, west of our camp, were creatures of this wood once. The Core\'s light twists all it touches.',
+              'Cut down eight of them. It is a mercy.',
+            ),
+            busy: (n: number, max: number) => say(`${n} of ${max}. The Glen lies west of the camp.`),
+            finish: say(
+              'The Glen breathes again. Thank you.',
+              'Now hear the truth. Three hundred years ago my people sealed the Core under your mountain.',
+              'The seal needed a guardian. And the Core needed... feeding.',
+            ),
+          },
+          {
+            id: 'main_08_husks',
+            offer: say(
+              'In the Hollow, to the south-west, the dead walk. Rotwood Husks, we call them.',
+              'Defeat five. Then look closely at their clothes. They are not elves.',
+            ),
+            busy: (n: number, max: number) => say(`${n} of ${max} husks. The Hollow is south-west, past the Glen.`),
+            finish: say(
+              'Oakhaven cloth. Oakhaven boots.',
+              'Your Elder has been sending people into this wood for years. "Lost on the road," she tells their families.',
+            ),
+          },
+          {
+            id: 'main_09_vyrnax',
+            offer: say(
+              'Vyrnax was the seal\'s guardian, a great wyrm bound to the Heart Grove. The blight has taken his mind.',
+              'Free him. Go south, past the Moonwell, to the Heart Grove.',
+            ),
+            busy: say('The Heart Grove is south, past the Moonwell. Vyrnax waits there.'),
+            finish: say(
+              'It is done. Vyrnax is at rest... and the Core has no guardian now.',
+              'Take my bow. You have earned it, and you will need it.',
+            ),
+          },
+          {
+            id: 'main_10_martha',
+            offer: say('Go back to Oakhaven. Ask your Elder what she traded, and for how long.'),
+            busy: say('Martha waits in Oakhaven. She knows you are coming. She always knows.'),
+          },
+        ], say('Rest by the fire. The wood is quieter while you are here.'), say(
+          'The Core stirs, unguarded. When you are ready, we will speak of the seal again.',
+          '(Chapter 3 is coming.)',
+        ));
+      case 'herbalist':
+        return {
+          lines: say('Moss, bark and spider silk. Elven goods, for those the Warden trusts.'),
+          onEnd: () => bus.emit('open-shop', { name: "Lyra's Goods", sells: ['elven_bow', 'leaf_mail', 'health_potion', 'mana_potion'] }),
+        };
       case 'guard':
         return { lines: say('Stay on the roads after dark.', 'Wolves east of the river. Slimes in the fields. And worse things, they say.') };
       case 'wizard': {
@@ -213,7 +293,11 @@ export class DialogueSystem {
     this.quests.complete(id);
     if (id === 'main_05_locket') {
       state.storyFlags.add('chapter1_done');
-      bus.emit('toast', 'Chapter 1 complete: Echoes of the Core. To be continued...');
+      bus.emit('toast', 'Chapter 1 complete: Echoes of the Core. The Sylvan Wood is open (end of the south road).');
+    }
+    if (id === 'main_10_martha') {
+      state.storyFlags.add('chapter2_done');
+      bus.emit('toast', 'Chapter 2 complete: The Sylvan Seal. To be continued...');
     }
   }
 
