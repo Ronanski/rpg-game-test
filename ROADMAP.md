@@ -150,6 +150,13 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 | R5 | Beta | Beta APK for other testers | GO BETA |
 | R6 | Stable | official release | GO STABLE |
 
+## Playtest 6: UI polish ✅
+- [x] Build mode and placing buttons (SHOP, DONE, PLACE, CANCEL) use the black-and-gold frame like the rest of the game
+- [x] MENU and building panels are only as big as what they show
+- [x] BAG: the equipped item's icon no longer covers its slot name
+- [x] The yellow guide arrow stays clear of the mini-map and the action buttons, and hides while you talk
+- [x] Job texts updated (the archer's SKILL is Multi Shot)
+
 ## R4: Chapter 2, The Sylvan Seal ✅
 - [x] **The Sylvan Wood**, a new forest area at the end of the south road (opens after Chapter 1): the elves' camp, the Blight Glen, the Moonwell, the Hollow, and the Heart Grove; thick trees you can brush past, a solid forest wall behind them
 - [x] New people: **Vaelen**, the elf Warden (quests), and **Lyra** (shop: Elven Bow, Leafweave Mail, potions)

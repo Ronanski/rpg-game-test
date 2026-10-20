@@ -52,6 +52,18 @@ export function panel(scene: Phaser.Scene, x: number, y: number, w: number, h: n
   return scene.add.nineslice(x, y, key, undefined, Math.round(w / 2), Math.round(h / 2), 6, 6, 6, 6).setOrigin(0).setScale(2);
 }
 
+/**
+ * Big framed touch button (build bar, placing): the same black-and-gold frame as the panels, with
+ * the label colored by what it does (green = confirm, red = cancel). Centred on (x, y).
+ */
+export function bigButton(scene: Phaser.Scene, x: number, y: number, w: number, h: number, label: string, color: string, onPress: () => void, gold = false) {
+  const frame = panel(scene, -w / 2, -h / 2, w, h, gold).setInteractive({ useHandCursor: true }).on('pointerdown', onPress);
+  return scene.add.container(x, y, [frame, scene.add.text(0, 0, label, text(16, color)).setOrigin(0.5)]);
+}
+
+/** Label colors for bigButton. */
+export const ACTION = { ok: '#8fd18a', cancel: '#ff8a7a', normal: COLORS.gold };
+
 /** Resizes a panel made with panel(). */
 export function resizePanel(p: Phaser.GameObjects.NineSlice, w: number, h: number) {
   p.setSize(Math.round(w / 2), Math.round(h / 2));

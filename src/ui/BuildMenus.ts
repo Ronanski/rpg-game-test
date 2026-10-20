@@ -4,7 +4,7 @@ import { bus } from '../core/EventBus';
 import { BUILDINGS, builders, costText, placeCost, timeText, type Resource } from '../systems/town/Buildings';
 import { canAfford } from '../systems/town/Economy';
 import { Menu } from './ItemMenus';
-import { text } from './theme';
+import { text, bigButton, ACTION } from './theme';
 import { spriteScale } from '../assets/sprites';
 import { view } from '../core/Screen';
 
@@ -59,7 +59,7 @@ export class BuildingPanel extends Menu {
     if (!this.isOpen || !this.b) return;
     const b = this.b, def = BUILDINGS[b.type];
     const lv = def.levels[b.level - 1], next = def.levels[b.level];
-    const { x, y, w, add } = this.frame(def.name.toUpperCase(), `Level ${b.level} of ${def.levels.length}`);
+    const { x, y, w, add } = this.frame(def.name.toUpperCase(), `Level ${b.level} of ${def.levels.length}`, { w: 640, h: 270 });
     const s = this.scene;
     const key = def.sprites[Math.min(b.level, def.sprites.length) - 1];
     const img = add(s.add.image(x + 80, y + 170, key).setOrigin(0.5, 1));
@@ -103,13 +103,8 @@ export class PlacementBar {
     const s = this.scene, { width, height } = view(s);
     const add = <T extends Phaser.GameObjects.GameObject>(o: T) => (this.root.add(o), o);
     add(s.add.text(width / 2, height - 96, `Placing ${name}: walk or tap the ground. Green = OK.`, { ...text(14), backgroundColor: '#15120ee6', padding: { x: 10, y: 6 } }).setOrigin(0.5));
-    const mk = (label: string, bx: number, color: number, ev: string) => {
-      const r = add(s.add.rectangle(bx, height - 44, 120, 44, color).setStrokeStyle(3, 0xf4ead0));
-      add(s.add.text(bx, height - 44, label, text(16)).setOrigin(0.5));
-      r.setInteractive({ useHandCursor: true }).on('pointerdown', () => bus.emit(ev));
-    };
-    mk('PLACE', width / 2 + 70, 0x2b7a3f, 'build-confirm');
-    mk('CANCEL', width / 2 - 70, 0x8a2b2b, 'build-cancel');
+    add(bigButton(s, width / 2 + 70, height - 44, 120, 44, 'PLACE', ACTION.ok, () => bus.emit('build-confirm'), true));
+    add(bigButton(s, width / 2 - 70, height - 44, 120, 44, 'CANCEL', ACTION.cancel, () => bus.emit('build-cancel')));
   }
 
   hide() {

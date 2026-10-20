@@ -20,11 +20,11 @@ export interface JobUnlock {
 }
 
 export const JOB_LIST: JobUnlock[] = [
-  { id: 'adventurer', how: 'Your starting job.', skill: 'Slash: a basic sword swing.' },
+  { id: 'adventurer', how: 'Your starting job.', skill: 'SKILL follows your weapon: bow = Multi Shot, sword = Slash.' },
   { id: 'warrior', how: 'Defeat 15 monsters.', skill: 'Heavy Slash: harder hits in a wider arc.', counter: 'kills', goal: 15 },
   { id: 'rogue', how: 'Land 8 critical hits.', skill: 'Quick Strikes: faster attacks, more crits. Can use bows.', counter: 'crits', goal: 8 },
   { id: 'mage', how: 'Reach level 3, then learn from Old Ezra in Oakhaven.', skill: 'Firebolt: a ranged fire spell (5 MP).', manual: true },
-  { id: 'builder', how: 'Build 5 structures (base building comes next).', skill: 'Quick Repair: fix walls and towers.', counter: 'built', goal: 5 },
+  { id: 'builder', how: 'Build 5 structures in town.', skill: 'Quick Repair: fix walls and towers.', counter: 'built', goal: 5 },
 ];
 
 export function isUnlocked(id: string) {

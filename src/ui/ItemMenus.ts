@@ -42,12 +42,13 @@ export abstract class Menu {
   }
 
   /** Draws the frame and returns the content box. */
-  protected frame(title: string, subtitle: string): { x: number; y: number; w: number; h: number; add: Add; compact: boolean } {
+  protected frame(title: string, subtitle: string, size = { w: 680, h: 420 }): { x: number; y: number; w: number; h: number; add: Add; compact: boolean } {
     const s = this.scene, { width, height } = view(s);
     this.shade.setSize(width, height);
     this.root.removeAll(true);
     const add: Add = (o) => (this.root.add(o), o);
-    const w = Math.min(680, width - 24), h = Math.min(420, height - 16);
+    // Small menus (MENU, a building) only take the room they need.
+    const w = Math.min(size.w, width - 24), h = Math.min(size.h, height - 16);
     const x = (width - w) / 2, y = (height - h) / 2;
     add(panel(s, x, y, w, h, true));
     const head = add(s.add.text(x + 20, y + 12, title, titleStyle(20)));
@@ -99,12 +100,13 @@ export class InventoryMenu extends Menu {
     for (const { slot, label } of SLOTS) {
       const id = state.equipment[slot];
       add(s.add.rectangle(x + 14, ly, leftW - 10, 40, 0x141a2c, 0.9).setOrigin(0));
-      add(s.add.text(x + 22, ly + 4, label, text(10, COLORS.dim)));
+      // Icon on the left, the slot name and the item beside it (never on top of each other).
+      add(s.add.text(x + 52, ly + 3, label, text(10, COLORS.dim)));
       if (id) {
-        this.icon(add, id, x + 36, ly + 24, 22);
-        add(s.add.text(x + 52, ly + 17, ITEMS[id].name, text(12)));
+        this.icon(add, id, x + 32, ly + 20, 22);
+        add(s.add.text(x + 52, ly + 19, ITEMS[id].name, text(12)));
         this.button(add, x + leftW - 64, ly + 6, 54, 'OFF', () => (unequip(slot), this.draw()));
-      } else add(s.add.text(x + 22, ly + 18, 'empty', text(12, COLORS.dim)));
+      } else add(s.add.text(x + 52, ly + 19, 'empty', text(12, COLORS.dim)));
       ly += 46;
     }
     add(s.add.text(x + 22, ly + 4, [
@@ -217,9 +219,9 @@ export class PauseMenu extends Menu {
   draw() {
     if (!this.isOpen) return;
     const s = this.scene, { width, height } = view(s);
-    const { add } = this.frame('MENU', `Day ${state.cycle.day}`);
+    const { add } = this.frame('MENU', `Day ${state.cycle.day}`, { w: 400, h: 230 });
     const bw = 260, x = (width - bw) / 2;
-    let y = height / 2 - 50;
+    let y = height / 2 - 40;
     const big = (label: string, on: () => void, gold = false) => {
       const b = add(panel(s, x, y, bw, 46, gold));
       add(s.add.text(width / 2, y + 23, label, text(17, gold ? COLORS.gold : COLORS.text)).setOrigin(0.5));
