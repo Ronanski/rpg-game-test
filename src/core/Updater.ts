@@ -8,6 +8,11 @@ const SITE = 'https://ronanski.github.io/rpg-game-test/';
 
 export const BUILD_ID = __BUILD_ID__;
 
+declare const __APP_VERSION__: string;
+/** package.json version; "-beta" in it marks a Beta build. */
+export const APP_VERSION = __APP_VERSION__;
+export const IS_BETA = APP_VERSION.includes('-beta');
+
 /** Set when a newer version has been downloaded; applying it restarts the game. */
 export let readyUpdate: { id: string } | null = null;
 /** What the updater is doing, shown on the title screen (empty in the browser). */

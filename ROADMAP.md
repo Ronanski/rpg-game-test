@@ -147,8 +147,16 @@ Jobs are earned by what you do in the game (start classless), and can be changed
 | R2 | Balance and bug pass ✅ | long automated runs (10 nights), difficulty, prices, EXP, gold | no |
 | R3 | Tutorial ✅ | short guide on the first play: walk, AUTO, quests, build, night | no |
 | R4 | Chapter 2: Sylvan ✅ | new region, monsters, boss, story after the Core's secret | no |
-| R5 | Beta | Beta APK for other testers | GO BETA |
+| R5 | Beta ✅ | Beta APK for other testers (0.4.0-beta.1) | GO BETA (given) |
 | R6 | Stable | official release | GO STABLE |
+
+## R5: Beta 0.4.0-beta.1 ✅
+- [x] Full check before release: Chapter 1 and 2 scripted runs, tutorial, every button by real tap, layout on 8 screen sizes, 10 simulated nights (nights 1-9 held, 10 hard). No script errors
+- [x] Version 0.4.0-beta.1; the title screen shows "BETA 0.4.0-beta.1 · build …"
+- [x] Release named "Beta v0.4.0-beta.1" on GitHub, with tester notes (BETA_NOTES.md: install, what to play, what to report)
+- [x] All test APKs from now on share one signing key, so a new APK installs over the old one and keeps the save (one last uninstall needed for older test APKs)
+- [ ] Testers' feedback (owner shares the link)
+- [ ] Stable: needs "GO STABLE", and a private release signing key for Play Store-style updates
 
 ## UI and asset audit ✅
 Measured on 8 screen sizes (568x320 old phone up to 1280x720) with a script that checks every HUD piece for overlap, off-screen and touch size:
@@ -237,5 +245,5 @@ Measured with a fast automated run (the archer on AUTO by the Core, 60 + 30 gold
 - [x] In-app update: install the APK once; on launch the app downloads the newest game from the web version in the background and uses it next start (or tap UPDATE READY on the title). No internet = plays the version it has. Saves are kept.
 - [ ] Check in-app update on a real phone (needs the first APK with the updater, after a merge to main)
 - [ ] Bug fixing and balance pass
-- [ ] Beta APK (only on "GO BETA")
+- [x] Beta APK (GO BETA given): v0.4.0-beta.1
 - [ ] Stable release (only on "GO STABLE")
