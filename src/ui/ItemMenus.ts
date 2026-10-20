@@ -2,9 +2,9 @@ import Phaser from 'phaser';
 import { state, emitStats, addItem } from '../core/GameState';
 import { bus } from '../core/EventBus';
 import { ITEMS, canEquip, equip, unequip, type Slot } from '../systems/items/Items';
-import { panel, text, title as titleStyle, COLORS } from './theme';
+import { panel, text, touchable, title as titleStyle, COLORS } from './theme';
 import { spriteScale } from '../assets/sprites';
-import { view } from '../core/Screen';
+import { safeArea, view } from '../core/Screen';
 
 export type Add = <T extends Phaser.GameObjects.GameObject>(o: T) => T;
 
@@ -48,13 +48,14 @@ export abstract class Menu {
     this.root.removeAll(true);
     const add: Add = (o) => (this.root.add(o), o);
     // Small menus (MENU, a building) only take the room they need.
-    const w = Math.min(size.w, width - 24), h = Math.min(size.h, height - 16);
-    const x = (width - w) / 2, y = (height - h) / 2;
+    const sa = safeArea(), aw = width - sa.l - sa.r, ah = height - sa.t - sa.b;
+    const w = Math.min(size.w, aw - 24), h = Math.min(size.h, ah - 16);
+    const x = sa.l + (aw - w) / 2, y = sa.t + (ah - h) / 2;
     add(panel(s, x, y, w, h, true));
     const head = add(s.add.text(x + 20, y + 12, title, titleStyle(20)));
     add(s.add.text(head.x + head.width + 16, y + 18, subtitle, text(13, COLORS.dim)));
     const c = add(s.add.text(x + w - 18, y + 12, '✕', text(22)).setOrigin(1, 0));
-    c.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.close());
+    touchable(c).on('pointerdown', () => this.close());
     return { x, y, w, h, add, compact: height < 450 };
   }
 
@@ -62,7 +63,8 @@ export abstract class Menu {
   protected button(add: Add, x: number, y: number, w: number, label: string, onPress: () => void, enabled = true) {
     const b = add(panel(this.scene, x, y, w, 28));
     add(this.scene.add.text(x + w / 2, y + 14, label, text(12, enabled ? COLORS.text : COLORS.dim)).setOrigin(0.5));
-    if (enabled) b.setInteractive({ useHandCursor: true }).on('pointerdown', onPress);
+    // Rows sit ~40 px apart in lists: a 38 px tall target fills its row without reaching the next.
+    if (enabled) touchable(b, 1, 38).on('pointerdown', onPress);
     else b.setAlpha(0.5);
   }
 

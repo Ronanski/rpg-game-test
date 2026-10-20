@@ -58,6 +58,8 @@ export class Npc extends Actor {
   update(now: number, dtMs: number, map: IsoMap, heroDist: number) {
     // Names of villagers show only up close, so the plaza isn't a wall of text.
     if (!this.def.role) this.label.setVisible(heroDist < NAME_RANGE);
+    // Key characters always show their name; what they do ("Potions", "Guard") only up close.
+    this.roleText?.setVisible(heroDist < NAME_RANGE * 1.6);
     if (now > this.nextThink) {
       this.nextThink = now + 2000 + Math.random() * 3500;
       if (this.def.role || this.near) {
@@ -103,7 +105,7 @@ export class Npc extends Actor {
   private place() {
     this.sync();
     const top = this.y - this.sprite.displayHeight - 2;
-    this.label.setPosition(this.x, top - (this.roleText ? 11 : 0));
+    this.label.setPosition(this.x, top - (this.roleText?.visible ? 11 : 0));
     this.roleText?.setPosition(this.x, top);
     this.marker.setPosition(this.x, this.label.y - 13);
   }

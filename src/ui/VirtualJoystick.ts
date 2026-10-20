@@ -45,8 +45,16 @@ export class VirtualJoystick {
     scene.input.on('pointerupoutside', release);
   }
 
+  /** Where the stick rests when not touched (the HUD sets it from the screen margins). */
+  private home: { x: number; y: number } | null = null;
+
+  setHome(x: number, y: number) {
+    this.home = { x, y };
+    this.resetPosition();
+  }
+
   resetPosition() {
-    const x = 96, y = view(this.scene).height - 96;
+    const x = this.home?.x ?? 96, y = this.home?.y ?? view(this.scene).height - 96;
     this.origin.set(x, y);
     this.base.setPosition(x, y).setAlpha(0.6);
     this.knob.setPosition(x, y).setAlpha(0.6);

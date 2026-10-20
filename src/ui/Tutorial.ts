@@ -52,7 +52,8 @@ export class Tutorial {
     return done.indexOf(false);
   }
 
-  update(width: number, height: number, k: number) {
+  /** Shown with its bottom centre at (cx, bottom), at most `maxW` screen px wide. */
+  update(cx: number, bottom: number, k: number, maxW = 330) {
     const i = this.current();
     if (i !== this.step) {
       if (this.step >= 0 && i === -1 && !state.storyFlags.has('tutorial_done')) {
@@ -73,12 +74,13 @@ export class Tutorial {
       return;
     }
     const show = !state.inMenu && !state.inDialogue && !state.buildMode;
-    this.label.setText(`TIP ${i + 1}/${STEPS.length}  ${STEPS[i].tip}`).setColor(COLORS.text);
-    const w = Math.min(300, this.label.width) + 24, h = this.label.height + 14;
+    const inner = Math.max(160, Math.min(300, maxW / k - 24));
+    this.label.setWordWrapWidth(inner).setText(`TIP ${i + 1}/${STEPS.length}  ${STEPS[i].tip}`).setColor(COLORS.text);
+    const w = Math.min(inner, this.label.width) + 24, h = this.label.height + 14;
     resizePanel(this.bg, w, h);
     this.bg.setPosition(-w / 2, -h);
     this.label.setPosition(-w / 2 + 12, -h + 7);
     // Bottom centre, between the joystick and the action buttons (toasts use the top centre).
-    this.root.setVisible(show).setScale(k).setPosition(width / 2, height - 8 * k);
+    this.root.setVisible(show).setScale(k).setPosition(cx, bottom);
   }
 }

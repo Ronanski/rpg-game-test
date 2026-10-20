@@ -12,15 +12,18 @@ import { BigMap, MinimapView, type MapData } from './MinimapView';
 import { Tutorial } from './Tutorial';
 import type { PlacedBuilding } from '../core/GameState';
 import { BUILDINGS } from '../systems/town/Buildings';
-import { JOBS } from '../systems/combat/ClassSystem';
 import { weaponType } from '../systems/items/Items';
 import { ARCHER } from '../systems/combat/CombatSystem';
-import { panel, resizePanel, text, applyPortrait, bigButton, ACTION, COLORS } from './theme';
+import { panel, resizePanel, text, applyPortrait, bigButton, touchable, ACTION, COLORS } from './theme';
 import type { Conversation } from '../systems/dialogue/DialogueSystem';
 import type { QuestTracker } from '../systems/quest/QuestTracker';
-import { DPR, fitCamera, view } from '../core/Screen';
+import { DPR, fitCamera, safeArea, view } from '../core/Screen';
 
-const STATUS_W = 300, STATUS_H = 104, PORTRAIT = 84;
+const STATUS_W = 310, STATUS_H = 104, PORTRAIT = 84;
+/** Space between the HUD and every screen edge (CSS px). */
+const MARGIN = 10;
+/** Smallest HUD scale (narrow phones). */
+const HUD_MIN = 0.62;
 
 /**
  * UI Handler: everything drawn in screen space on top of the world.
@@ -61,11 +64,9 @@ export class UIScene extends Phaser.Scene {
   private nightBtn!: Phaser.GameObjects.Container;
   private dodgeBtn!: ActionButton;
   private skillBtn!: ActionButton;
-  private jobText!: Phaser.GameObjects.Text;
   private bars!: Phaser.GameObjects.Graphics;
   private nameText!: Phaser.GameObjects.Text;
   private levelText!: Phaser.GameObjects.Text;
-  private barLabels!: Phaser.GameObjects.Text;
   /** HP / MP / EX labels, one per bar. */
   private barTags: Phaser.GameObjects.Text[] = [];
   private goldText!: Phaser.GameObjects.Text;
@@ -79,6 +80,8 @@ export class UIScene extends Phaser.Scene {
   private questBox!: Phaser.GameObjects.Container;
   /** HUD scale: smaller on short (phone) screens so the world stays visible. */
   private k = 1;
+  /** Notch / rounded-corner insets (see Screen.safeArea), refreshed on every layout. */
+  private safe = { l: 0, r: 0, t: 0, b: 0 };
   /** Touch-button scale (see layout). */
   private kb = 1;
 
@@ -108,29 +111,36 @@ export class UIScene extends Phaser.Scene {
     this.listen('appearance-changed', (key: string) => portrait.setY(y + 10 + (PORTRAIT - applyPortrait(portrait, key, PORTRAIT - 12)) / 2));
     this.nameText = this.add.text(x + PORTRAIT + 30, y + 12, '', text(18));
     this.levelText = this.add.text(x + STATUS_W - 16, y + 14, '', text(15, COLORS.gold)).setOrigin(1, 0);
-    this.barLabels = this.add.text(x + PORTRAIT + 30, y + 46, '', { ...text(13), lineSpacing: 0 }).setOrigin(0, 0.5);
     this.bars = this.add.graphics();
     this.barTags = [0, 1, 2].map((i) => this.add.text(x + PORTRAIT + 30, y + 46 + i * 20, '', text(13)).setOrigin(0, 0.5));
-    const coin = this.add.image(x + 16, y + STATUS_H + 18, 'icon_coin').setScale(2);
-    this.goldText = this.add.text(x + 32, y + STATUS_H + 9, '', text(16, COLORS.gold));
-    // JOB button under the gold: shows the current job, opens the JOBS menu (J key too).
-    const jobPanel = panel(this, x, y + STATUS_H + 32, 170, 32);
-    // BAG button next to it (I key too).
-    const bagPanel = panel(this, x + 178, y + STATUS_H + 32, 76, 32);
-    const bagIcon = this.add.image(x + 196, y + STATUS_H + 48, 'icon_items').setScale(0.55);
-    const bagText = this.add.text(x + 210, y + STATUS_H + 48, 'BAG', text(14)).setOrigin(0, 0.5);
-    bagPanel.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.openMenu('bag'));
-    // BUILD button (B key too).
-    const buildPanel = panel(this, x + 262, y + STATUS_H + 32, 90, 32);
-    const buildIcon = this.add.image(x + 280, y + STATUS_H + 48, 'icon_crafting').setScale(0.55);
-    const buildText = this.add.text(x + 294, y + STATUS_H + 48, 'BUILD', text(14)).setOrigin(0, 0.5);
-    buildPanel.setInteractive({ useHandCursor: true }).on('pointerdown', () => bus.emit('build-mode', true));
-    // AUTO toggle: attack the nearest monster without pressing ATTACK. It sits with the menu
-    // buttons (set once, rarely changed) so the thumb buttons stay together around ATTACK.
-    const autoPanel = panel(this, x + 360, y + STATUS_H + 32, 104, 32);
-    const autoIcon = this.add.image(x + 376, y + STATUS_H + 48, 'pin_star').setScale(0.45);
-    this.autoText = this.add.text(x + 390, y + STATUS_H + 48, '', text(14)).setOrigin(0, 0.5);
-    autoPanel.setInteractive({ useHandCursor: true }).on('pointerdown', () => {
+    // Under the panel, on the panel's own width: gold and town resources in four equal slots,
+    // then the JOB / BAG / BUILD / AUTO buttons, edge to edge with the panel.
+    const slot = STATUS_W / 4, ry = y + STATUS_H + 18;
+    const coin = this.add.image(x + 10, ry, 'icon_coin').setScale(2);
+    this.goldText = this.add.text(x + 24, ry, '', text(16, COLORS.gold)).setOrigin(0, 0.5);
+    const resIcons = ['res_wood', 'res_stone', 'res_mana'].map((k, i) => this.add.image(x + (i + 1) * slot + 12, ry, k).setScale(2));
+    this.resTexts = resIcons.map((_, i) => this.add.text(x + (i + 1) * slot + 28, ry, '', text(16)).setOrigin(0, 0.5));
+    const by = y + STATUS_H + 32, bh = 32, gap = 6;
+    let bx = x;
+    const rowBtn = (w: number, icon: string, label: string, onPress: () => void) => {
+      const p = touchable(panel(this, bx, by, w, bh), HUD_MIN).on('pointerdown', onPress);
+      const img = this.add.image(0, by + bh / 2, icon);
+      img.setScale(18 / Math.max(img.width, img.height));
+      const t = this.add.text(0, by + bh / 2, label, text(14)).setOrigin(0, 0.5);
+      // Icon + label centred as one group.
+      const gw = 18 + 5 + t.width, gx = bx + (w - gw) / 2;
+      img.setX(gx + 9);
+      t.setX(gx + 23);
+      bx += w + gap;
+      return [p, img, t] as const;
+    };
+    // Widths add up to the panel's: 66 + 70 + 80 + 76 + 3 gaps of 6 = 310.
+    const jobRow = rowBtn(66, 'icon_status', 'JOB', () => this.toggleJobs());
+    const bagRow = rowBtn(70, 'icon_items', 'BAG', () => this.openMenu('bag'));
+    const buildRow = rowBtn(80, 'icon_crafting', 'BUILD', () => bus.emit('build-mode', true));
+    // AUTO: attack the nearest monster without pressing ATTACK (green when on). It sits with the
+    // menu buttons (set once, rarely changed) so the thumb buttons stay together around ATTACK.
+    const autoRow = rowBtn(76, 'pin_star', 'AUTO', () => {
       state.autoAttack = !state.autoAttack;
       try {
         localStorage.setItem('aethelgard.auto', state.autoAttack ? '1' : '0');
@@ -138,12 +148,8 @@ export class UIScene extends Phaser.Scene {
         // No storage: the choice lasts until the game closes.
       }
     });
-    // Town resources next to the gold.
-    const resIcons = ['res_wood', 'res_stone', 'res_mana'].map((k, i) => this.add.image(x + 96 + i * 70, y + STATUS_H + 18, k).setScale(2));
-    this.resTexts = resIcons.map((_, i) => this.add.text(x + 110 + i * 70, y + STATUS_H + 9, '', text(16)));
-    this.jobText = this.add.text(x + 12, y + STATUS_H + 48, '', text(14)).setOrigin(0, 0.5);
-    jobPanel.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.toggleJobs());
-    this.statusBox = this.add.container(0, 0, [statusPanel, portraitPanel, portrait, this.nameText, this.levelText, this.barLabels, ...this.barTags, this.bars, coin, this.goldText, jobPanel, this.jobText, bagPanel, bagIcon, bagText, buildPanel, buildIcon, buildText, autoPanel, autoIcon, this.autoText, ...resIcons, ...this.resTexts]);
+    this.autoText = autoRow[2];
+    this.statusBox = this.add.container(0, 0, [statusPanel, portraitPanel, portrait, this.nameText, this.levelText, ...this.barTags, this.bars, coin, this.goldText, ...resIcons, ...this.resTexts, ...jobRow, ...bagRow, ...buildRow, ...autoRow]);
 
     // Quest tracker (top-right).
     this.questPanel = panel(this, 0, 10, 200, 60);
@@ -152,20 +158,22 @@ export class UIScene extends Phaser.Scene {
     this.questText = this.add.text(0, 0, '', { ...text(13), lineSpacing: 4 });
     this.questBox = this.add.container(0, 0, [this.questPanel, this.questIcon, this.questTitle, this.questText]);
     // MENU button (top-right corner; Esc too when nothing else is open).
-    const mIcon = this.add.image(-24, 32, 'icon_settings').setScale(46 / 48).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.openPause());
+    const mIcon = touchable(this.add.image(-23, 23, 'icon_settings').setScale(46 / 48), HUD_MIN).on('pointerdown', () => this.openPause());
     this.menuBtn = this.add.container(0, 0, [mIcon]);
     // Mini-map (owner's compass ring) with zoom + / − and the MAP button beside it.
     this.minimap = new MinimapView(this, () => this.openBigMap());
     this.bigMap = new BigMap(this, () => this.setControlsVisible(true));
     this.listen('minimap', (d: MapData) => this.minimap.update(d));
+    // Zoom + / − beside the mini-map (tap the mini-map itself for the big map). Shown at the touch
+    // button scale, 56 px apart, so each is a full-size target.
     const zImg = (y: number, key: string, f: number) =>
-      this.add.image(0, y, key).setScale(0.85).setInteractive({ useHandCursor: true }).on('pointerdown', () => bus.emit('zoom-by', f));
-    const mapBtn = this.add.image(0, 92, 'icon_map').setScale(0.75).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.openBigMap());
-    this.zoomBox = this.add.container(0, 0, [zImg(0, 'ui_btn_plus', 1.25), zImg(42, 'ui_btn_minus', 0.8), mapBtn]);
+      touchable(this.add.image(0, y, key).setScale(0.9), 0.8).on('pointerdown', () => bus.emit('zoom-by', f));
+    this.zoomBox = this.add.container(0, 0, [zImg(0, 'ui_btn_plus', 1.25), zImg(56, 'ui_btn_minus', 0.8)]);
     // Arrow at the screen edge pointing to what to do next (quest giver, monsters, the Core at night).
     const g = this.add.graphics();
     g.fillStyle(0xffd75e).fillTriangle(16, 0, -10, -11, -10, 11).lineStyle(2, 0x07080e).strokeTriangle(16, 0, -10, -11, -10, 11);
-    this.objText = this.add.text(0, 22, '', text(13, COLORS.gold)).setOrigin(0.5, 0);
+    // On a dark chip so it reads over busy ground and other name tags.
+    this.objText = this.add.text(0, 22, '', { ...text(13, COLORS.gold), backgroundColor: '#15120ed9', padding: { x: 8, y: 3 } }).setOrigin(0.5, 0);
     this.objArrow = this.add.container(0, 0, [g, this.objText]).setVisible(false).setDepth(40);
     this.tweens.add({ targets: g, scale: 1.2, duration: 450, yoyo: true, repeat: -1 });
     this.listen('objective', (o: { sx: number; sy: number; label: string; onScreen: boolean } | null) => this.drawObjective(o));
@@ -174,19 +182,19 @@ export class UIScene extends Phaser.Scene {
     this.cyclePanel = panel(this, -120, 0, 240, 40);
     this.cycleText = this.add.text(0, 20, '', text(14)).setOrigin(0.5);
     this.cycleBar = this.add.graphics();
-    const nbBg = panel(this, -60, 44, 120, 30, true);
-    const nbTx = this.add.text(0, 59, 'START NIGHT', text(13, COLORS.gold)).setOrigin(0.5);
-    nbBg.setInteractive({ useHandCursor: true }).on('pointerdown', () => bus.emit('start-night'));
+    const nbBg = panel(this, -64, 46, 128, 32, true);
+    const nbTx = this.add.text(0, 62, 'START NIGHT', text(13, COLORS.gold)).setOrigin(0.5);
+    touchable(nbBg, HUD_MIN).on('pointerdown', () => bus.emit('start-night'));
     this.nightBtn = this.add.container(0, 0, [nbBg, nbTx]);
-    this.cycleBox = this.add.container(0, 10, [this.cyclePanel, this.cycleText, this.cycleBar, this.nightBtn]);
+    this.cycleBox = this.add.container(0, 0, [this.cyclePanel, this.cycleText, this.cycleBar, this.nightBtn]);
     this.listen('cycle-tick', (c: { raiders: number; coreHp: number; coreMax: number; indoor?: string }) => this.drawCycle(c));
 
     // Touch controls (bottom). They also show on desktop, where keys work too.
     this.stick = new VirtualJoystick(this);
-    this.attackBtn = new ActionButton(this, 'ATTACK', 'icon_sword', 84, () => (state.controls.attack = true));
+    this.attackBtn = new ActionButton(this, 'ATTACK', 'icon_equipment', 84, () => (state.controls.attack = true));
     this.talkBtn = new ActionButton(this, 'TALK', 'icon_talk', 60, () => (state.controls.talk = true)).setVisible(false);
     this.potionBtn = new ActionButton(this, 'POTION', 'item_health_potion', 64, () => (state.controls.potion = true));
-    this.skillBtn = new ActionButton(this, 'SKILL', 'icon_skill', 64, () => (state.controls.skill = true));
+    this.skillBtn = new ActionButton(this, 'SKILL', 'icon_skills', 64, () => (state.controls.skill = true));
     this.dodgeBtn = new ActionButton(this, 'DODGE', 'icon_dodge', 64, () => (state.controls.dodge = true));
     // RAIN: the archer's Rain of Arrows (shown from level 5 with a bow).
     this.rainBtn = new ActionButton(this, 'RAIN', 'item_bow', 56, () => (state.controls.rain = true));
@@ -294,7 +302,6 @@ export class UIScene extends Phaser.Scene {
       if (this.placementBar.visible) bus.emit('build-cancel');
       else if (state.buildMode && !open.length) bus.emit('build-mode', false);
       else if (!open.length) this.openPause();
-      if (this.placementBar.visible) bus.emit('build-cancel');
     });
     this.listen('jobs-changed', () => this.jobMenu.draw());
 
@@ -307,7 +314,9 @@ export class UIScene extends Phaser.Scene {
   update() {
     this.dialogue.layout();
     const v = view(this);
-    this.tutorial.update(v.width, v.height, this.k);
+    // The tip sits bottom centre, between the joystick and the TALK / DODGE buttons.
+    const left = this.safe.l + MARGIN + 180, right = v.width - this.safe.r - MARGIN - 290 * this.kb;
+    this.tutorial.update((left + right) / 2, v.height - this.safe.b - MARGIN, this.k, right - left - 8);
     const now = this.time.now, cd = state.cooldowns;
     this.skillBtn.setCooldown((cd.skillReady - now) / cd.skillTotal);
     this.rainBtn.setCooldown((cd.rainReady - now) / cd.rainTotal);
@@ -315,7 +324,7 @@ export class UIScene extends Phaser.Scene {
     const ps = state.player;
     const canRain = !!ps && ps.level >= ARCHER.rain.level && weaponType() === 'bow';
     this.rainBtn.setVisible(this.controlsOn && canRain);
-    this.autoText.setText(state.autoAttack ? 'AUTO ON' : 'AUTO OFF').setColor(state.autoAttack ? '#8fd18a' : COLORS.dim);
+    this.autoText.setColor(state.autoAttack ? '#8fd18a' : COLORS.dim);
     this.dodgeBtn.setCooldown((cd.dodgeReady - now) / cd.dodgeTotal);
     if (!state.inDialogue && !state.inMenu) {
       state.controls.moveX = this.stick.value.x;
@@ -339,9 +348,10 @@ export class UIScene extends Phaser.Scene {
     const huts = state.town.buildings.filter((b) => b.type === 'builder_hut').length;
     const busy = state.town.buildings.filter((b) => b.status !== 'idle').length;
     this.buildBarText.setText(`BUILD MODE · Builders free: ${huts - busy}/${huts}\nDrag to look around · tap a building`)
-      .setPosition(12, height - 12).setOrigin(0, 1).setScale(this.k);
-    this.buildBarBtns[0].setPosition(width - 210 * this.kb, height - 40 * this.kb).setScale(this.kb);
-    this.buildBarBtns[1].setPosition(width - 76 * this.kb, height - 40 * this.kb).setScale(this.kb);
+      .setPosition(this.safe.l + MARGIN, height - this.safe.b - MARGIN).setOrigin(0, 1).setScale(this.k);
+    const R = width - this.safe.r - MARGIN, B = height - this.safe.b - MARGIN;
+    this.buildBarBtns[1].setPosition(R - 60 * this.kb, B - 24 * this.kb).setScale(this.kb);
+    this.buildBarBtns[0].setPosition(R - 192 * this.kb, B - 24 * this.kb).setScale(this.kb);
     this.buildBar.setVisible(!this.placementBar.visible);
   }
 
@@ -409,51 +419,55 @@ export class UIScene extends Phaser.Scene {
       this.objArrow.setVisible(true).setPosition(o.sx, Math.max(60, o.sy - 70));
       (this.objArrow.list[0] as Phaser.GameObjects.Graphics).setRotation(Math.PI / 2);
       // The goal is in view (and has its own name tag): just the arrow over it.
-      this.objText.setText('');
+      this.objText.setText('').setVisible(false);
       return;
     }
     // Kept inside the clear middle of the screen: below the top HUD, above the buttons, and away
     // from the mini-map and the action buttons on the right.
     const k = this.k;
     // Right edge: left of the mini-map column and the action buttons. Bottom: above the tutorial tip.
-    const box = { l: 80 * k, r: width - 330 * this.kb, t: 185 * k, b: height - 72 * k };
+    const sa = this.safe;
+    const box = { l: sa.l + 80 * k, r: width - sa.r - 330 * this.kb, t: sa.t + 185 * k, b: height - sa.b - 72 * k };
     const bx = (box.l + box.r) / 2, by = (box.t + box.b) / 2;
     const ang = Math.atan2(o.sy - by, o.sx - bx);
     const t = Math.min((box.r - box.l) / 2 / Math.abs(Math.cos(ang) || 1e-6), (box.b - box.t) / 2 / Math.abs(Math.sin(ang) || 1e-6));
     this.objArrow.setVisible(true).setPosition(bx + Math.cos(ang) * t, by + Math.sin(ang) * t);
     (this.objArrow.list[0] as Phaser.GameObjects.Graphics).setRotation(ang);
     // The label goes on the side facing the middle of the screen.
-    this.objText.setText(o.label).setPosition(-Math.cos(ang) * 34, -Math.sin(ang) * 22).setOrigin(Math.cos(ang) > 0.3 ? 1 : Math.cos(ang) < -0.3 ? 0 : 0.5, 0.5);
+    this.objText.setVisible(true).setText(o.label).setPosition(-Math.cos(ang) * 34, -Math.sin(ang) * 22).setOrigin(Math.cos(ang) > 0.3 ? 1 : Math.cos(ang) < -0.3 ? 0 : 0.5, 0.5);
   }
 
   private layout() {
     const { width, height } = view(this);
-    // Phone screens (landscape, under 450 px tall): a compact HUD. Info panels shrink more than
-    // the touch buttons, which stay at least ~45 px so a thumb still hits them easily.
+    // Every edge keeps the same margin, plus the phone's notch / rounded corners.
+    const sa = (this.safe = safeArea());
+    const L = sa.l + MARGIN, R = width - sa.r - MARGIN, T = sa.t + MARGIN, B = height - sa.b - MARGIN;
+    // Phone screens (landscape, under 450 px tall): a compact HUD, a little smaller still on
+    // narrow phones so the top panels never meet. Touch buttons shrink less (45 px or more).
     const phone = height < 450;
-    const k = (this.k = phone ? 0.75 : 1);
+    const k = (this.k = phone ? Math.max(HUD_MIN, Math.min(0.75, width / 1040)) : 1);
     const kb = (this.kb = phone ? 0.8 : 1);
-    this.statusBox.setScale(k);
-    this.cycleBox.setScale(k).setPosition(width / 2, 8);
-    this.questBox.setScale(k);
-    this.menuBtn.setScale(k).setPosition(width - 8, 0);
-    // Right column under the quest panel: mini-map, and + / − / MAP to its left.
+    // Panels are drawn from (10, 10) inside their containers: shift so they start at the margin.
+    this.statusBox.setScale(k).setPosition(L - 10 * k, T - 10 * k);
+    this.cycleBox.setScale(k).setPosition((L + R) / 2, T);
+    this.questBox.setScale(k).setPosition(0, T - 10 * k);
+    this.menuBtn.setScale(k).setPosition(R, T);
     this.minimap.root.setScale(k);
-    this.zoomBox.setScale(k);
+    this.zoomBox.setScale(kb);
     for (const b of [this.attackBtn, this.talkBtn, this.potionBtn, this.skillBtn, this.dodgeBtn, this.rainBtn]) b.setScale((b.baseScale = kb));
     // Thumb arc around ATTACK (bottom-right corner): DODGE, SKILL and POTION on the inner ring
     // (left, up-left, up), TALK and RAIN on the outer ring, left of them.
-    const ax = width - 60 * kb, ay = height - 60 * kb;
+    const ax = R - 42 * kb, ay = B - 42 * kb;
     const ring = (b: Phaser.GameObjects.Container, r: number, deg: number) =>
       b.setPosition(ax + Math.cos((deg * Math.PI) / 180) * r * kb, ay - Math.sin((deg * Math.PI) / 180) * r * kb);
     this.attackBtn.setPosition(ax, ay);
-    ring(this.dodgeBtn, 100, 180);
-    ring(this.skillBtn, 100, 135);
-    ring(this.potionBtn, 100, 90);
-    ring(this.talkBtn, 180, 180);
-    ring(this.rainBtn, 178, 145);
+    ring(this.dodgeBtn, 104, 180);
+    ring(this.skillBtn, 104, 135);
+    ring(this.potionBtn, 104, 90);
+    ring(this.talkBtn, 184, 180);
+    ring(this.rainBtn, 182, 145);
     this.potionCount.setScale(kb).setPosition(this.potionBtn.x + 30 * kb, this.potionBtn.y - 32 * kb);
-    this.stick.resetPosition();
+    this.stick.setHome(L + 86, B - 86);
     this.dialogue.layout();
     this.jobMenu.draw();
     this.pauseMenu.draw();
@@ -466,7 +480,6 @@ export class UIScene extends Phaser.Scene {
     const x = 10 + PORTRAIT + 30, y = 10;
     this.nameText.setText(s.name.toUpperCase());
     this.levelText.setText(`LV ${String(s.level).padStart(2, '0')}`);
-    this.barLabels.setText('HP').setVisible(false);
     this.barTags.forEach((t, i) => t.setText(['HP', 'MP', 'EX'][i]));
     const g = this.bars.clear();
     const bar = (by: number, cur: number, max: number, color: number) => {
@@ -482,7 +495,6 @@ export class UIScene extends Phaser.Scene {
     bar(y + 61, s.mp, s.maxMp, COLORS.mp);
     bar(y + 81, s.exp, s.expToNext, COLORS.exp);
     this.goldText.setText(`${s.gold}`);
-    this.jobText.setText(`JOB  ${JOBS[s.jobId].name.toUpperCase()}  ▸`);
   }
 
   private drawCycle(c: { raiders: number; coreHp: number; coreMax: number; indoor?: string }) {
@@ -530,16 +542,21 @@ export class UIScene extends Phaser.Scene {
     }
     this.questText.setText(lines.join('\n'));
     const w = Math.max(190, this.questText.width + 34), h = this.questText.height + 52;
-    const x = view(this).width / this.k - w - 64; // leave room for the MENU button
+    const sa = this.safe, width = view(this).width, R = width - sa.r - MARGIN, T = sa.t + MARGIN, k = this.k;
+    // Right-aligned to the MENU button's left (46 px gear + 8 px gap), in panel units.
+    const x = (R - (46 + 8) * k) / k - w;
     resizePanel(this.questPanel, w, h);
     this.questPanel.setPosition(x, 10);
     this.questIcon.setPosition(x + 24, 33);
     this.questTitle.setPosition(x + 42, 24);
     this.questText.setPosition(x + 18, 48);
     // The mini-map and its buttons sit just under the quest panel (never on top of it).
-    const k = this.k, top = (10 + h + 8) * k, width = view(this).width;
-    this.minimap.root.setPosition(width - 10 - 66 * k, top + 66 * k);
-    this.zoomBox.setPosition(width - 10 - 154 * k, top + 20 * k);
+    // Very short screens (old 4-inch phones): a smaller mini-map so it clears the POTION button.
+    const mk = view(this).height < 340 ? k * 0.85 : k;
+    const top = T + (h + 8) * k;
+    this.minimap.root.setScale(mk).setPosition(R - 66 * mk, top + 66 * mk);
+    // + / − centred beside it (their centres are 56 apart, each ~36 tall).
+    this.zoomBox.setPosition(R - 132 * mk - 8 - 20 * this.kb, top + 66 * mk - 28 * this.kb);
   }
 
   private toasts: Phaser.GameObjects.Text[] = [];
