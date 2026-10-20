@@ -22,6 +22,7 @@ import type { PlacedBuilding } from '../core/GameState';
 import { saveGame, setSnapshotSource, type SaveData } from '../core/SaveGame';
 import type { QuestState } from '../systems/quest/QuestTracker';
 import { DPR, view } from '../core/Screen';
+import { applyLook } from '../systems/Look';
 
 const TALK_RANGE = 70;
 /** Names shown when you walk into a place, and on the clock while inside. */
@@ -164,6 +165,7 @@ export class WorldScene extends Phaser.Scene {
     // The camera's real zoom also covers the sharp-graphics scale (DPR, see core/Screen.ts).
     cam.setZoom(this.zoom * DPR);
     cam.setRoundPixels(true);
+    applyLook(cam);
     // Zoom: + / − buttons and pinch (UI scene), mouse wheel here.
     const zoomBy = (f: number) => {
       if (state.buildMode) return;
